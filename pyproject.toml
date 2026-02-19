@@ -32,10 +32,22 @@ dev = [
     "ruff>=0.6.0",
     "mypy>=1.11",
 ]
+science = [
+    "numpy>=1.26.0",
+    "scipy>=1.12.0",
+    "scikit-learn>=1.4.0",
+    "scikit-optimize>=0.10.0",
+    "statsmodels>=0.14.0",
+    "umap-learn>=0.5.0",
+]
 nwb = [
     "pynwb>=2.8.0",
     "hdmf>=3.14.0",
     "neuroconv>=0.6.0",
+]
+memory = [
+    "graphiti-core>=0.5.0",
+    "sentence-transformers>=3.0.0",
 ]
 
 [project.scripts]
