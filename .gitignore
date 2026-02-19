@@ -24,6 +24,7 @@ env/
 .env.local
 *.pem
 credentials.json
+.mcp.json
 
 # Data (never commit raw data)
 data/
@@ -47,6 +48,10 @@ Thumbs.db
 .coverage
 htmlcov/
 .pytest_cache/
+
+# Linting / Type checking
+.ruff_cache/
+.mypy_cache/
 
 # Logs
 *.log

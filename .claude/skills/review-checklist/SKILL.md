@@ -10,9 +10,15 @@ You are generating a code review checklist for Jarvis Mesh.
 
 ## Context
 
-Recent changes: !`git diff --stat HEAD~1 2>/dev/null || git diff --stat --cached 2>/dev/null || echo "No recent changes"`
+1. Get recent changes:
+```bash
+git diff --stat HEAD~1 2>/dev/null || git diff --stat --cached 2>/dev/null || echo "No recent changes"
+```
 
-Changed files: !`git diff --name-only HEAD~1 2>/dev/null || git diff --name-only --cached 2>/dev/null || echo "None"`
+2. Get changed files:
+```bash
+git diff --name-only HEAD~1 2>/dev/null || git diff --name-only --cached 2>/dev/null || echo "None"
+```
 
 ## Generate Checklist
 

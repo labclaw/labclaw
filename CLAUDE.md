@@ -18,6 +18,7 @@ Jarvis Mesh is a distributed agentic architecture for self-documenting, self-imp
 | Agent runtime, orchestrator, tool calling, LLM integration | agent-engineer | Building/modifying runtime.py, orchestrator.py, role configs, prompts |
 | Edge nodes, file watchers, quality checks, device adapters | edge-engineer | Building/modifying watcher.py, quality.py, adapters/, sensor code |
 | Neuroscience domain: NWB, analysis pipelines, data schemas, SAM-Behavior | neuro-specialist | NWB export, analysis pipeline design, schema definitions, domain logic |
+| Dashboard pages, Streamlit UI, visualization | platform-engineer | Building/modifying dashboard/ components, data display |
 | Code review, PR review, security audit | code-reviewer | All code changes before merge |
 
 ### Orchestration Protocol
@@ -78,4 +79,4 @@ configs/            # Environment configs (YAML)
 
 ## TODO
 
-- [ ] Configure MCP servers in `.mcp.json` when credentials are available
+- [ ] Copy `.mcp.json.example` to `.mcp.json` and update paths for your machine

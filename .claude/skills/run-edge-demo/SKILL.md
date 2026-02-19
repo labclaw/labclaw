@@ -8,6 +8,8 @@ context: fork
 
 You are running the edge node demo for Jarvis Mesh.
 
+**Prerequisites:** Requires `src/jarvis_mesh/edge/watcher.py` to be implemented (Phase 1). If the module does not exist yet, report that the demo is not yet available and list what needs to be built.
+
 ## Steps
 
 1. Check if sample data exists:

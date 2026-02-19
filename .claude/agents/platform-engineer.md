@@ -11,7 +11,10 @@ Your domain:
 - `src/jarvis_mesh/core/graph.py` — Experiment graph database (SQLite + JSON)
 - `src/jarvis_mesh/core/registry.py` — Plugin registry (discovers and manages extensions)
 - `src/jarvis_mesh/core/config.py` — System configuration (YAML-based)
+- `src/jarvis_mesh/core/governance.py` — Role-based permissions + immutable audit ledger
+- `src/jarvis_mesh/core/evaluation.py` — Offline replay, shadow-mode scoring, upgrade validation
 - `src/jarvis_mesh/api/app.py` — FastAPI REST API
+- `src/jarvis_mesh/dashboard/app.py` — Streamlit dashboard
 - `configs/` — Environment configuration files
 
 You build reliable, well-tested infrastructure. Your code:

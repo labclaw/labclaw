@@ -22,6 +22,7 @@ dependencies = [
     "redis>=5.0.0",
     "streamlit>=1.38.0",
     "pyyaml>=6.0",
+    "aiosqlite>=0.20.0",
 ]
 
 [project.optional-dependencies]
@@ -34,7 +35,12 @@ dev = [
 nwb = [
     "pynwb>=2.8.0",
     "hdmf>=3.14.0",
+    "neuroconv>=0.6.0",
 ]
+
+[project.scripts]
+jarvis-mesh = "jarvis_mesh.cli:main"
+jarvis-edge = "jarvis_mesh.edge.cli:main"
 
 [tool.ruff]
 target-version = "py311"
