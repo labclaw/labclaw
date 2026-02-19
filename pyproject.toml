@@ -1,0 +1,48 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "jarvis-mesh"
+version = "0.1.0"
+description = "Distributed agentic architecture for self-documenting, self-improving neuroscience laboratories"
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.11"
+authors = [
+    { name = "Shen Lab" },
+]
+
+dependencies = [
+    "fastapi>=0.115.0",
+    "uvicorn>=0.30.0",
+    "watchdog>=4.0.0",
+    "pydantic>=2.0.0",
+    "anthropic>=0.40.0",
+    "redis>=5.0.0",
+    "streamlit>=1.38.0",
+    "pyyaml>=6.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.24",
+    "ruff>=0.6.0",
+    "mypy>=1.11",
+]
+nwb = [
+    "pynwb>=2.8.0",
+    "hdmf>=3.14.0",
+]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "W", "UP"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"

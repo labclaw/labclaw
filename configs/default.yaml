@@ -1,0 +1,26 @@
+# Jarvis Mesh default configuration
+
+system:
+  name: jarvis-mesh
+  version: 0.1.0
+  log_level: INFO
+
+graph:
+  backend: sqlite
+  path: data/jarvis_mesh.db
+
+events:
+  backend: memory  # memory | redis
+  redis_url: redis://localhost:6379
+
+api:
+  host: 0.0.0.0
+  port: 8000
+
+edge:
+  watch_paths: []
+  poll_interval_seconds: 5
+
+agents:
+  default_model: claude-sonnet-4-6
+  max_tool_calls: 20
