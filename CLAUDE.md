@@ -18,6 +18,7 @@ Jarvis Mesh is a distributed agentic architecture for self-documenting, self-imp
 | Agent runtime, orchestrator, tool calling, LLM integration | agent-engineer | Building/modifying runtime.py, orchestrator.py, role configs, prompts |
 | Edge nodes, file watchers, quality checks, device adapters | edge-engineer | Building/modifying watcher.py, quality.py, adapters/, sensor code |
 | Neuroscience domain: NWB, analysis pipelines, data schemas, SAM-Behavior | neuro-specialist | NWB export, analysis pipeline design, schema definitions, domain logic |
+| Discovery pipeline: pattern mining, hypothesis generation, predictive modeling, Bayesian optimization, statistical validation | discovery-engineer | Building/modifying discovery/, optimization/, validation/ modules |
 | Dashboard pages, Streamlit UI, visualization | platform-engineer | Building/modifying dashboard/ components, data display |
 | Code review, PR review, security audit | code-reviewer | All code changes before merge |
 
@@ -36,14 +37,19 @@ Jarvis Mesh is a distributed agentic architecture for self-documenting, self-imp
 - **New Plugin**: tech-lead → neuro-specialist (schema) + [specialist] (implementation) → code-reviewer
 - **NWB/Data**: tech-lead → neuro-specialist → code-reviewer
 - **Edge Integration**: tech-lead → edge-engineer → neuro-specialist (validation) → code-reviewer
+- **Discovery/Mining**: tech-lead → discovery-engineer → neuro-specialist (biological validation) → code-reviewer
+- **Closed-Loop Optimization**: tech-lead → discovery-engineer (optimizer) + neuro-specialist (safety/domain) → code-reviewer
 
 ## Project Structure
 
 ```
 src/jarvis_mesh/
-├── core/           # Event bus, graph DB, plugin registry, config
+├── core/           # Event bus, graph DB, plugin registry, config, governance, evaluation
 ├── agents/         # Agent runtime, orchestrator, role configs
 ├── edge/           # File watchers, quality checks, device adapters
+├── discovery/      # Pattern mining, hypothesis generation, predictive modeling
+├── optimization/   # Bayesian optimization, safety constraints, approval workflow
+├── validation/     # Statistics, cross-validation, provenance, report generation
 ├── api/            # REST API (FastAPI)
 └── dashboard/      # Streamlit dashboard
 plugins/            # Extension plugins (devices, analysis, metrics, schemas)
