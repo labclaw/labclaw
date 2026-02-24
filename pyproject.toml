@@ -44,6 +44,7 @@ dev = [
     "bandit>=1.7.0",
     "pip-audit>=2.7.0",
     "safety>=3.0.0",
+    "commitizen>=3.0",
 ]
 science = [
     "numpy>=1.26.0",
@@ -112,6 +113,15 @@ exclude_lines = [
     "raise NotImplementedError",
     "@overload",
 ]
+
+[tool.commitizen]
+name = "cz_conventional_commits"
+version = "0.0.3"
+version_files = ["pyproject.toml:project.version"]
+tag_format = "v$version"
+update_changelog_on_bump = true
+changelog_incremental = true
+changelog_file = "CHANGELOG.md"
 
 [tool.mypy]
 python_version = "3.11"

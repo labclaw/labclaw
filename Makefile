@@ -1,4 +1,4 @@
-.PHONY: test lint format build docker demo clean install dev-install coverage-html
+.PHONY: test lint format build docker demo clean install dev-install coverage-html release
 
 test:
 	uv run pytest --cov=labclaw --cov-report=term-missing --cov-fail-under=90 -q
@@ -33,3 +33,7 @@ dev-install:
 
 coverage-html:
 	uv run pytest --cov=labclaw --cov-report=html -q
+
+release:
+	uv run cz bump
+	git push origin main --tags

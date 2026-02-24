@@ -1,5 +1,43 @@
 # Changelog
 
+## 0.0.3 — 2026-02-24
+
+### Features
+
+- `kfold_validate(data, k=5, seed=42)` — k-fold cross-validation with per-fold MAE
+- `permutation_test(group_a, group_b, n_perms=1000)` — two-sample permutation test
+- `to_markdown(report)` — render ValidationReport as markdown
+- `to_dict(chain)` / `from_dict(data)` — ProvenanceChain serialization
+
+### Bug Fixes
+
+- Fix `file_watcher.py` event registration — `hardware.file.detected` now registered at import time
+- Fix `permutation_test` ZeroDivisionError when `n_perms=0`
+
+### Tests
+
+- Test coverage: 76% → 95% (1,055 tests, was 581)
+- Core modules at 100% coverage (graph, safety, schemas, events, gateway)
+
+### CI
+
+- `actions/checkout` 4 → 6
+- `actions/upload-artifact` 4 → 6
+- `actions/download-artifact` 4 → 7
+- `astral-sh/setup-uv` 4 → 7
+- `github/codeql-action` 3 → 4
+- `webfactory/ssh-agent` 0.9.0 → 0.9.1
+
+## 0.0.2 — 2026-02-22
+
+### Features
+
+- Complete 5-layer superbrain architecture
+- Memory, hardware, and persona layers
+- Discovery pipeline: pattern mining, hypothesis generation, predictive modeling
+- Scientific method pipeline modules
+- Full hardening: runtime correctness, memory safety, API contracts
+
 ## 0.0.1 — 2026-02-20
 
 First production release. All 5 layers functional, deployed on DO server.
