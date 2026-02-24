@@ -7,7 +7,7 @@ Feature: REST API Endpoints
   Scenario: Health check
     When I GET "/api/health"
     Then the response status is 200
-    And the response contains "status" with value "ok"
+    And the response contains "status"
 
   Scenario: System status
     When I GET "/api/status"

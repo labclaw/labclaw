@@ -369,15 +369,15 @@ def check_duplicate_raises(tier_b: TierBBackend, label: str) -> None:
 
 
 @given(
-    "the shared blocks backend is not implemented",
-    target_fixture="sb_error",
+    "the shared blocks backend is implemented",
+    target_fixture="sb_status",
 )
-def sb_not_implemented() -> str:
-    return "not_implemented"
+def sb_implemented() -> str:
+    return "implemented"
 
 
-@then("accessing shared blocks raises NotImplementedError")
-def check_sb_not_implemented(sb_error: str) -> None:
+@then("accessing shared blocks succeeds")
+def check_sb_implemented(sb_status: str) -> None:
     from labclaw.memory.shared_blocks import TierCBackend
-    with pytest.raises(NotImplementedError):
-        TierCBackend()
+    backend = TierCBackend()
+    assert backend is not None

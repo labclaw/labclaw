@@ -65,3 +65,11 @@ class EvolutionConfig(BaseModel):
     max_candidates: int = 3
     diversity_min: int = 2
     max_cycles: int = 1000
+
+
+class EvolutionState(BaseModel):
+    """Serializable snapshot of all evolution state for persistence."""
+
+    cycles: list[EvolutionCycle] = Field(default_factory=list)
+    fitness_history: dict[str, list[FitnessScore]] = Field(default_factory=dict)
+    saved_at: datetime = Field(default_factory=_now)

@@ -35,36 +35,20 @@ jobs:
       - name: Sync dependencies
         run: uv sync --extra dev --frozen
 
-      - name: Ruff (error-focused rules)
-        run: uv run --extra dev ruff check src tests --select E,F,I,W
+      - name: Ruff check
+        run: uv run ruff check src/ tests/
 
-  compatibility:
-    name: compatibility (py3.11)
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup uv
-        uses: astral-sh/setup-uv@v4
-        with:
-          enable-cache: true
-
-      - name: Set up Python
-        run: uv python install 3.11
-
-      - name: Sync dependencies
-        run: uv sync --extra dev --extra science --frozen
-
-      - name: Run unit tests
-        run: uv run --extra dev --extra science pytest -q tests/unit
+      - name: Ruff format check
+        run: uv run ruff format --check src/ tests/
 
   test:
-    name: test
+    name: test (py${{ matrix.python-version }})
     runs-on: ubuntu-latest
     timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12", "3.13"]
 
     steps:
       - name: Checkout
@@ -75,14 +59,27 @@ jobs:
         with:
           enable-cache: true
 
-      - name: Set up Python
-        run: uv python install 3.12
+      - name: Set up Python ${{ matrix.python-version }}
+        run: uv python install ${{ matrix.python-version }}
 
       - name: Sync dependencies
         run: uv sync --extra dev --extra science --frozen
 
-      - name: Run tests
-        run: uv run --extra dev --extra science pytest -q
+      - name: Run tests with coverage
+        run: >
+          uv run pytest
+          --cov=labclaw
+          --cov-report=xml
+          --cov-report=term-missing
+          --cov-fail-under=90
+          -q
+
+      - name: Upload coverage
+        if: matrix.python-version == '3.12'
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage.xml
 
   package:
     name: package

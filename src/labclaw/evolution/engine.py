@@ -9,9 +9,11 @@ Auto-rollback if any metric drops > rollback_threshold from baseline.
 
 from __future__ import annotations
 
+import json
 import logging
 import random
 from datetime import UTC, datetime
+from pathlib import Path
 from typing import Any
 
 from labclaw.core.events import event_registry
@@ -21,6 +23,7 @@ from labclaw.evolution.schemas import (
     EvolutionCandidate,
     EvolutionConfig,
     EvolutionCycle,
+    EvolutionState,
     FitnessScore,
 )
 
@@ -302,6 +305,117 @@ class EvolutionEngine:
         return sorted(cycles, key=lambda c: c.started_at)
 
     # ------------------------------------------------------------------
+    # Cycle tracking & persistence
+    # ------------------------------------------------------------------
+
+    def get_active_cycles(self) -> list[EvolutionCycle]:
+        """Return cycles that haven't been promoted or rolled back."""
+        return [
+            c for c in self._cycles.values()
+            if c.stage not in (EvolutionStage.PROMOTED, EvolutionStage.ROLLED_BACK)
+        ]
+
+    def should_advance(self, cycle_id: str) -> bool:
+        """Check if soak time has elapsed since the cycle started.
+
+        Uses a simple time-based heuristic: the cycle must have been running
+        for at least 2 evolution intervals (approximated as 2 × min_soak_sessions
+        seconds) before it can advance.  For MVP this is generous — the daemon
+        calls this each interval so a cycle will advance on the second tick.
+        """
+        cycle = self._get_cycle(cycle_id)
+        elapsed = (datetime.now(UTC) - cycle.started_at).total_seconds()
+        # Soak = at least 1 second (unit-test friendly) so that a brand-new
+        # cycle created in the same tick is NOT immediately advanced.
+        soak_seconds = max(self._config.min_soak_sessions, 1)
+        return elapsed >= soak_seconds
+
+    async def propose_candidates_llm(
+        self,
+        target: EvolutionTarget,
+        context: str,
+        llm_provider: Any,
+        n: int = 3,
+    ) -> list[EvolutionCandidate]:
+        """Use LLM to propose smarter candidates based on fitness history.
+
+        Falls back to template-based proposals if the LLM call fails.
+        """
+        history = self._fitness.get_history(target)
+        history_summary = ""
+        if history:
+            recent = history[-5:]
+            history_summary = "\n".join(
+                f"  - {s.measured_at.isoformat()}: {s.metrics}" for s in recent
+            )
+
+        prompt = (
+            f"You are an evolution engine for a lab automation system.\n"
+            f"Target: {target.value}\n"
+            f"Context: {context}\n"
+            f"Recent fitness history:\n{history_summary}\n\n"
+            f"Propose {n} configuration changes as JSON array. "
+            f"Each element: {{\"description\": str, \"config_diff\": dict}}.\n"
+            f"Only output valid JSON, no markdown."
+        )
+
+        try:
+            response = await llm_provider.complete(prompt)
+            proposals = json.loads(response)
+            if not isinstance(proposals, list):
+                proposals = [proposals]
+            candidates = []
+            for p in proposals[:n]:
+                candidates.append(
+                    EvolutionCandidate(
+                        target=target,
+                        description=p.get("description", f"LLM proposal for {target.value}"),
+                        config_diff=p.get("config_diff", {}),
+                        proposed_by="llm",
+                    )
+                )
+            if candidates:
+                return candidates
+        except Exception:
+            logger.warning("LLM proposal failed for %s, falling back to templates", target.value)
+
+        return self.propose_candidates(target, n=n)
+
+    def persist_state(self, path: Path) -> None:
+        """Save all evolution state to JSON file."""
+        state = EvolutionState(
+            cycles=list(self._cycles.values()),
+            fitness_history=self._fitness.to_dict(),
+        )
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(state.model_dump_json(indent=2))
+
+    def load_state(self, path: Path) -> None:
+        """Load evolution state from JSON file."""
+        if not path.exists():
+            return
+        try:
+            state = EvolutionState.model_validate_json(path.read_text())
+            self._cycles = {c.cycle_id: c for c in state.cycles}
+            self._fitness = FitnessTracker.from_dict(state.fitness_history)
+            logger.info(
+                "Loaded evolution state: %d cycles, %d fitness targets",
+                len(self._cycles),
+                len(state.fitness_history),
+            )
+        except Exception:
+            logger.exception("Failed to load evolution state from %s", path)
+
+    # ------------------------------------------------------------------
+    # Accessors
+    # ------------------------------------------------------------------
+
+    def get_cycle(self, cycle_id: str) -> EvolutionCycle:
+        """Return a cycle by ID. Raises KeyError if not found."""
+        if cycle_id not in self._cycles:
+            raise KeyError(f"Evolution cycle {cycle_id!r} not found")
+        return self._cycles[cycle_id]
+
     # Private helpers
     # ------------------------------------------------------------------
 

@@ -129,7 +129,7 @@ cat > /opt/labclaw/memory/labclaw/SOUL.md <<'EOF'
 ---
 name: LabClaw
 type: system
-version: 0.1.0
+version: 0.0.1
 created: 2026-02-20
 ---
 

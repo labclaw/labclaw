@@ -441,3 +441,18 @@ class TierBBackend:
     def all_edges(self) -> list[KGEdge]:
         """Return all edges in the graph."""
         return list(self._edges.values())
+
+
+# ---------------------------------------------------------------------------
+# SQLite-backed backend (production)
+# ---------------------------------------------------------------------------
+
+from labclaw.memory.sqlite_backend import SQLiteTierBBackend  # noqa: E402
+
+__all__ = [
+    "KGEdge",
+    "KGQueryFilter",
+    "KGSearchResult",
+    "SQLiteTierBBackend",
+    "TierBBackend",
+]

@@ -12,6 +12,7 @@ from labclaw.evolution.schemas import (
     EvolutionCandidate,
     EvolutionConfig,
     EvolutionCycle,
+    EvolutionState,
     FitnessScore,
 )
 
@@ -20,6 +21,7 @@ __all__ = [
     "EvolutionConfig",
     "EvolutionCycle",
     "EvolutionEngine",
+    "EvolutionState",
     "FitnessScore",
     "FitnessTracker",
 ]

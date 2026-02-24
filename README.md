@@ -87,7 +87,7 @@ See:
 
 - [ ] Add a 60-second demo GIF in `docs/`
 - [ ] Publish benchmark datasets + reproducible scripts
-- [ ] Tag `v0.1.0` release notes
+- [ ] Tag `v0.0.1` release notes
 - [ ] Open 10 beginner-friendly issues (`good first issue`)
 - [ ] Post roadmap updates weekly
 

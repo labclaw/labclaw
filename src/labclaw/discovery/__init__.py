@@ -16,6 +16,7 @@ from labclaw.discovery.hypothesis import (
     HypothesisGenerator,
     HypothesisInput,
     HypothesisOutput,
+    LLMHypothesisGenerator,
 )
 from labclaw.discovery.mining import (
     MiningConfig,
@@ -46,6 +47,7 @@ __all__ = [
     "HypothesisGenerator",
     "HypothesisInput",
     "HypothesisOutput",
+    "LLMHypothesisGenerator",
     "MiningConfig",
     "MiningResult",
     "ModelConfig",

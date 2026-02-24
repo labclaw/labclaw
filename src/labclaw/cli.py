@@ -30,11 +30,24 @@ def main() -> None:
         else:
             port = 18800
         uvicorn.run(app, host="127.0.0.1", port=port)
+    elif cmd == "demo":
+        _demo_cmd(sys.argv[2:])
+    elif cmd == "init":
+        _init_cmd(sys.argv[2:])
+    elif cmd == "mcp":
+        from labclaw.mcp.server import main as mcp_main
+        mcp_main()
+    elif cmd == "plugin":
+        _plugin_cmd(sys.argv[2:])
     else:
         print("Usage: labclaw <command>")
         print()
         print("Commands:")
         print("  serve          Start the full 24/7 LabClaw daemon")
+        print("  demo           Run an interactive demo (no API keys needed)")
+        print("  init           Scaffold a new LabClaw project directory")
+        print("  mcp            Start MCP server (stdio transport)")
+        print("  plugin         Manage plugins (see: labclaw plugin --help)")
         print("  --dashboard    Launch Streamlit dashboard only")
         print("  --api [PORT]   Launch FastAPI server only")
         print()
@@ -43,6 +56,178 @@ def main() -> None:
         print("  --memory-root PATH     Memory directory (default: /opt/labclaw/memory)")
         print("  --port PORT            API port (default: 18800)")
         print("  --dashboard-port PORT  Dashboard port (default: 18801)")
+
+
+def _demo_cmd(args: list[str]) -> None:
+    """Run the interactive demo."""
+    import logging
+
+    from labclaw.demo.runner import DemoRunner
+
+    domain = "generic"
+    keep = False
+    i = 0
+    while i < len(args):
+        if args[i] == "--domain" and i + 1 < len(args):
+            domain = args[i + 1]
+            i += 2
+        elif args[i] == "--keep":
+            keep = True
+            i += 1
+        elif args[i] in ("-h", "--help"):
+            print("Usage: labclaw demo [--domain generic|neuroscience|chemistry] [--keep]")
+            print()
+            print("Options:")
+            print("  --domain DOMAIN  Sample dataset to use (default: generic)")
+            print("  --keep           Keep temporary workspace after demo")
+            return
+        else:
+            i += 1
+
+    logging.basicConfig(level=logging.WARNING, format="%(message)s")
+
+    try:
+        runner = DemoRunner(domain=domain, keep=keep)
+        runner.run()
+    except ValueError as exc:
+        print(f"Error: {exc}", file=sys.stderr)
+        sys.exit(1)
+    except KeyboardInterrupt:
+        print("\nDemo interrupted.")
+
+
+def _init_cmd(args: list[str]) -> None:
+    """Scaffold a new LabClaw project directory."""
+    import shutil
+
+    if not args or args[0] in ("-h", "--help"):
+        print("Usage: labclaw init <project-name>")
+        print()
+        print("Scaffolds a new LabClaw project directory with default configs.")
+        if not args:
+            sys.exit(1)
+        return
+
+    name = args[0]
+    project_dir = Path.cwd() / name
+
+    if project_dir.exists():
+        print(f"Error: directory '{project_dir}' already exists", file=sys.stderr)
+        sys.exit(1)
+
+    project_dir.mkdir(parents=True)
+    (project_dir / "data").mkdir()
+    (project_dir / "lab").mkdir()
+    (project_dir / "configs").mkdir()
+
+    # Copy default config
+    default_cfg = Path(__file__).parent.parent.parent / "configs" / "default.yaml"
+    dest_cfg = project_dir / "configs" / "default.yaml"
+    if default_cfg.exists():
+        shutil.copy2(default_cfg, dest_cfg)
+    else:
+        dest_cfg.write_text(
+            "# LabClaw configuration\n"
+            "system:\n"
+            f"  name: {name}\n"
+            "  version: 0.0.1\n"
+            "  log_level: INFO\n"
+            "\n"
+            "llm:\n"
+            "  provider: anthropic\n"
+            "  model: claude-sonnet-4-6\n"
+            "  api_key_env: ANTHROPIC_API_KEY\n"
+        )
+
+    # Create lab SOUL.md and MEMORY.md
+    (project_dir / "lab" / "SOUL.md").write_text(
+        f"# {name}\n\n"
+        "## Identity\n\n"
+        f"This is the lab profile for **{name}**.\n\n"
+        "## Mission\n\n"
+        "<!-- Describe your lab's research mission here -->\n\n"
+        "## Protocols\n\n"
+        "<!-- List standard operating procedures -->\n"
+    )
+    (project_dir / "lab" / "MEMORY.md").write_text(
+        f"# {name} — Memory Log\n\n"
+        "<!-- LabClaw will append observations and discoveries here -->\n"
+    )
+
+    print(f"Project scaffolded: {project_dir}")
+    print()
+    print("  Project structure:")
+    print(f"    {name}/")
+    print(f"    {name}/configs/default.yaml")
+    print(f"    {name}/data/")
+    print(f"    {name}/lab/SOUL.md")
+    print(f"    {name}/lab/MEMORY.md")
+    print()
+    print("  Next steps:")
+    print(f"    cd {name}")
+    print("    labclaw demo          # Run the interactive demo")
+    print("    labclaw serve          # Start the 24/7 daemon")
+
+
+def _plugin_cmd(args: list[str]) -> None:
+    """Dispatch plugin sub-commands."""
+    sub = args[0] if args else ""
+
+    if sub == "list":
+        from labclaw.plugins import plugin_registry
+        from labclaw.plugins.loader import PluginLoader
+
+        PluginLoader().load_all()
+        plugins = plugin_registry.list_plugins()
+        if not plugins:
+            print("No plugins registered.")
+            return
+        print(f"{'NAME':<30} {'TYPE':<12} {'VERSION':<10} DESCRIPTION")
+        print("-" * 80)
+        for m in plugins:
+            print(f"{m.name:<30} {m.plugin_type:<12} {m.version:<10} {m.description}")
+
+    elif sub == "create":
+        if len(args) < 2:
+            print("Usage: labclaw plugin create <name> [--type device|domain|analysis] [--out DIR]",
+                  file=sys.stderr)
+            sys.exit(1)
+
+        name = args[1]
+        plugin_type = "domain"
+        out_dir = Path.cwd()
+
+        i = 2
+        while i < len(args):
+            if args[i] == "--type" and i + 1 < len(args):
+                plugin_type = args[i + 1]
+                i += 2
+            elif args[i] == "--out" and i + 1 < len(args):
+                out_dir = Path(args[i + 1])
+                i += 2
+            else:
+                i += 1
+
+        from labclaw.plugins.scaffold import scaffold_plugin
+
+        try:
+            project_dir = scaffold_plugin(name, plugin_type, out_dir)
+        except ValueError as exc:
+            print(f"Error: {exc}", file=sys.stderr)
+            sys.exit(1)
+
+        print(f"Plugin scaffold created: {project_dir}")
+        print(f"  cd {project_dir}")
+        print("  pip install -e .")
+
+    else:
+        print("Usage: labclaw plugin <subcommand>")
+        print()
+        print("Subcommands:")
+        print("  list                      List all registered plugins")
+        print("  create <name>             Scaffold a new plugin project")
+        print("    --type device|domain|analysis  Plugin type (default: domain)")
+        print("    --out DIR                      Output directory (default: .)")
 
 
 if __name__ == "__main__":

@@ -6,18 +6,22 @@ shares the same in-memory state (registry, chronicle, etc.).
 
 from __future__ import annotations
 
+import logging
 import os
 import threading
 from functools import lru_cache
 from pathlib import Path
 
 from labclaw.core.events import event_registry
-from labclaw.discovery.hypothesis import HypothesisGenerator
+from labclaw.discovery.hypothesis import HypothesisGenerator, LLMHypothesisGenerator
 from labclaw.discovery.mining import PatternMiner
 from labclaw.edge.session_chronicle import SessionChronicle
 from labclaw.evolution.engine import EvolutionEngine
 from labclaw.hardware.registry import DeviceRegistry
+from labclaw.llm.provider import LLMProvider
 from labclaw.memory.markdown import TierABackend
+
+logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
 # Configurable root for Tier A memory
@@ -76,7 +80,12 @@ def get_pattern_miner() -> PatternMiner:
 
 
 @lru_cache
-def get_hypothesis_generator() -> HypothesisGenerator:
+def get_hypothesis_generator() -> HypothesisGenerator | LLMHypothesisGenerator:
+    """Get hypothesis generator. Uses LLM if available, otherwise templates."""
+    llm = get_llm_provider()
+    if llm is not None:
+        logger.info("Using LLM-powered hypothesis generator (%s)", llm.model_name)
+        return LLMHypothesisGenerator(llm)
     return HypothesisGenerator()
 
 
@@ -98,6 +107,24 @@ def get_event_registry():  # noqa: ANN201
     return event_registry
 
 
+@lru_cache
+def get_llm_provider() -> LLMProvider | None:
+    """Get configured LLM provider. Returns None if no API key available."""
+    from labclaw.config import load_config
+    from labclaw.llm import get_llm_provider as _factory
+
+    cfg = load_config()
+    key = os.environ.get(cfg.llm.api_key_env, "")
+    if not key:
+        logger.warning("No API key found in %s, LLM provider unavailable", cfg.llm.api_key_env)
+        return None
+    try:
+        return _factory(cfg.llm.provider, model=cfg.llm.model, api_key=key)
+    except Exception:
+        logger.exception("Failed to create LLM provider %s", cfg.llm.provider)
+        return None
+
+
 def reset_all() -> None:
     """Clear all cached singletons. For testing only."""
     global _memory_root  # noqa: PLW0603
@@ -113,5 +140,6 @@ def reset_all() -> None:
         get_pattern_miner,
         get_hypothesis_generator,
         get_evolution_engine,
+        get_llm_provider,
     ):
         fn.cache_clear()

@@ -68,3 +68,21 @@ class FitnessTracker:
     def get_history(self, target: EvolutionTarget) -> list[FitnessScore]:
         """Return all fitness scores for a target, oldest first."""
         return list(self._history.get(target, []))
+
+    def to_dict(self) -> dict[str, list[dict]]:
+        """Serialize fitness history keyed by target value string."""
+        return {
+            target.value: [s.model_dump(mode="json") for s in scores]
+            for target, scores in self._history.items()
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict[str, list[dict]]) -> FitnessTracker:
+        """Deserialize fitness history from target-keyed dict."""
+        tracker = cls()
+        for target_str, scores_data in data.items():
+            target = EvolutionTarget(target_str)
+            tracker._history[target] = [
+                FitnessScore.model_validate(s) for s in scores_data
+            ]
+        return tracker

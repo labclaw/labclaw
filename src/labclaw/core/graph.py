@@ -99,8 +99,26 @@ class ExperimentNode(GraphNode):
     description: str = ""
 
 
+class SampleNode(GraphNode):
+    """Generic sample — any physical or biological specimen.
+
+    Domain-agnostic replacement for SubjectNode.  Domain plugins subclass this
+    to add domain-specific fields (e.g. AnimalSampleNode).
+    """
+
+    label: str
+    sample_type: str = ""  # e.g. "animal", "cell_line", "tissue", "reagent"
+    properties: dict[str, Any] = Field(default_factory=dict)
+    parent_id: str | None = None  # Parent SampleNode reference
+
+
 class SubjectNode(GraphNode):
-    """Subjects — animals: genotype, age, sex, surgical history."""
+    """Subjects — animals: genotype, age, sex, surgical history.
+
+    .. deprecated::
+        Use :class:`SampleNode` (or domain-specific subclass) instead.
+        Kept for backwards compatibility.
+    """
 
     subject_label: str
     species: str = ""
@@ -230,7 +248,8 @@ NODE_TYPES: dict[str, type[GraphNode]] = {
     "protocol": ProtocolNode,
     "project": ProjectNode,
     "experiment": ExperimentNode,
-    "subject": SubjectNode,
+    "sample": SampleNode,
+    "subject": SubjectNode,  # deprecated alias
     "session": SessionNode,
     "trial": TrialNode,
     "recording": RecordingNode,

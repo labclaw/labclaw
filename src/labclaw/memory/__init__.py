@@ -5,8 +5,8 @@ Design doc: Section 6 (Memory Architecture)
 
 Three-tier architecture:
   Tier A: Human-readable markdown (OpenClaw pattern) — implemented
-  Tier B: Temporal knowledge graph (in-memory) — implemented
-  Tier C: Agent shared state (Letta pattern) — stub
+  Tier B: Temporal knowledge graph — in-memory (TierBBackend) and SQLite (SQLiteTierBBackend)
+  Tier C: Agent shared blocks (key-value working memory) — implemented
 """
 
 from __future__ import annotations
@@ -15,6 +15,7 @@ from labclaw.memory.knowledge_graph import (
     KGEdge,
     KGQueryFilter,
     KGSearchResult,
+    SQLiteTierBBackend,
     TierBBackend,
 )
 from labclaw.memory.markdown import (
@@ -29,6 +30,7 @@ from labclaw.memory.search import (
     HybridSearchQuery,
     HybridSearchResult,
 )
+from labclaw.memory.shared_blocks import TierCBackend
 
 __all__ = [
     "HybridSearchConfig",
@@ -40,7 +42,9 @@ __all__ = [
     "KGSearchResult",
     "MarkdownDoc",
     "MemoryEntry",
+    "SQLiteTierBBackend",
     "SearchResult",
     "TierABackend",
     "TierBBackend",
+    "TierCBackend",
 ]

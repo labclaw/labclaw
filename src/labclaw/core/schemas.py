@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import uuid
 from datetime import UTC, datetime
-from enum import Enum
+from enum import StrEnum
 from pathlib import Path
 from typing import Any
 
@@ -18,7 +18,7 @@ from pydantic import BaseModel, Field, field_validator
 # Enums
 # ---------------------------------------------------------------------------
 
-class Layer(str, Enum):
+class Layer(StrEnum):
     HARDWARE = "hardware"
     INFRA = "infra"
     DISCOVERY = "discovery"
@@ -29,7 +29,7 @@ class Layer(str, Enum):
     EVOLUTION = "evolution"
 
 
-class DeviceStatus(str, Enum):
+class DeviceStatus(StrEnum):
     ONLINE = "online"
     OFFLINE = "offline"
     ERROR = "error"
@@ -38,7 +38,7 @@ class DeviceStatus(str, Enum):
     RESERVED = "reserved"
 
 
-class DeviceInterfaceType(str, Enum):
+class DeviceInterfaceType(StrEnum):
     FILE_BASED = "file_based"
     SERIAL = "serial"
     NETWORK_API = "network_api"
@@ -46,14 +46,14 @@ class DeviceInterfaceType(str, Enum):
     SOFTWARE_BRIDGE = "software_bridge"
 
 
-class SafetyLevel(str, Enum):
+class SafetyLevel(StrEnum):
     SAFE = "safe"
     CAUTION = "caution"
     REQUIRES_APPROVAL = "requires_approval"
     BLOCKED = "blocked"
 
 
-class HypothesisStatus(str, Enum):
+class HypothesisStatus(StrEnum):
     PROPOSED = "proposed"
     TESTING = "testing"
     CONFIRMED = "confirmed"
@@ -61,7 +61,7 @@ class HypothesisStatus(str, Enum):
     INCONCLUSIVE = "inconclusive"
 
 
-class EvolutionTarget(str, Enum):
+class EvolutionTarget(StrEnum):
     ANALYSIS_PARAMS = "analysis_params"
     PROMPTS = "prompts"
     ROUTING = "routing"
@@ -69,7 +69,7 @@ class EvolutionTarget(str, Enum):
     STRATEGY = "strategy"
 
 
-class EvolutionStage(str, Enum):
+class EvolutionStage(StrEnum):
     BACKTEST = "backtest"
     SHADOW = "shadow"
     CANARY = "canary"
@@ -77,14 +77,14 @@ class EvolutionStage(str, Enum):
     ROLLED_BACK = "rolled_back"
 
 
-class QualityLevel(str, Enum):
+class QualityLevel(StrEnum):
     GOOD = "good"
     WARNING = "warning"
     CRITICAL = "critical"
     UNKNOWN = "unknown"
 
 
-class MemberRole(str, Enum):
+class MemberRole(StrEnum):
     PI = "pi"
     POSTDOC = "postdoc"
     GRADUATE = "graduate"

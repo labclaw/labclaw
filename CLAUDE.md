@@ -8,6 +8,26 @@ LabClaw is a self-evolving agentic system that serves as the super brain for res
 **Domain:** Neuroscience (first vertical) — video behavior tracking, microscopy, electrophysiology, behavioral apparatus
 **Design doc:** `docs/plans/2026-02-19-labclaw-design-v2.md`
 
+## Build & Test
+
+```bash
+# Install all dependencies
+make dev-install                    # or: uv sync --extra dev --extra science
+
+# Run tests (90% coverage required)
+make test                           # or: uv run pytest --cov=labclaw --cov-fail-under=90 -q
+
+# Lint and format
+make lint                           # check only
+make format                         # auto-fix
+
+# Type checking
+uv run mypy src/labclaw/
+
+# Build package
+make build
+```
+
 ## Architecture (5 Layers)
 
 ```
@@ -17,6 +37,83 @@ Layer 3: ENGINE                  — Scientific method loop (OBSERVE→...→CON
 Layer 2: SOFTWARE INFRA          — Gateway, Event Bus, API, Dashboard, Edge Nodes
 Layer 1: HARDWARE                — Devices, interfaces, manager, safety
 ```
+
+## Code Style
+
+- **Linter:** `ruff` — rules: E, F, I, N, W, UP — line length 100
+- **Type hints** required on all public function signatures (params + return)
+- **Pydantic models** for all data schemas and experiment validation
+- **`from __future__ import annotations`** in every module for forward references
+- **`pathlib.Path`** for all file paths, never raw strings
+- **Docstrings** only on public API; no comments on obvious code
+- **Async**: use `async def` for all new DB operations (aiosqlite)
+- **Timestamps:** ISO 8601 format; filenames with `YYYYMMDD_HHMMSS`
+- **JSON:** always cast numpy `int64`/`float64` with `int()` / `float()` before `json.dumps()`
+
+## Key Abstractions
+
+- **Protocol-based design** — hardware interfaces, plugins, and adapters all use `typing.Protocol`
+- **Event-driven** — modules communicate via `{layer}.{module}.{action}` events on Redis Streams (or in-memory bus)
+- **Pydantic schemas** — `LabEvent`, `GraphNode`, `StepContext`, `CycleResult` are the core data types in `core/schemas.py`
+- **Plugin registry** — entry-point based (`labclaw.plugins` group); three types: `DevicePlugin`, `DomainPlugin`, `AnalysisPlugin`
+- **Governance engine** — role-based permissions + safety rules + immutable audit log
+- **Three-tier memory** — Tier A (Markdown/git), Tier B (Knowledge Graph), Tier C (Agent Shared Blocks)
+
+## Important Rules
+
+- **Never modify existing test fixtures** — add new ones in `tests/fixtures/`
+- **Always use async** for new database operations (aiosqlite backend)
+- **No credentials in code** — use environment variables via `configs/`
+- **All event/graph node schemas live in `core/`** — plugins extend via the registry
+- **Validate at boundaries** (API input, file parsing) — trust internal code
+- **Never silently catch exceptions** — log or re-raise with specific types
+
+## Project Structure
+
+```
+src/labclaw/
+├── core/           # Config, event bus, gateway, graph, registry, governance, evaluation
+├── hardware/       # Device registry, manager, safety, interface adapters
+├── memory/         # Markdown memory, knowledge graph (Graphiti), shared blocks, search
+├── discovery/      # Mining, unsupervised, hypothesis generation, predictive modeling
+├── optimization/   # Bayesian optimization, safety constraints, proposal, approval
+├── validation/     # Statistics, cross-validation, provenance, report generation
+├── evolution/      # Self-evolution engine, fitness scoring, candidate promotion
+├── agents/         # Agent runtime, orchestrator, tool definitions
+├── orchestrator/   # Top-level scientific method state machine
+├── plugins/        # Plugin loader, registry, protocols, domain packs
+├── llm/            # LLM provider abstraction (Anthropic, OpenAI, local)
+├── edge/           # File watchers, quality checks, device adapters, CLI
+├── api/            # REST API (FastAPI) on port 18800
+├── dashboard/      # Streamlit dashboard on port 18801
+└── mcp/            # MCP server (labclaw-mcp)
+lab/                # Lab memory — Tier A: human-readable (SOUL.md, MEMORY.md, protocols/)
+members/            # Per-member profiles — human + digital (SOUL.md, MEMORY.md)
+devices/            # Per-device profiles (SOUL.md, MEMORY.md)
+plugins/            # Extension plugins (devices, analysis, metrics, schemas)
+tests/              # Unit, integration, BDD feature tests
+configs/            # Environment configs (YAML)
+```
+
+## File Naming Conventions
+
+- Source mirrors: `src/labclaw/core/graph.py` → `tests/unit/core/test_graph.py`
+- BDD features: `tests/features/layer{N}_{name}/test_{feature}.feature`
+- Step definitions: `tests/features/step_definitions/{module}_steps.py`
+- Config files: `configs/{environment}.yaml`
+
+## PR Checklist
+
+Before submitting a pull request, verify:
+
+- [ ] `make lint` passes with no errors
+- [ ] `make test` passes with ≥90% coverage
+- [ ] Type hints on all new public functions
+- [ ] Pydantic models for any new data schemas
+- [ ] New tests for all behavior changes
+- [ ] No credentials, tokens, or `.env` files committed
+- [ ] Existing test fixtures unchanged (add new ones if needed)
+- [ ] Docs updated if API or behavior changed
 
 ## Agent Team
 
@@ -42,40 +139,6 @@ Layer 1: HARDWARE                — Devices, interfaces, manager, safety
 4. **Max 2 agents in parallel** to avoid file conflicts.
 5. **Code reviewer is the quality gate** — all changes pass through code-reviewer.
 
-### Workflow Chains
-
-- **New Feature**: tech-lead → [specialist(s)] → code-reviewer
-- **Bug Fix**: tech-lead → [specialist] → code-reviewer
-- **New Plugin**: tech-lead → neuro-specialist (schema) + [specialist] (impl) → code-reviewer
-- **NWB/Data**: tech-lead → neuro-specialist → code-reviewer
-- **Edge Integration**: tech-lead → edge-engineer → neuro-specialist (validation) → code-reviewer
-- **Discovery/Mining**: tech-lead → discovery-engineer → neuro-specialist (bio validation) → code-reviewer
-- **Closed-Loop Optimization**: tech-lead → discovery-engineer + neuro-specialist (safety) → code-reviewer
-- **Memory System**: tech-lead → memory-engineer → code-reviewer
-- **Persona Tuning**: tech-lead → memory-engineer + neuro-specialist → code-reviewer
-
-## Project Structure
-
-```
-src/labclaw/
-├── core/           # Config, event bus, gateway, graph, registry, governance, evaluation
-├── hardware/       # Device registry, manager, safety, interface adapters
-├── memory/         # Markdown memory, knowledge graph (Graphiti), shared blocks, search
-├── discovery/      # Mining, unsupervised, hypothesis generation, predictive modeling
-├── optimization/   # Bayesian optimization, safety constraints, proposal, approval
-├── validation/     # Statistics, cross-validation, provenance, report generation
-├── agents/         # Agent runtime, orchestrator
-├── edge/           # File watchers, quality checks, device adapters, CLI
-├── api/            # REST API (FastAPI)
-└── dashboard/      # Streamlit dashboard
-lab/                # Lab memory — Tier A: human-readable (SOUL.md, MEMORY.md, protocols/, etc.)
-members/            # Per-member profiles — human + digital (SOUL.md, MEMORY.md)
-devices/            # Per-device profiles (SOUL.md, MEMORY.md)
-plugins/            # Extension plugins (devices, analysis, metrics, schemas)
-tests/              # Unit, integration, replay tests
-configs/            # Environment configs (YAML)
-```
-
 ## Scientific Method Mapping
 
 | Step | Code Module | Function |
@@ -96,19 +159,6 @@ configs/            # Environment configs (YAML)
 | B: Knowledge Graph | Graphiti | Entities, relations, temporal tracking | FalkorDB/SQLite |
 | C: Agent State | Letta | Shared blocks, per-agent workspace | In-memory + SQLite |
 
-## Coding Standards
-
-- Python 3.11+, type hints required on all public functions
-- Pydantic models for all data schemas and experiment validation
-- `ruff` for linting (E, F, I, N, W, UP rules)
-- `pytest` for testing; async tests with `pytest-asyncio`
-- Docstrings only on public API; no comments on obvious code
-- All event/graph node schemas in `core/` — plugins extend via registry
-- File paths as `pathlib.Path`, never raw strings
-- JSON serialization: always cast numpy types with `int()` / `float()`
-- No credentials in code; use environment variables via config
-- Timestamps in ISO 8601 format; filenames with `YYYYMMDD_HHMMSS`
-
 ## Key Dependencies
 
 - **Graphiti**: `graphiti-core` — temporal knowledge graph for lab memory
@@ -124,7 +174,3 @@ configs/            # Environment configs (YAML)
 - `/build-and-test` — Build the project and run the test suite
 - `/run-edge-demo` — Launch edge watcher demo on sample data
 - `/review-checklist` — Generate a domain-specific code review checklist
-
-## TODO
-
-- [ ] Copy `.mcp.json.example` to `.mcp.json` and update paths for your machine

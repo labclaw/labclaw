@@ -126,10 +126,7 @@ def _parse_csv_to_dicts(files: list[Path]) -> list[dict]:
 
 @pytest.fixture(autouse=True)
 def _reset_event_registry():
-    """Reset the global event registry before and after each test."""
-    event_registry.clear()
-    # Re-register events by re-importing the modules that register on import.
-    # Simpler: just re-register the events we need.
+    """Ensure needed events are registered; preserve existing registrations."""
     _events = [
         "hardware.file.detected",
         "hardware.quality.checked",
@@ -152,7 +149,6 @@ def _reset_event_registry():
         if not event_registry.is_registered(evt):
             event_registry.register(evt)
     yield
-    event_registry.clear()
 
 
 # ---------------------------------------------------------------------------

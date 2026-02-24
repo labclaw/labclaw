@@ -1,4 +1,4 @@
-"""Hypothesis generation — template-based MVP, LLM-driven in future.
+"""Hypothesis generation — template-based + LLM-driven.
 
 Spec: docs/specs/L3-discovery.md
 Design doc: section 5.3 (Discovery Loop)
@@ -7,12 +7,14 @@ Maps to the HYPOTHESIZE step of the scientific method:
 instead of hypotheses limited by personal experience and recent reading,
 generate from all data patterns combined with full literature knowledge.
 
-MVP: template-based generation from PatternRecord types.
-Future: LLM + statistical evidence generates testable hypotheses.
+Two implementations:
+  - HypothesisGenerator: template-based (always available, no API key needed)
+  - LLMHypothesisGenerator: LLM-powered via LLMProvider, falls back to templates on error
 """
 
 from __future__ import annotations
 
+import json
 import logging
 import uuid
 from datetime import UTC, datetime
@@ -22,6 +24,7 @@ from pydantic import BaseModel, Field
 from labclaw.core.events import event_registry
 from labclaw.core.schemas import HypothesisStatus
 from labclaw.discovery.mining import PatternRecord
+from labclaw.llm.provider import LLMProvider
 
 logger = logging.getLogger(__name__)
 
@@ -219,3 +222,146 @@ class HypothesisGenerator:
             resource_estimate="1-2 analysis sessions",
             patterns_used=[pattern.pattern_id],
         )
+
+
+# ---------------------------------------------------------------------------
+# LLM-powered Hypothesis Response Model
+# ---------------------------------------------------------------------------
+
+class _LLMHypothesisItem(BaseModel):
+    """Schema for a single LLM-generated hypothesis (used for structured output)."""
+
+    statement: str
+    testable: bool = True
+    confidence: float
+    required_experiments: list[str]
+    resource_estimate: str
+
+
+class _LLMHypothesisResponse(BaseModel):
+    """Schema for the LLM structured response containing multiple hypotheses."""
+
+    hypotheses: list[_LLMHypothesisItem]
+
+
+# ---------------------------------------------------------------------------
+# LLMHypothesisGenerator
+# ---------------------------------------------------------------------------
+
+class LLMHypothesisGenerator:
+    """LLM-powered hypothesis generation from discovered patterns.
+
+    Falls back to template-based HypothesisGenerator on any LLM error.
+    """
+
+    def __init__(self, llm: LLMProvider) -> None:
+        self._llm = llm
+        self._fallback = HypothesisGenerator()
+
+    def generate(self, hypothesis_input: HypothesisInput) -> list[HypothesisOutput]:
+        """Generate hypotheses — delegates to async _generate_llm, falls back on error."""
+        import asyncio
+
+        try:
+            loop = asyncio.get_running_loop()
+        except RuntimeError:
+            loop = None
+
+        if loop and loop.is_running():
+            # Already inside an async context — use a new thread to avoid deadlock
+            import concurrent.futures
+            with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
+                result = pool.submit(
+                    asyncio.run, self._generate_llm(hypothesis_input)
+                ).result()
+            return result
+
+        return asyncio.run(self._generate_llm(hypothesis_input))
+
+    async def _generate_llm(
+        self, hypothesis_input: HypothesisInput
+    ) -> list[HypothesisOutput]:
+        """Call the LLM to generate hypotheses; fall back to templates on error."""
+        if not hypothesis_input.patterns:
+            return []
+
+        prompt = self._build_prompt(hypothesis_input)
+        system = (
+            "You are a scientific hypothesis generator for a neuroscience laboratory. "
+            "Given experimental data patterns, generate testable hypotheses with "
+            "confidence scores, required experiments, and resource estimates. "
+            "Be specific and grounded in the evidence provided."
+        )
+
+        try:
+            response = await self._llm.complete_structured(
+                prompt,
+                system=system,
+                response_model=_LLMHypothesisResponse,
+                temperature=0.7,
+            )
+        except Exception:
+            logger.warning("LLM hypothesis generation failed, falling back to templates")
+            return self._fallback.generate(hypothesis_input)
+
+        # Convert LLM response to HypothesisOutput objects
+        pattern_ids = [p.pattern_id for p in hypothesis_input.patterns]
+        hypotheses: list[HypothesisOutput] = []
+
+        for item in response.hypotheses:
+            hypothesis = HypothesisOutput(
+                statement=item.statement,
+                testable=item.testable,
+                confidence=max(0.0, min(item.confidence, 1.0)),
+                required_experiments=item.required_experiments,
+                resource_estimate=item.resource_estimate,
+                patterns_used=pattern_ids,
+            )
+            hypotheses.append(hypothesis)
+
+            event_registry.emit(
+                "discovery.hypothesis.created",
+                payload={
+                    "hypothesis_id": hypothesis.hypothesis_id,
+                    "statement": hypothesis.statement,
+                    "confidence": float(hypothesis.confidence),
+                    "source": "llm",
+                },
+            )
+
+        hypotheses.sort(key=lambda h: h.confidence, reverse=True)
+        return hypotheses
+
+    @staticmethod
+    def _build_prompt(hypothesis_input: HypothesisInput) -> str:
+        """Build a prompt from patterns and context."""
+        parts: list[str] = []
+
+        if hypothesis_input.context:
+            parts.append(f"Domain context: {hypothesis_input.context}")
+
+        parts.append(f"Number of patterns discovered: {len(hypothesis_input.patterns)}")
+        parts.append("")
+
+        for i, pattern in enumerate(hypothesis_input.patterns, 1):
+            parts.append(f"Pattern {i}:")
+            parts.append(f"  Type: {pattern.pattern_type}")
+            parts.append(f"  Description: {pattern.description}")
+            parts.append(f"  Confidence: {pattern.confidence:.3f}")
+            parts.append(f"  Evidence: {json.dumps(pattern.evidence, default=str)}")
+            parts.append("")
+
+        if hypothesis_input.constraints:
+            parts.append("Constraints:")
+            for c in hypothesis_input.constraints:
+                parts.append(f"  - {c}")
+            parts.append("")
+
+        parts.append(
+            "Generate testable hypotheses based on these patterns. "
+            "For each hypothesis provide: a clear statement, whether it is testable, "
+            "a confidence score (0-1), a list of required experiments, "
+            "and a resource estimate."
+        )
+
+        return "\n".join(parts)

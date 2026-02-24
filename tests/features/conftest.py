@@ -10,7 +10,7 @@ from pathlib import Path
 
 import pytest
 
-from labclaw.core.events import EventRegistry, event_registry
+from labclaw.core.events import EventRegistry
 from labclaw.core.schemas import LabEvent
 
 
@@ -51,10 +51,8 @@ def fresh_registry() -> EventRegistry:
 
 @pytest.fixture()
 def _clean_global_registry() -> None:
-    """Reset the global event registry before/after test."""
-    event_registry.clear()
+    """Provide a clean global event registry for test (no teardown clear)."""
     yield  # type: ignore[misc]
-    event_registry.clear()
 
 
 class EventCapture:

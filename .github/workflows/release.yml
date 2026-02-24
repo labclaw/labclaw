@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: "Existing tag to release (for example: v0.1.0)"
+        description: "Existing tag to release (for example: v0.0.2)"
         required: true
         type: string
 
@@ -87,10 +87,9 @@ jobs:
     timeout-minutes: 10
     needs:
       - build
-    if: ${{ secrets.PYPI_API_TOKEN != '' }}
     environment: pypi
     permissions:
-      contents: read
+      id-token: write
 
     steps:
       - name: Download dist artifacts
@@ -102,6 +101,4 @@ jobs:
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
-          user: __token__
-          password: ${{ secrets.PYPI_API_TOKEN }}
           packages-dir: dist

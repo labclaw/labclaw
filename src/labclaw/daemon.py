@@ -26,7 +26,6 @@ import uvicorn
 from labclaw.api.app import app
 from labclaw.api.deps import (
     get_evolution_engine,
-    get_hypothesis_generator,
     get_pattern_miner,
     get_tier_a_backend,
     set_data_dir,
@@ -153,6 +152,7 @@ class LabClawDaemon:
         self,
         data_dir: Path,
         memory_root: Path,
+        host: str = "127.0.0.1",
         api_port: int = DEFAULT_PORT,
         dashboard_port: int = DASHBOARD_PORT,
         discovery_interval: int = DISCOVERY_INTERVAL_SECONDS,
@@ -160,6 +160,7 @@ class LabClawDaemon:
     ) -> None:
         self.data_dir = data_dir
         self.memory_root = memory_root
+        self.host = host
         self.api_port = api_port
         self.dashboard_port = dashboard_port
         self.discovery_interval = discovery_interval
@@ -193,6 +194,21 @@ class LabClawDaemon:
         self.data_dir.mkdir(parents=True, exist_ok=True)
         self.memory_root.mkdir(parents=True, exist_ok=True)
 
+        # Load plugins
+        try:
+            from labclaw.plugins.loader import PluginLoader
+
+            loader = PluginLoader()
+            loaded = loader.load_all(local_dir=self.data_dir.parent / "plugins")
+            if loaded:
+                logger.info("Loaded %d plugins: %s", len(loaded), ", ".join(loaded))
+        except Exception:
+            logger.warning("Plugin loading failed", exc_info=True)
+
+        # Load persisted evolution state
+        state_path = self.memory_root / "evolution_state.json"
+        get_evolution_engine().load_state(state_path)
+
         # Ingest any existing files in data_dir
         self._ingest_existing_files()
 
@@ -219,7 +235,7 @@ class LabClawDaemon:
         try:
             uvicorn.run(
                 app,
-                host="127.0.0.1",
+                host=self.host,
                 port=self.api_port,
                 log_level="info",
             )
@@ -326,40 +342,47 @@ class LabClawDaemon:
             )
             return
 
-        logger.info("Discovery: running on %d rows...", len(rows))
+        logger.info("Discovery: running orchestrator on %d rows...", len(rows))
         try:
-            miner = get_pattern_miner()
-            config = MiningConfig(min_sessions=3)
-            result = miner.mine(rows, config)
+            import asyncio
 
-            if result.patterns:
-                self._discovery_count += 1
-                logger.info(
-                    "Discovery #%d: found %d patterns",
-                    self._discovery_count, len(result.patterns),
-                )
+            from labclaw.api.deps import get_llm_provider
+            from labclaw.orchestrator.loop import ScientificLoop
+            from labclaw.orchestrator.steps import (
+                AnalyzeStep,
+                AskStep,
+                ConcludeStep,
+                ExperimentStep,
+                HypothesizeStep,
+                ObserveStep,
+                PredictStep,
+            )
 
-                # Log patterns to memory
-                for p in result.patterns:
-                    self._log_to_memory(
-                        "labclaw", "discovery",
-                        f"[{p.pattern_type}] {p.description} (confidence={p.confidence:.2f})",
-                    )
+            llm = get_llm_provider()
+            loop = ScientificLoop(steps=[
+                ObserveStep(),
+                AskStep(),
+                HypothesizeStep(llm_provider=llm),
+                PredictStep(),
+                ExperimentStep(),
+                AnalyzeStep(),
+                ConcludeStep(),
+            ])
+            result = asyncio.run(loop.run_cycle(rows))
 
-                # Generate hypotheses
-                gen = get_hypothesis_generator()
-                from labclaw.discovery.hypothesis import HypothesisInput
+            self._discovery_count += 1
+            logger.info(
+                "Discovery #%d: %d patterns, %d hypotheses (%.1fs)",
+                self._discovery_count, result.patterns_found,
+                result.hypotheses_generated, result.total_duration,
+            )
 
-                hypotheses = gen.generate(HypothesisInput(patterns=result.patterns))
-                for h in hypotheses:
-                    self._log_to_memory(
-                        "labclaw", "hypothesis",
-                        f"{h.statement} (confidence={h.confidence:.2f})",
-                    )
-                    logger.info("Hypothesis: %s", h.statement)
-            else:
-                logger.info("Discovery: no significant patterns found")
-
+            # Log summary to memory
+            self._log_to_memory(
+                "labclaw", "discovery",
+                f"Cycle {result.cycle_id[:8]}: {result.patterns_found} patterns, "
+                f"{result.hypotheses_generated} hypotheses",
+            )
         except Exception:
             logger.exception("Discovery loop error")
 
@@ -376,82 +399,80 @@ class LabClawDaemon:
             self._run_evolution()
 
     def _run_evolution(self) -> None:
+        """Improved evolution loop that tracks cycles across intervals."""
         rows = self._accumulator.get_all_rows()
         if len(rows) < MIN_ROWS_FOR_MINING:
             return
 
-        logger.info("Evolution: evaluating fitness...")
         try:
             engine = get_evolution_engine()
+            target = EvolutionTarget.ANALYSIS_PARAMS
 
-            # Compute metrics from current data
-            numeric_cols = []
-            if rows:
-                for k, v in rows[0].items():
-                    if isinstance(v, (int, float)):
-                        numeric_cols.append(k)
-
-            if not numeric_cols:
-                logger.info("Evolution: no numeric columns for fitness evaluation")
-                return
-
-            # Measure fitness: use variance explained and pattern count
+            # Compute current fitness
             miner = get_pattern_miner()
             config = MiningConfig(min_sessions=3)
             result = miner.mine(rows, config)
+            numeric_cols = [
+                k for k, v in rows[0].items() if isinstance(v, (int, float))
+            ] if rows else []
 
             metrics = {
                 "pattern_count": float(len(result.patterns)),
                 "data_rows": float(len(rows)),
                 "coverage": float(len(result.patterns)) / max(len(numeric_cols), 1),
             }
-
-            target = EvolutionTarget.ANALYSIS_PARAMS
-            fitness = engine.measure_fitness(
+            current_fitness = engine.measure_fitness(
                 target=target, metrics=metrics, data_points=len(rows),
             )
-            logger.info("Evolution fitness: %s", metrics)
 
-            # Try to run a cycle
-            candidates = engine.propose_candidates(target, n=1)
-            if candidates:
-                cycle = engine.start_cycle(candidates[0], fitness)
-                self._evolution_count += 1
-                logger.info(
-                    "Evolution cycle #%d started: %s",
-                    self._evolution_count, cycle.cycle_id[:8],
-                )
+            # Try to advance existing active cycles
+            active_cycles = engine.get_active_cycles()
+            for cycle in active_cycles:
+                if engine.should_advance(cycle.cycle_id):
+                    candidate_diff = cycle.candidate.config_diff or {}
+                    base_dict = {
+                        k: v for k, v in config.__dict__.items()
+                        if not k.startswith("_")
+                    }
+                    base_dict.update(candidate_diff)
+                    try:
+                        candidate_config = MiningConfig(**base_dict)
+                    except Exception:
+                        candidate_config = config
+                    new_result = miner.mine(rows, candidate_config)
+                    improved_metrics = {
+                        "pattern_count": float(len(new_result.patterns)),
+                        "data_rows": float(len(rows)),
+                        "coverage": (
+                            float(len(new_result.patterns)) / max(len(numeric_cols), 1)
+                            if numeric_cols else 0.0
+                        ),
+                    }
+                    improved_fitness = engine.measure_fitness(
+                        target=target, metrics=improved_metrics, data_points=len(rows),
+                    )
+                    updated = engine.advance_stage(cycle.cycle_id, improved_fitness)
+                    self._evolution_count += 1
+                    self._log_to_memory(
+                        "labclaw", "evolution",
+                        f"Cycle {cycle.cycle_id[:8]} advanced to "
+                        f"{updated.stage.value}",
+                    )
 
-                # Apply candidate config diff and re-mine
-                candidate_diff = candidates[0].config_diff or {}
-                base_config_dict = {
-                    k: v for k, v in config.__dict__.items()
-                    if not k.startswith('_')
-                }
-                base_config_dict.update(candidate_diff)
-                try:
-                    candidate_config = MiningConfig(**base_config_dict)
-                except Exception:
-                    candidate_config = config
-                new_result = miner.mine(rows, candidate_config)
-                improved_metrics = {
-                    "pattern_count": float(len(new_result.patterns)),
-                    "data_rows": float(len(rows)),
-                    "coverage": (
-                        float(len(new_result.patterns)) / max(len(numeric_cols), 1)
-                        if numeric_cols else 0.0
-                    ),
-                }
-                improved = engine.measure_fitness(
-                    target=target, metrics=improved_metrics, data_points=len(rows),
-                )
-                engine.advance_stage(cycle.cycle_id, improved)
+            # If no active cycles, start a new one
+            if not active_cycles:
+                candidates = engine.propose_candidates(target, n=1)
+                if candidates:
+                    cycle = engine.start_cycle(candidates[0], current_fitness)
+                    self._evolution_count += 1
+                    self._log_to_memory(
+                        "labclaw", "evolution",
+                        f"New cycle {cycle.cycle_id[:8]} started",
+                    )
 
-                self._log_to_memory(
-                    "labclaw", "evolution",
-                    f"Cycle {cycle.cycle_id[:8]} advanced. "
-                    f"Fitness: {metrics} -> {improved_metrics}",
-                )
+            # Persist state
+            state_path = self.memory_root / "evolution_state.json"
+            engine.persist_state(state_path)
 
         except Exception:
             logger.exception("Evolution loop error")
@@ -516,6 +537,10 @@ def main() -> None:
         help="Root directory for Tier A memory (default: /opt/labclaw/memory)",
     )
     parser.add_argument(
+        "--host", type=str, default="127.0.0.1",
+        help="API server bind address (default: 127.0.0.1)",
+    )
+    parser.add_argument(
         "--port", type=int, default=DEFAULT_PORT,
         help=f"API server port (default: {DEFAULT_PORT})",
     )
@@ -542,6 +567,7 @@ def main() -> None:
     daemon = LabClawDaemon(
         data_dir=args.data_dir,
         memory_root=args.memory_root,
+        host=args.host,
         api_port=args.port,
         dashboard_port=args.dashboard_port,
         discovery_interval=args.discovery_interval,

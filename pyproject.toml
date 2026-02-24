@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "labclaw"
-version = "0.1.0"
+version = "0.0.2"
 description = "Distributed agentic architecture for self-documenting, self-improving neuroscience laboratories"
 readme = "README.md"
 license = "MIT"
@@ -19,10 +19,13 @@ dependencies = [
     "watchdog>=4.0.0",
     "pydantic>=2.0.0",
     "anthropic>=0.40.0",
+    "openai>=1.0.0",
+    "httpx>=0.27.0",
     "redis>=5.0.0",
     "streamlit>=1.38.0",
     "pyyaml>=6.0",
     "aiosqlite>=0.20.0",
+    "mcp>=1.0.0",
 ]
 
 [project.optional-dependencies]
@@ -30,10 +33,17 @@ dev = [
     "pytest>=8.0",
     "pytest-asyncio>=0.24",
     "pytest-bdd>=7.0",
+    "pytest-cov>=6.0",
     "httpx>=0.27.0",
     "ruff>=0.6.0",
     "mypy>=1.11",
+    "pre-commit>=4.0",
+    "build>=1.0",
     "scipy>=1.12.0",
+    "hypothesis>=6.100.0",
+    "bandit>=1.7.0",
+    "pip-audit>=2.7.0",
+    "safety>=3.0.0",
 ]
 science = [
     "numpy>=1.26.0",
@@ -57,6 +67,10 @@ memory = [
 labclaw = "labclaw.cli:main"
 labclaw-edge = "labclaw.edge.cli:main"
 labclaw-daemon = "labclaw.daemon:main"
+# labclaw-mcp entry point added when mcp package is installed (see PR #4)
+
+[project.entry-points."labclaw.plugins"]
+# Example: neuro = "labclaw_neuro:create_plugin"
 
 [tool.ruff]
 target-version = "py311"
@@ -65,6 +79,43 @@ line-length = 100
 [tool.ruff.lint]
 select = ["E", "F", "I", "N", "W", "UP"]
 
+[tool.ruff.lint.per-file-ignores]
+# Standard math notation (X, A, XtX) in linear algebra code
+"src/labclaw/discovery/modeling.py" = ["N802", "N803", "N806"]
+# sklearn import alias naming
+"src/labclaw/discovery/unsupervised.py" = ["N811"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 asyncio_mode = "auto"
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "integration: marks integration tests",
+]
+
+[tool.coverage.run]
+source = ["labclaw"]
+omit = [
+    "*/tests/*",
+    "*/demo/*",
+    "*/dashboard/*",
+]
+
+[tool.coverage.report]
+fail_under = 90
+show_missing = true
+exclude_lines = [
+    "pragma: no cover",
+    "if __name__ == .__main__.",
+    "if TYPE_CHECKING:",
+    "raise NotImplementedError",
+    "@overload",
+]
+
+[tool.mypy]
+python_version = "3.11"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false
+check_untyped_defs = true
+ignore_missing_imports = true
