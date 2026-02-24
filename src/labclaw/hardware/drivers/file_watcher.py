@@ -24,6 +24,15 @@ from labclaw.hardware.interfaces.file_based import FileBasedDriver
 
 logger = logging.getLogger(__name__)
 
+# Register file-watcher events at module import time
+_FILE_WATCHER_EVENTS = [
+    "hardware.file.detected",
+]
+
+for _evt in _FILE_WATCHER_EVENTS:
+    if not event_registry.is_registered(_evt):
+        event_registry.register(_evt)
+
 
 class _FileEventHandler(FileSystemEventHandler):
     """Watchdog handler that queues newly detected file paths."""
