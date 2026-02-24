@@ -6,6 +6,8 @@ Lines targeted: 138, 169-176, 218, 220, 234-235, 239, 326-331,
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import pytest
 
 from labclaw.core.schemas import EvolutionStage, EvolutionTarget
@@ -220,7 +222,7 @@ class TestShouldAdvance:
 
 
 class TestPersistence:
-    def test_persist_and_load_state(self, tmp_path: pytest.TempPathFactory) -> None:
+    def test_persist_and_load_state(self, tmp_path: Path) -> None:
         engine = EvolutionEngine()
         cycle = engine.start_cycle(_candidate(), _baseline())
         state_file = tmp_path / "state.json"
@@ -230,12 +232,12 @@ class TestPersistence:
         engine2.load_state(state_file)
         assert cycle.cycle_id in engine2._cycles
 
-    def test_load_state_nonexistent_file(self, tmp_path: pytest.TempPathFactory) -> None:
+    def test_load_state_nonexistent_file(self, tmp_path: Path) -> None:
         engine = EvolutionEngine()
         engine.load_state(tmp_path / "nonexistent.json")
         assert engine._cycles == {}
 
-    def test_persist_creates_parent_dirs(self, tmp_path: pytest.TempPathFactory) -> None:
+    def test_persist_creates_parent_dirs(self, tmp_path: Path) -> None:
         engine = EvolutionEngine()
         engine.start_cycle(_candidate(), _baseline())
         nested = tmp_path / "a" / "b" / "c" / "state.json"

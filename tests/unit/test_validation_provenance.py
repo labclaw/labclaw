@@ -90,12 +90,23 @@ def test_verify_chain_step_empty_node_type_returns_false() -> None:
 
 
 def test_to_dict_from_dict_round_trip() -> None:
+    import json
+
     tracker = ProvenanceTracker()
     steps = _make_steps(3)
     original = tracker.build_chain("find-rt-01", steps)
 
     serialized = to_dict(original)
+
+    # Verify JSON-safe (no datetime, UUID objects)
+    json.dumps(serialized)
+
     restored = from_dict(serialized)
 
     assert restored.finding_id == original.finding_id
+    assert restored.chain_id == original.chain_id
     assert len(restored.steps) == len(original.steps)
+    for orig_step, rest_step in zip(original.steps, restored.steps):
+        assert rest_step.node_id == orig_step.node_id
+        assert rest_step.node_type == orig_step.node_type
+        assert rest_step.description == orig_step.description

@@ -129,6 +129,8 @@ def permutation_test(
         raise ValueError("group_a must be non-empty")
     if not group_b:
         raise ValueError("group_b must be non-empty")
+    if n_perms < 1:
+        raise ValueError(f"n_perms must be >= 1, got {n_perms}")
 
     combined = list(group_a) + list(group_b)
     n_a = len(group_a)

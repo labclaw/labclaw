@@ -60,8 +60,8 @@ def test_kfold_validate_five_folds_on_twenty() -> None:
 
     assert result["k"] == 5
     assert len(result["fold_maes"]) == 5
-    assert "mean_mae" in result
-    assert "std_mae" in result
+    assert result["mean_mae"] == pytest.approx(sum(result["fold_maes"]) / 5)
+    assert result["std_mae"] >= 0.0
 
 
 def test_kfold_validate_k2_on_four() -> None:
@@ -115,3 +115,13 @@ def test_permutation_test_empty_group_a_raises() -> None:
 def test_permutation_test_empty_group_b_raises() -> None:
     with pytest.raises(ValueError, match="group_b must be non-empty"):
         permutation_test([1.0, 2.0], [])
+
+
+def test_permutation_test_zero_perms_raises() -> None:
+    with pytest.raises(ValueError, match="n_perms must be >= 1"):
+        permutation_test([1.0], [2.0], n_perms=0)
+
+
+def test_permutation_test_negative_perms_raises() -> None:
+    with pytest.raises(ValueError, match="n_perms must be >= 1"):
+        permutation_test([1.0], [2.0], n_perms=-5)

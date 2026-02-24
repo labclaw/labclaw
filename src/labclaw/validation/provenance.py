@@ -7,6 +7,7 @@ Design doc: section 5.5 (Validator)
 from __future__ import annotations
 
 import logging
+from typing import Any
 
 from labclaw.core.events import event_registry
 from labclaw.validation.statistics import ProvenanceChain, ProvenanceStep
@@ -71,7 +72,7 @@ class ProvenanceTracker:
         return True
 
 
-def to_dict(chain: ProvenanceChain) -> dict:
+def to_dict(chain: ProvenanceChain) -> dict[str, Any]:
     """Serialize a ProvenanceChain to a JSON-safe dict.
 
     Args:
@@ -83,7 +84,7 @@ def to_dict(chain: ProvenanceChain) -> dict:
     return chain.model_dump(mode="json")
 
 
-def from_dict(data: dict) -> ProvenanceChain:
+def from_dict(data: dict[str, Any]) -> ProvenanceChain:
     """Deserialize a ProvenanceChain from a dict.
 
     Args:

@@ -87,5 +87,6 @@ def test_to_markdown_contains_required_sections() -> None:
     assert "## Summary" in md
     assert "## Statistical Tests" in md
     assert "## Conclusion" in md
+    assert "## Provenance" in md
     assert "find-md-01" in md
     assert "my_test" in md

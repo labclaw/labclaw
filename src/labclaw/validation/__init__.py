@@ -8,9 +8,9 @@ Spec: docs/specs/L3-validation.md
 
 from __future__ import annotations
 
-from labclaw.validation.cross_validation import holdout_validate
-from labclaw.validation.provenance import ProvenanceTracker
-from labclaw.validation.report import ReportGenerator
+from labclaw.validation.cross_validation import holdout_validate, kfold_validate, permutation_test
+from labclaw.validation.provenance import ProvenanceTracker, from_dict, to_dict
+from labclaw.validation.report import ReportGenerator, to_markdown
 from labclaw.validation.statistics import (
     ProvenanceChain,
     ProvenanceStep,
@@ -29,5 +29,10 @@ __all__ = [
     "StatTestResult",
     "ValidationConfig",
     "ValidationReport",
+    "from_dict",
     "holdout_validate",
+    "kfold_validate",
+    "permutation_test",
+    "to_dict",
+    "to_markdown",
 ]

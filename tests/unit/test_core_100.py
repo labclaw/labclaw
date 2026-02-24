@@ -14,7 +14,6 @@ from labclaw.core.graph import get_node_type
 from labclaw.core.safety import HardwareSafetyGuard
 from labclaw.core.schemas import DeviceStatus, EventName, SafetyLevel
 
-
 # ---------------------------------------------------------------------------
 # core/graph.py — get_node_type unknown type
 # ---------------------------------------------------------------------------
