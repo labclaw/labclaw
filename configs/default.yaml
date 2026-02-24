@@ -1,13 +1,13 @@
-# Jarvis Mesh default configuration
+# LabClaw default configuration
 
 system:
-  name: jarvis-mesh
+  name: labclaw
   version: 0.1.0
   log_level: INFO
 
 graph:
   backend: sqlite
-  path: data/jarvis_mesh.db
+  path: data/labclaw.db
 
 events:
   backend: memory  # memory | redis

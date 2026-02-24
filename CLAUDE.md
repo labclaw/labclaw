@@ -1,12 +1,12 @@
-# CLAUDE.md — Jarvis Mesh
+# CLAUDE.md — LabClaw
 
 ## Project Overview
 
-Jarvis Mesh is a self-evolving agentic system that serves as the super brain for research laboratories. It encodes the complete scientific method as an autonomous computational loop, accumulates persistent memory that makes it increasingly effective over time, and serves each team member with personalized intelligence.
+LabClaw is a self-evolving agentic system that serves as the super brain for research laboratories. It encodes the complete scientific method as an autonomous computational loop, accumulates persistent memory that makes it increasingly effective over time, and serves each team member with personalized intelligence.
 
 **Tech stack:** Python 3.11+, FastAPI, SQLite, Redis Streams, Claude API, Streamlit, Graphiti
 **Domain:** Neuroscience (first vertical) — video behavior tracking, microscopy, electrophysiology, behavioral apparatus
-**Design doc:** `docs/plans/2026-02-19-jarvis-mesh-design-v2.md`
+**Design doc:** `docs/plans/2026-02-19-labclaw-design-v2.md`
 
 ## Architecture (5 Layers)
 
@@ -57,7 +57,7 @@ Layer 1: HARDWARE                — Devices, interfaces, manager, safety
 ## Project Structure
 
 ```
-src/jarvis_mesh/
+src/labclaw/
 ├── core/           # Config, event bus, gateway, graph, registry, governance, evaluation
 ├── hardware/       # Device registry, manager, safety, interface adapters
 ├── memory/         # Markdown memory, knowledge graph (Graphiti), shared blocks, search

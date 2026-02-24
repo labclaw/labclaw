@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "jarvis-mesh"
+name = "labclaw"
 version = "0.1.0"
 description = "Distributed agentic architecture for self-documenting, self-improving neuroscience laboratories"
 readme = "README.md"
@@ -29,8 +29,11 @@ dependencies = [
 dev = [
     "pytest>=8.0",
     "pytest-asyncio>=0.24",
+    "pytest-bdd>=7.0",
+    "httpx>=0.27.0",
     "ruff>=0.6.0",
     "mypy>=1.11",
+    "scipy>=1.12.0",
 ]
 science = [
     "numpy>=1.26.0",
@@ -51,8 +54,9 @@ memory = [
 ]
 
 [project.scripts]
-jarvis-mesh = "jarvis_mesh.cli:main"
-jarvis-edge = "jarvis_mesh.edge.cli:main"
+labclaw = "labclaw.cli:main"
+labclaw-edge = "labclaw.edge.cli:main"
+labclaw-daemon = "labclaw.daemon:main"
 
 [tool.ruff]
 target-version = "py311"

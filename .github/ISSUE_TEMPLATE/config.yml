@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Questions and Discussions
+    url: https://github.com/robotlearning123/labclaw/discussions
+    about: Ask and discuss ideas with the community

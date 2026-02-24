@@ -6,9 +6,9 @@ allowed-tools: Bash, Read, Write, Grep
 context: fork
 ---
 
-You are running the edge node demo for Jarvis Mesh.
+You are running the edge node demo for LabClaw.
 
-**Prerequisites:** Requires `src/jarvis_mesh/edge/watcher.py` to be implemented (Phase 1). If the module does not exist yet, report that the demo is not yet available and list what needs to be built.
+**Prerequisites:** Requires `src/labclaw/edge/watcher.py` to be implemented (Phase 1). If the module does not exist yet, report that the demo is not yet available and list what needs to be built.
 
 ## Steps
 
@@ -24,7 +24,7 @@ mkdir -p /tmp/jarvis-edge-demo
 
 3. Start the edge watcher in background:
 ```bash
-python3 -m jarvis_mesh.edge.watcher --watch-path /tmp/jarvis-edge-demo --config configs/default.yaml &
+python3 -m labclaw.edge.watcher --watch-path /tmp/jarvis-edge-demo --config configs/default.yaml &
 WATCHER_PID=$!
 echo "Watcher started with PID: $WATCHER_PID"
 ```

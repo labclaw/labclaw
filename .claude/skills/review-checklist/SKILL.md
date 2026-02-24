@@ -6,7 +6,7 @@ allowed-tools: Bash, Read, Grep, Glob
 context: fork
 ---
 
-You are generating a code review checklist for Jarvis Mesh.
+You are generating a code review checklist for LabClaw.
 
 ## Context
 

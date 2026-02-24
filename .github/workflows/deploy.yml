@@ -1,0 +1,162 @@
+name: Deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Deployment target"
+        required: true
+        default: production
+        type: choice
+        options:
+          - staging
+          - production
+      ref:
+        description: "Git ref to deploy (branch, tag, or SHA)"
+        required: true
+        default: main
+        type: string
+      run_smoke_checks:
+        description: "Run remote health checks after restart"
+        required: true
+        default: true
+        type: boolean
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-${{ github.event.inputs.environment }}
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: deploy-${{ github.event.inputs.environment }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: ${{ github.event.inputs.environment }}
+    env:
+      DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+      DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+      DEPLOY_PORT: ${{ secrets.DEPLOY_SSH_PORT }}
+      REMOTE_DIR: ${{ vars.DEPLOY_REMOTE_DIR || '/opt/labclaw' }}
+      SERVICE_NAME: ${{ vars.DEPLOY_SERVICE_NAME || 'labclaw' }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.ref }}
+
+      - name: Validate deployment configuration
+        run: |
+          set -euo pipefail
+          test -n "${DEPLOY_HOST}" || { echo "::error ::Missing secret DEPLOY_HOST"; exit 1; }
+          test -n "${DEPLOY_USER}" || { echo "::error ::Missing secret DEPLOY_USER"; exit 1; }
+          echo "Configuration looks valid."
+
+      - name: Start SSH agent
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.DEPLOY_SSH_PRIVATE_KEY }}
+
+      - name: Add host key
+        run: |
+          set -euo pipefail
+          PORT="${DEPLOY_PORT:-22}"
+          mkdir -p "${HOME}/.ssh"
+          ssh-keyscan -p "${PORT}" -H "${DEPLOY_HOST}" >> "${HOME}/.ssh/known_hosts"
+
+      - name: Preflight remote access
+        run: |
+          set -euo pipefail
+          PORT="${DEPLOY_PORT:-22}"
+          TARGET="${DEPLOY_USER}@${DEPLOY_HOST}"
+          REMOTE_UID="$(ssh -p "${PORT}" "${TARGET}" "id -u")"
+          if [ "${REMOTE_UID}" != "0" ]; then
+            echo "::error ::Deploy user must be root for systemd + user provisioning."
+            echo "::error ::Current remote uid: ${REMOTE_UID}"
+            exit 1
+          fi
+
+      - name: Sync source code
+        run: |
+          set -euo pipefail
+          PORT="${DEPLOY_PORT:-22}"
+          TARGET="${DEPLOY_USER}@${DEPLOY_HOST}"
+
+          ssh -p "${PORT}" "${TARGET}" "mkdir -p ${REMOTE_DIR}/{data,memory,logs}"
+          ssh -p "${PORT}" "${TARGET}" \
+            "id labclaw >/dev/null 2>&1 || useradd -r -s /usr/sbin/nologin --no-create-home -d ${REMOTE_DIR} labclaw"
+          ssh -p "${PORT}" "${TARGET}" "chown -R labclaw:labclaw ${REMOTE_DIR}"
+
+          rsync -az --delete \
+            -e "ssh -p ${PORT}" \
+            --exclude '__pycache__' \
+            --exclude '*.pyc' \
+            --exclude '.git' \
+            --exclude '.ruff_cache' \
+            --exclude '.mypy_cache' \
+            --exclude '.pytest_cache' \
+            --exclude '.venv' \
+            --exclude 'venv' \
+            --exclude 'node_modules' \
+            --exclude '*.egg-info' \
+            --exclude 'tests/' \
+            --exclude 'docs/' \
+            --exclude 'deploy/' \
+            --exclude '.mcp.json' \
+            --exclude '/data/' \
+            --exclude '/memory/' \
+            --exclude '/logs/' \
+            ./ "${TARGET}:${REMOTE_DIR}/"
+
+          scp -P "${PORT}" deploy/labclaw.service \
+            "${TARGET}:/etc/systemd/system/${SERVICE_NAME}.service"
+
+      - name: Install and restart service
+        run: |
+          set -euo pipefail
+          PORT="${DEPLOY_PORT:-22}"
+          TARGET="${DEPLOY_USER}@${DEPLOY_HOST}"
+
+          ssh -p "${PORT}" "${TARGET}" bash -s <<EOF
+          set -euo pipefail
+          cd "${REMOTE_DIR}"
+
+          if [ ! -d venv ]; then
+            python3 -m venv venv
+          fi
+
+          venv/bin/pip install --upgrade pip
+          venv/bin/pip install -e ".[science]"
+
+          systemctl daemon-reload
+          systemctl enable "${SERVICE_NAME}"
+          systemctl restart "${SERVICE_NAME}"
+          systemctl status "${SERVICE_NAME}" --no-pager | head -20
+          EOF
+
+      - name: Run smoke checks
+        if: ${{ github.event.inputs.run_smoke_checks == 'true' }}
+        run: |
+          set -euo pipefail
+          PORT="${DEPLOY_PORT:-22}"
+          TARGET="${DEPLOY_USER}@${DEPLOY_HOST}"
+
+          ssh -p "${PORT}" "${TARGET}" "curl -fsS http://127.0.0.1:18800/api/health >/dev/null"
+          ssh -p "${PORT}" "${TARGET}" \
+            "systemctl is-active --quiet ${SERVICE_NAME}"
+
+      - name: Deployment summary
+        run: |
+          {
+            echo "## Deploy Complete"
+            echo ""
+            echo "- Environment: \`${{ github.event.inputs.environment }}\`"
+            echo "- Ref: \`${{ github.event.inputs.ref }}\`"
+            echo "- Host: \`${DEPLOY_HOST}\`"
+            echo "- Remote dir: \`${REMOTE_DIR}\`"
+            echo "- Service: \`${SERVICE_NAME}\`"
+            echo "- Smoke checks: \`${{ github.event.inputs.run_smoke_checks }}\`"
+          } >> "${GITHUB_STEP_SUMMARY}"

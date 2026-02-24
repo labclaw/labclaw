@@ -1,4 +1,4 @@
-# Python Coding Standards — Jarvis Mesh
+# Python Coding Standards — LabClaw
 
 ## Language & Runtime
 - Python 3.11+ required
@@ -23,7 +23,7 @@
 
 ## Testing
 - `pytest` with `pytest-asyncio` for async tests
-- Test files mirror source structure: `tests/unit/core/test_graph.py` for `src/jarvis_mesh/core/graph.py`
+- Test files mirror source structure: `tests/unit/core/test_graph.py` for `src/labclaw/core/graph.py`
 - Fixtures in `tests/fixtures/` for sample data files
 
 ## Imports

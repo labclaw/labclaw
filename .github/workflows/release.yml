@@ -1,0 +1,107 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Existing tag to release (for example: v0.1.0)"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: build-release-artifacts
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Checkout selected tag
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          git checkout "refs/tags/${{ inputs.tag }}"
+
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          enable-cache: true
+
+      - name: Set up Python
+        run: uv python install 3.12
+
+      - name: Build distributions
+        run: |
+          rm -rf dist
+          uv build --sdist --wheel
+
+      - name: Check package metadata
+        run: uvx twine check dist/*
+
+      - name: Upload dist artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/*
+
+  github-release:
+    name: github-release
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs:
+      - build
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download dist artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist
+
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
+          generate_release_notes: true
+          fail_on_unmatched_files: true
+          files: dist/*
+
+  publish-pypi:
+    name: publish-pypi
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs:
+      - build
+    if: ${{ secrets.PYPI_API_TOKEN != '' }}
+    environment: pypi
+    permissions:
+      contents: read
+
+    steps:
+      - name: Download dist artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          user: __token__
+          password: ${{ secrets.PYPI_API_TOKEN }}
+          packages-dir: dist

@@ -1,12 +1,12 @@
 ---
 name: build-and-test
-description: "Build the Jarvis Mesh project and run the full test suite, reporting results with pass/fail counts and any errors."
+description: "Build the LabClaw project and run the full test suite, reporting results with pass/fail counts and any errors."
 user-invocable: true
 allowed-tools: Bash, Read, Grep
 context: fork
 ---
 
-You are running the build and test pipeline for Jarvis Mesh.
+You are running the build and test pipeline for LabClaw.
 
 ## Steps
 
@@ -27,7 +27,7 @@ ruff check src/ tests/ --output-format=concise 2>&1
 
 4. Run type checking (if mypy is configured):
 ```bash
-mypy src/jarvis_mesh/ --ignore-missing-imports 2>&1 | tail -20
+mypy src/labclaw/ --ignore-missing-imports 2>&1 | tail -20
 ```
 
 5. Run the test suite:

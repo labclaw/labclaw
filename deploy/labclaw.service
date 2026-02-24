@@ -1,0 +1,29 @@
+[Unit]
+Description=LabClaw — 24/7 Lab Intelligence Daemon
+After=network.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=labclaw
+Group=labclaw
+WorkingDirectory=/opt/labclaw
+ExecStart=/opt/labclaw/venv/bin/python -m labclaw.daemon \
+    --data-dir /opt/labclaw/data \
+    --memory-root /opt/labclaw/memory \
+    --port 18800 \
+    --dashboard-port 18801 \
+    --discovery-interval 300 \
+    --evolution-interval 1800
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=labclaw
+
+# Environment
+EnvironmentFile=-/opt/labclaw/.env
+Environment=PYTHONPATH=/opt/labclaw/src
+
+[Install]
+WantedBy=multi-user.target
