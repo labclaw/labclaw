@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "labclaw"
-version = "0.0.2"
+version = "0.0.3"
 description = "Distributed agentic architecture for self-documenting, self-improving neuroscience laboratories"
 readme = "README.md"
 license = "MIT"
