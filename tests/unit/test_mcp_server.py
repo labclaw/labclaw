@@ -10,11 +10,23 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 try:
-    from labclaw.mcp.server import create_server
+    from labclaw.mcp.server import (
+        _get_device_registry,
+        _get_evolution_engine,
+        _get_hypothesis_generator,
+        _get_pattern_miner,
+        _get_search_engine,
+        create_server,
+    )
     _HAS_MCP = True
 except ImportError:
     _HAS_MCP = False
     create_server = None  # type: ignore[assignment, misc]
+    _get_pattern_miner = None  # type: ignore[assignment]
+    _get_hypothesis_generator = None  # type: ignore[assignment]
+    _get_evolution_engine = None  # type: ignore[assignment]
+    _get_device_registry = None  # type: ignore[assignment]
+    _get_search_engine = None  # type: ignore[assignment]
 
 pytestmark = pytest.mark.skipif(not _HAS_MCP, reason="mcp package not installed")
 
@@ -185,3 +197,52 @@ class TestMCPToolFunctions:
             parsed = json.loads(result)
             assert len(parsed) == 1
             assert parsed[0]["snippet"] == "finding xyz"
+
+
+# ---------------------------------------------------------------------------
+# Private helper functions — unit tests
+# ---------------------------------------------------------------------------
+
+
+class TestHelperFunctions:
+    """Test the module-level _get_* helpers (lines 23-45 in server.py)."""
+
+    def test_get_pattern_miner_delegates_to_api_deps(self) -> None:
+        mock_miner = MagicMock()
+        with patch("labclaw.api.deps.get_pattern_miner", return_value=mock_miner):
+            result = _get_pattern_miner()
+        assert result is mock_miner
+
+    def test_get_hypothesis_generator_delegates_to_api_deps(self) -> None:
+        mock_gen = MagicMock()
+        with patch("labclaw.api.deps.get_hypothesis_generator", return_value=mock_gen):
+            result = _get_hypothesis_generator()
+        assert result is mock_gen
+
+    def test_get_evolution_engine_delegates_to_api_deps(self) -> None:
+        mock_engine = MagicMock()
+        with patch("labclaw.api.deps.get_evolution_engine", return_value=mock_engine):
+            result = _get_evolution_engine()
+        assert result is mock_engine
+
+    def test_get_device_registry_delegates_to_api_deps(self) -> None:
+        mock_registry = MagicMock()
+        with patch("labclaw.api.deps.get_device_registry", return_value=mock_registry):
+            result = _get_device_registry()
+        assert result is mock_registry
+
+    def test_get_search_engine_returns_hybrid_search_engine(self) -> None:
+        from labclaw.memory.search import HybridSearchEngine
+
+        mock_backend = MagicMock()
+        with patch("labclaw.api.deps.get_tier_a_backend", return_value=mock_backend):
+            result = _get_search_engine()
+        assert isinstance(result, HybridSearchEngine)
+
+    def test_create_server_returns_fastmcp_with_name_labclaw(self) -> None:
+        from mcp.server.fastmcp import FastMCP
+
+        server = create_server()
+        assert isinstance(server, FastMCP)
+        # FastMCP exposes the name it was initialised with
+        assert server.name == "labclaw"

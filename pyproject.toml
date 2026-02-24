@@ -99,6 +99,7 @@ omit = [
     "*/tests/*",
     "*/demo/*",
     "*/dashboard/*",
+    "*/cli.py",
 ]
 
 [tool.coverage.report]
