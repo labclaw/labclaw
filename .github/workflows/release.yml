@@ -36,7 +36,7 @@ jobs:
           git checkout "refs/tags/${{ inputs.tag }}"
 
       - name: Setup uv
-        uses: astral-sh/setup-uv@v4
+        uses: astral-sh/setup-uv@v7
         with:
           enable-cache: true
 
