@@ -69,3 +69,27 @@ class ProvenanceTracker:
                 return False
 
         return True
+
+
+def to_dict(chain: ProvenanceChain) -> dict:
+    """Serialize a ProvenanceChain to a JSON-safe dict.
+
+    Args:
+        chain: The provenance chain to serialize.
+
+    Returns:
+        JSON-safe dictionary representation.
+    """
+    return chain.model_dump(mode="json")
+
+
+def from_dict(data: dict) -> ProvenanceChain:
+    """Deserialize a ProvenanceChain from a dict.
+
+    Args:
+        data: Dictionary previously produced by to_dict.
+
+    Returns:
+        Validated ProvenanceChain instance.
+    """
+    return ProvenanceChain.model_validate(data)
