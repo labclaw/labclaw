@@ -5,7 +5,7 @@
 
 ## Purpose
 
-Defines the base types, enums, and conventions that all layers share. This is the "language" of Jarvis Mesh — every event, graph node, and data record builds on these foundations.
+Defines the base types, enums, and conventions that all layers share. This is the "language" of LabClaw — every event, graph node, and data record builds on these foundations.
 
 ---
 
@@ -172,7 +172,7 @@ event_registry = EventRegistry()
 Layers register events like:
 ```python
 # In memory/markdown.py
-from jarvis_mesh.core.events import event_registry
+from labclaw.core.events import event_registry
 event_registry.register("memory.tier_a.updated", MemoryUpdatedEvent)
 ```
 
@@ -200,7 +200,7 @@ event_registry.register("memory.tier_a.updated", MemoryUpdatedEvent)
 
 ## Acceptance Criteria
 
-- [ ] All enums are importable from `jarvis_mesh.core.schemas`
+- [ ] All enums are importable from `labclaw.core.schemas`
 - [ ] `LabEvent` validates event name format on construction
 - [ ] `EventRegistry.register()` prevents duplicate registration
 - [ ] `EventRegistry.emit()` creates event with auto-generated ID and timestamp

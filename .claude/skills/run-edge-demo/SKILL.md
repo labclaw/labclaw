@@ -19,12 +19,12 @@ ls -la tests/fixtures/ 2>/dev/null || echo "No test fixtures found"
 
 2. Create a temporary watch directory if needed:
 ```bash
-mkdir -p /tmp/jarvis-edge-demo
+mkdir -p /tmp/labclaw-edge-demo
 ```
 
 3. Start the edge watcher in background:
 ```bash
-python3 -m labclaw.edge.watcher --watch-path /tmp/jarvis-edge-demo --config configs/default.yaml &
+python3 -m labclaw.edge.watcher --watch-path /tmp/labclaw-edge-demo --config configs/default.yaml &
 WATCHER_PID=$!
 echo "Watcher started with PID: $WATCHER_PID"
 ```
@@ -32,7 +32,7 @@ echo "Watcher started with PID: $WATCHER_PID"
 4. Copy sample files to trigger detection:
 ```bash
 # Copy test fixtures or create dummy files
-echo '{"test": true}' > /tmp/jarvis-edge-demo/test_session.json
+echo '{"test": true}' > /tmp/labclaw-edge-demo/test_session.json
 ```
 
 5. Wait and check results:

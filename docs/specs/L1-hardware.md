@@ -5,7 +5,7 @@
 
 ## Purpose
 
-The hardware layer is the physical foundation of Jarvis Mesh. Every instrument in the lab is a managed resource with identity, capabilities, state, and safety constraints. For the MVP, the focus is on file-based devices (watchdog monitors output folders), with the architecture supporting serial, network, GPIO/DAQ, and software bridge interfaces.
+The hardware layer is the physical foundation of LabClaw. Every instrument in the lab is a managed resource with identity, capabilities, state, and safety constraints. For the MVP, the focus is on file-based devices (watchdog monitors output folders), with the architecture supporting serial, network, GPIO/DAQ, and software bridge interfaces.
 
 ---
 
@@ -181,5 +181,5 @@ class HardwareManager:
 - [ ] HardwareSafetyChecker blocks commands on offline/error devices
 - [ ] HardwareSafetyChecker returns SafetyCheckResult with appropriate level
 - [ ] HardwareManager coordinates registry + safety for command execution
-- [ ] All schemas importable from `jarvis_mesh.hardware`
+- [ ] All schemas importable from `labclaw.hardware`
 - [ ] All BDD scenarios pass

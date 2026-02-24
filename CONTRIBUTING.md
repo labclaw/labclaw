@@ -20,7 +20,7 @@ LabClaw requires **Python 3.11+** and uses [uv](https://docs.astral.sh/uv/) for 
 
 ```bash
 # Clone the repository
-git clone https://github.com/robotlearning123/labclaw.git
+git clone https://github.com/labclaw/labclaw.git
 cd labclaw
 
 # Install with dev and science dependencies
@@ -220,8 +220,8 @@ If you're new to the project, these are good starting points:
 - Write BDD feature tests for existing behavior
 - Fix documentation typos or add clarifications
 
-Look for issues labeled [`good first issue`](https://github.com/robotlearning123/labclaw/labels/good%20first%20issue).
+Look for issues labeled [`good first issue`](https://github.com/labclaw/labclaw/labels/good%20first%20issue).
 
 ## Questions?
 
-Open a [discussion](https://github.com/robotlearning123/labclaw/discussions) for questions, ideas, or design proposals.
+Open a [discussion](https://github.com/labclaw/labclaw/discussions) for questions, ideas, or design proposals.

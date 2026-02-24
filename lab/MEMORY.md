@@ -2,7 +2,7 @@
 
 > Persistent facts, decisions, and lessons learned by the lab.
 > This file is the source of truth for durable lab knowledge.
-> Updated by Jarvis and by humans. Git-versioned.
+> Updated by LabClaw and by humans. Git-versioned.
 
 ## Active Knowledge
 

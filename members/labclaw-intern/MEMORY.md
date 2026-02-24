@@ -1,4 +1,4 @@
-# Jarvis Intern — Personal Memory
+# LabClaw Intern — Personal Memory
 
 ## Preferences
 

@@ -4,7 +4,7 @@
 
 ## Purpose
 
-The self-evolution subsystem enables Jarvis Mesh to improve its own analytical
+The self-evolution subsystem enables LabClaw to improve its own analytical
 strategies autonomously.  Rather than tuning only experiment parameters
 (Bayesian optimization in L3), this layer mutates the system's internal
 configuration — analysis parameters, prompts, routing rules, heuristics, and
@@ -40,7 +40,7 @@ than `rollback_threshold` (default 10 %), the cycle is auto-rolled back.
 
 ## Pydantic Schemas
 
-All models live in `src/jarvis_mesh/evolution/schemas.py`.
+All models live in `src/labclaw/evolution/schemas.py`.
 
 ### FitnessScore
 

@@ -1,4 +1,4 @@
-"""Jarvis Edge — file watchers, quality checks, session chronicle, sentinel."""
+"""LabClaw Edge — file watchers, quality checks, session chronicle, sentinel."""
 
 from __future__ import annotations
 

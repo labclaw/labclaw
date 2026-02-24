@@ -7,7 +7,7 @@ name = "labclaw"
 version = "0.0.3"
 description = "Distributed agentic architecture for self-documenting, self-improving neuroscience laboratories"
 readme = "README.md"
-license = "MIT"
+license = "Apache-2.0"
 requires-python = ">=3.11"
 authors = [
     { name = "Shen Lab" },

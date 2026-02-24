@@ -224,5 +224,5 @@ class HypothesisGenerator:
 - [ ] Each hypothesis has statement, testable flag, confidence, experiments, resources
 - [ ] Events emitted: discovery.pattern.found, discovery.mining.completed, discovery.hypothesis.created
 - [ ] numpy/scipy optional — graceful fallback to pure Python
-- [ ] All schemas importable from `jarvis_mesh.discovery`
+- [ ] All schemas importable from `labclaw.discovery`
 - [ ] All BDD scenarios pass

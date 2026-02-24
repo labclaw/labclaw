@@ -283,5 +283,5 @@ class ExperimentPipeline:
 - [ ] ApprovalGate manages pending/approved/rejected workflow
 - [ ] ExperimentPipeline coordinates propose-validate-approve flow
 - [ ] Events are emitted: optimization.proposal.created, optimization.safety.checked, optimization.approval.requested, optimization.approval.decided, optimization.result.recorded
-- [ ] All schemas importable from `jarvis_mesh.optimization`
+- [ ] All schemas importable from `labclaw.optimization`
 - [ ] All BDD scenarios pass

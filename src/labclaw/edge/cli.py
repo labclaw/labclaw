@@ -1,4 +1,4 @@
-"""Jarvis Edge CLI — edge node entry point."""
+"""LabClaw Edge CLI — edge node entry point."""
 
 from __future__ import annotations
 
@@ -12,7 +12,7 @@ def main() -> None:
         app_path = Path(__file__).parent.parent / "dashboard" / "app.py"
         subprocess.run(["streamlit", "run", str(app_path)])
     else:
-        print("jarvis-edge: Not yet implemented. Use --dashboard to launch the UI.")
+        print("labclaw-edge: Not yet implemented. Use --dashboard to launch the UI.")
 
 
 if __name__ == "__main__":

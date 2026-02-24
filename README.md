@@ -1,10 +1,10 @@
 # LabClaw
 
-[![CI](https://github.com/robotlearning123/labclaw/actions/workflows/ci.yml/badge.svg)](https://github.com/robotlearning123/labclaw/actions/workflows/ci.yml)
-[![Security](https://github.com/robotlearning123/labclaw/actions/workflows/security.yml/badge.svg)](https://github.com/robotlearning123/labclaw/actions/workflows/security.yml)
-[![Release](https://github.com/robotlearning123/labclaw/actions/workflows/release.yml/badge.svg)](https://github.com/robotlearning123/labclaw/actions/workflows/release.yml)
+[![CI](https://github.com/labclaw/labclaw/actions/workflows/ci.yml/badge.svg)](https://github.com/labclaw/labclaw/actions/workflows/ci.yml)
+[![Security](https://github.com/labclaw/labclaw/actions/workflows/security.yml/badge.svg)](https://github.com/labclaw/labclaw/actions/workflows/security.yml)
+[![Release](https://github.com/labclaw/labclaw/actions/workflows/release.yml/badge.svg)](https://github.com/labclaw/labclaw/actions/workflows/release.yml)
 [![Python](https://img.shields.io/badge/python-3.11%2B-blue.svg)](https://www.python.org/)
-[![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+[![License: Apache 2.0](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
 
 Distributed, agentic lab infrastructure for **self-documenting** and **self-improving** neuroscience workflows.
 
@@ -101,4 +101,4 @@ See [CONTRIBUTING.md](CONTRIBUTING.md). PRs and issues are welcome.
 
 ## License
 
-MIT
+Apache 2.0

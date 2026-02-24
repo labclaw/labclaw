@@ -214,5 +214,5 @@ class ProvenanceTracker:
 - [ ] ValidationReport combines stats + provenance with conclusion
 - [ ] Sample size warnings are generated when N < min_sample_size
 - [ ] Events are emitted: validation.test.completed, validation.report.generated, validation.provenance.built
-- [ ] All schemas importable from `jarvis_mesh.validation`
+- [ ] All schemas importable from `labclaw.validation`
 - [ ] All BDD scenarios pass

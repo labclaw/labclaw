@@ -205,5 +205,5 @@ Used wrong baseline for calcium signal normalization. Corrected to use first 5 s
 - [ ] `read_soul()` raises `FileNotFoundError` for missing entities
 - [ ] `search()` returns ranked results across all entities
 - [ ] Events `memory.tier_a.created`, `memory.tier_a.updated`, `memory.search.executed` are emitted
-- [ ] All models importable from `jarvis_mesh.memory`
+- [ ] All models importable from `labclaw.memory`
 - [ ] Tier B and Tier C stubs raise `NotImplementedError`

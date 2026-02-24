@@ -92,7 +92,7 @@ NODE_TYPES: dict[str, type[GraphNode]]
 
 ## Acceptance Criteria
 
-- [ ] All 14 node types importable from `jarvis_mesh.core.graph`
+- [ ] All 14 node types importable from `labclaw.core.graph`
 - [ ] Each node type has `node_type` auto-set to correct string
 - [ ] `GraphNode` base provides `node_id`, `created_at`, `updated_at`, `created_by`, `tags`, `metadata`
 - [ ] `get_node_type("session")` returns `SessionNode`

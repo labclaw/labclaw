@@ -6,7 +6,7 @@ LabClaw is a self-evolving agentic system that serves as the super brain for res
 
 **Tech stack:** Python 3.11+, FastAPI, SQLite, Redis Streams, Claude API, Streamlit, Graphiti
 **Domain:** Neuroscience (first vertical) — video behavior tracking, microscopy, electrophysiology, behavioral apparatus
-**Design doc:** `docs/plans/2026-02-19-labclaw-design-v2.md`
+**Design doc:** `docs/plans/2026-02-19-jarvis-mesh-design-v2.md`
 
 ## Build & Test
 

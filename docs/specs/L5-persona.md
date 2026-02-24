@@ -29,7 +29,7 @@ Defined in `MemberRole` enum (`core/schemas.py`):
 
 ## Pydantic Schemas
 
-All models live in `src/jarvis_mesh/persona/schemas.py`.
+All models live in `src/labclaw/persona/schemas.py`.
 
 ### MemberProfile
 

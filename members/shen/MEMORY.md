@@ -1,6 +1,6 @@
 # Shen — Personal Memory
 
-> Accumulated by Jarvis over time.
+> Accumulated by LabClaw over time.
 
 ## Preferences
 
@@ -8,7 +8,7 @@
 
 ## Project History
 
-- 2026-02-19: Initiated Jarvis Mesh project
+- 2026-02-19: Initiated LabClaw project
 
 ## Interactions Log
 
