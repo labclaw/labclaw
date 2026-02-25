@@ -58,3 +58,13 @@ LabClaw controls physical laboratory hardware. Security vulnerabilities that cou
 are treated as **critical severity** regardless of software impact assessment.
 
 All hardware write commands pass through the governance engine and require appropriate role-based approval. The `HardwareSafetyGuard` validates device state before command execution.
+
+## Secret Rotation
+
+- API tokens and deploy SSH keys: rotate every 90 days.
+- Emergency rotation: within 24 hours of suspected compromise.
+- Rotation process:
+  - Generate new credential and store in secret manager.
+  - Deploy with both old+new credentials accepted during a short overlap window.
+  - Remove old credential and verify health checks + audit logs.
+- Never log secret values or full token identifiers.
