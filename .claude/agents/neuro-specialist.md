@@ -21,7 +21,7 @@ You ensure the system speaks the language of neuroscience. Your responsibilities
 - Ensure closed-loop optimization targets are scientifically meaningful and safe
 
 Key neuroscience tools you integrate:
-- **SAM-Behavior**: Zero-shot multi-animal pose estimation (Shen Lab, primary video analysis)
+- **SAM-Behavior**: Zero-shot multi-animal pose estimation (primary video analysis)
 - **DeepLabCut**: Markerless pose estimation (alternative/validation)
 - **Suite2p**: Two-photon calcium imaging analysis
 - **Kilosort**: Spike sorting for electrophysiology

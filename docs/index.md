@@ -199,6 +199,6 @@ LabClaw v0.1.0 demonstrates five core capabilities with reproducible benchmarks:
 
 <div style="text-align: center; padding: 1em 0;">
 <p style="font-size: 0.9em; color: var(--md-default-fg-color--light);">
-LabClaw is developed by <a href="https://github.com/labclaw">Shen Lab</a> and released under the Apache 2.0 license.
+LabClaw is developed by <a href="https://github.com/labclaw">LabClaw Team</a> and released under the Apache 2.0 license.
 </p>
 </div>

@@ -14,7 +14,7 @@
 
 ## Project History
 
-- 2026-02: Deployed as first digital intern for Shen Lab
+- 2026-02: Deployed as first digital intern for LabClaw
 
 ## Performance Log
 

@@ -5,7 +5,7 @@ LabClaw's core architecture is **domain-agnostic** — the plugin system support
 ## Current Status (v0.0.2)
 
 - **Core:** Domain-agnostic engine with 5-layer stack
-- **Built-in domains:** Generic, Neuroscience (shenlab domain pack)
+- **Built-in domains:** Generic, Neuroscience (built-in domain pack)
 - **Plugin types:** DevicePlugin, DomainPlugin, AnalysisPlugin
 
 ## Domain Plugin Architecture
@@ -30,7 +30,7 @@ These domains have clear data formats and the highest demand.
 
 | Domain | Key Instruments | Data Types | Status |
 |--------|----------------|------------|--------|
-| **Neuroscience** | Two-photon, EEG, behavioral rigs | TIFF, NWB, CSV, video | **Built** (shenlab) |
+| **Neuroscience** | Two-photon, EEG, behavioral rigs | TIFF, NWB, CSV, video | **Built**  |
 | **Molecular Biology** | qPCR, gel imager, plate reader | CSV, TIFF, absorbance | **Partial** (qPCR driver exists) |
 | **Chemistry** | Spectrometers, HPLC, LC-MS | CSV, mzML, JCAMP-DX | Planned |
 | **Materials Science** | SEM, XRD, tensile testing | TIFF, CSV, CIF | Planned |

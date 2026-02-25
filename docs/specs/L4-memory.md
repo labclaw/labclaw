@@ -168,12 +168,12 @@ Events are registered at module import time via the global `event_registry`.
 
 ```markdown
 ---
-name: Shen Lab
+name: LabClaw
 type: lab
 created: 2026-02-19T00:00:00Z
 ---
 
-# Shen Lab
+# LabClaw
 
 Mission, values, and identity description...
 ```

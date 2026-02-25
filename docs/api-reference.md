@@ -519,7 +519,7 @@ List all registered plugins.
     "name": "labclaw-neuro",
     "version": "0.1.0",
     "description": "Neuroscience domain plugin",
-    "author": "Shen Lab",
+    "author": "LabClaw Team",
     "plugin_type": "domain"
   }
 ]

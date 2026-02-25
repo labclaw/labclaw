@@ -1,6 +1,6 @@
 # Lab Identity
 
-**Lab:** Shen Lab
+**Lab:** LabClaw
 **Domain:** Behavioral neuroscience + brain imaging
 **Instruments:** Video cameras, microscopes, electrophysiology rigs, behavioral apparatus
 **Core values:** Reproducibility first, data before story, rigorous statistics, open science

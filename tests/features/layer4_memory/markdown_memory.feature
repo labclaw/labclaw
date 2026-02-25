@@ -10,10 +10,10 @@ Feature: Markdown Memory (Tier A)
   # -----------------------------------------------------------------------
 
   Scenario: Create and read an entity's SOUL.md
-    When I create a SOUL for entity "shen-lab" with name "Shen Lab"
-    And I request the SOUL for entity "shen-lab"
+    When I create a SOUL for entity "labclaw" with name "LabClaw"
+    And I request the SOUL for entity "labclaw"
     Then I receive a MarkdownDoc with frontmatter containing "name"
-    And the frontmatter "name" is "Shen Lab"
+    And the frontmatter "name" is "LabClaw"
     And the content is valid markdown
     And an event "memory.tier_a.created" is emitted
 
