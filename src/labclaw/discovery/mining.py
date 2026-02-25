@@ -194,6 +194,7 @@ class PatternMiner:
             },
         )
 
+        self.last_result = result
         return result
 
     def find_correlations(
