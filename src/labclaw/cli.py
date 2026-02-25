@@ -413,62 +413,23 @@ def _ablation_cmd(args: list[str]) -> None:
             for row in reader:
                 all_rows.append(dict(row))
 
-    from labclaw.orchestrator.loop import ScientificLoop
-    from labclaw.orchestrator.steps import (
-        AnalyzeStep,
-        AskStep,
-        ConcludeStep,
-        ExperimentStep,
-        HypothesizeStep,
-        ObserveStep,
-        PredictStep,
-    )
+    from labclaw.evolution.runner import EvolutionRunner
     from labclaw.validation.statistics import StatisticalValidator, ValidationConfig
 
-    # Full pipeline run
-    conclude_full = ConcludeStep()
-    steps_full = [
-        ObserveStep(),
-        AskStep(),
-        HypothesizeStep(llm_provider=None, max_llm_calls=0),
-        PredictStep(),
-        ExperimentStep(),
-        AnalyzeStep(),
-        conclude_full,
-    ]
-    loop_full = ScientificLoop(steps=steps_full)
+    runner = EvolutionRunner(n_cycles=n_cycles, seed=seed)
+    full_result = runner.run(all_rows)
 
-    # No-hypothesis ablation run
-    conclude_ablation = ConcludeStep()
-    steps_ablation = [
-        ObserveStep(),
-        AskStep(),
-        HypothesizeStep(llm_provider=None, max_llm_calls=0),
-        PredictStep(),
-        ExperimentStep(),
-        AnalyzeStep(),
-        conclude_ablation,
-    ]
-    loop_ablation = ScientificLoop(steps=steps_ablation)
+    runner2 = EvolutionRunner(n_cycles=n_cycles, seed=seed)
+    ablation_result = runner2.run_ablation(all_rows)
 
-    full_scores: list[float] = []
-    ablation_scores: list[float] = []
-
-    random.seed(seed)
-    for _ in range(n_cycles):
-        r_full = asyncio.run(loop_full.run_cycle(all_rows))
-        full_scores.append(float(r_full.patterns_found))
-
-        r_abl = asyncio.run(loop_ablation.run_cycle(all_rows))
-        ablation_scores.append(float(r_abl.patterns_found))
-
+    # Statistical comparison
     validator = StatisticalValidator()
     cfg = ValidationConfig(min_sample_size=2)
     try:
         stat_result = validator.run_test(
             "permutation",
-            full_scores,
-            ablation_scores,
+            full_result.fitness_scores,
+            ablation_result.fitness_scores,
             config=cfg,
         )
         p_value: float | None = float(stat_result.p_value)
@@ -478,12 +439,11 @@ def _ablation_cmd(args: list[str]) -> None:
         significant = None
 
     output = {
-        "full": {"fitness_scores": full_scores, "n_cycles": n_cycles, "seed": seed},
-        "no_evolution": {"fitness_scores": ablation_scores, "n_cycles": n_cycles, "seed": seed},
+        "full": full_result.model_dump(),
+        "no_evolution": ablation_result.model_dump(),
         "comparison": {
-            "full_mean": float(sum(full_scores) / len(full_scores)) if full_scores else 0.0,
-            "ablation_mean": float(sum(ablation_scores) / len(ablation_scores))
-            if ablation_scores else 0.0,
+            "full_mean_fitness": float(full_result.mean_fitness),
+            "ablation_mean_fitness": float(ablation_result.mean_fitness),
             "p_value": p_value,
             "significant": significant,
         },
