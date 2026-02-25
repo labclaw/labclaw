@@ -50,6 +50,8 @@ def main() -> None:
         _pipeline_cmd(sys.argv[2:])
     elif cmd == "ablation":
         _ablation_cmd(sys.argv[2:])
+    elif cmd == "memory":
+        _memory_cmd(sys.argv[2:])
     else:
         print("Usage: labclaw <command>")
         print()
@@ -61,6 +63,7 @@ def main() -> None:
         print("  plugin         Manage plugins (see: labclaw plugin --help)")
         print("  pipeline       Run one discovery cycle on CSV data and print JSON result")
         print("  ablation       Run full vs no-evolution comparison and print JSON result")
+        print("  memory         Query or inspect persisted memory")
         print("  --dashboard    Launch Streamlit dashboard only")
         print("  --api [PORT]   Launch FastAPI server only")
         print()
@@ -449,6 +452,64 @@ def _ablation_cmd(args: list[str]) -> None:
         },
     }
     print(json.dumps(output))
+
+
+def _memory_cmd(args: list[str]) -> None:
+    """Query or inspect the persisted session memory.
+
+    Usage:
+        labclaw memory query "search term" [--memory-root PATH] [--db PATH]
+        labclaw memory stats [--memory-root PATH] [--db PATH]
+    """
+    sub = args[0] if args else ""
+
+    if sub in ("-h", "--help", ""):
+        print("Usage: labclaw memory <subcommand> [options]")
+        print()
+        print("Subcommands:")
+        print("  query TERM     Search stored findings")
+        print("  stats          Show finding count and retrieval rate")
+        print()
+        print("Options:")
+        print("  --memory-root PATH  Memory root directory (default: ./memory)")
+        print("  --db PATH           SQLite DB path for Tier B (optional)")
+        if not sub:
+            sys.exit(1)
+        return
+
+    memory_root: Path = Path("memory")
+    db_path: Path | None = None
+    query_term: str = ""
+
+    i = 1
+    while i < len(args):
+        if args[i] == "--memory-root" and i + 1 < len(args):
+            memory_root = Path(args[i + 1])
+            i += 2
+        elif args[i] == "--db" and i + 1 < len(args):
+            db_path = Path(args[i + 1])
+            i += 2
+        elif sub == "query" and i == 1:
+            query_term = args[i]
+            i += 1
+        else:
+            i += 1
+
+    from labclaw.memory.session_memory import SessionMemoryManager
+
+    mgr = SessionMemoryManager(memory_root, db_path)
+    asyncio.run(mgr.init())
+
+    if sub == "query":
+        findings = asyncio.run(mgr.retrieve_findings(query=query_term))
+        print(json.dumps(findings, default=str, indent=2))
+    elif sub == "stats":
+        total = len(mgr._findings)
+        rate = mgr.get_retrieval_rate()
+        print(json.dumps({"finding_count": total, "retrieval_rate": rate}))
+    else:
+        print(f"Unknown memory subcommand: {sub!r}", file=sys.stderr)
+        sys.exit(1)
 
 
 if __name__ == "__main__":
