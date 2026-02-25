@@ -178,6 +178,18 @@ class LabClawDaemon:
         set_memory_root(memory_root)
         set_data_dir(data_dir)
 
+    def _resolve_local_plugin_dir(self) -> Path | None:
+        candidate = (self.data_dir.parent / "plugins").resolve()
+        trusted_root = self.memory_root.parent.resolve()
+        if not candidate.is_relative_to(trusted_root):
+            logger.warning(
+                "Refusing local plugins outside trusted root: %s (trusted: %s)",
+                candidate,
+                trusted_root,
+            )
+            return None
+        return candidate
+
     def start(self) -> None:
         """Start all components and block until shutdown."""
         logger.info("=" * 60)
@@ -199,7 +211,7 @@ class LabClawDaemon:
             from labclaw.plugins.loader import PluginLoader
 
             loader = PluginLoader()
-            loaded = loader.load_all(local_dir=self.data_dir.parent / "plugins")
+            loaded = loader.load_all(local_dir=self._resolve_local_plugin_dir())
             if loaded:
                 logger.info("Loaded %d plugins: %s", len(loaded), ", ".join(loaded))
         except Exception:

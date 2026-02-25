@@ -271,6 +271,14 @@ class TestDaemonStart:
             mock_evo.return_value.load_state.return_value = None
             daemon.start()  # must not raise; plugin names appear in logs
 
+    def test_resolve_local_plugin_dir_rejects_outside_trusted_root(self, tmp_path: Path) -> None:
+        with patch("labclaw.daemon.set_memory_root"), patch("labclaw.daemon.set_data_dir"):
+            daemon = LabClawDaemon(
+                data_dir=tmp_path / "outside" / "data",
+                memory_root=tmp_path / "inside" / "memory",
+            )
+        assert daemon._resolve_local_plugin_dir() is None
+
 
 # ---------------------------------------------------------------------------
 # Line 253 — stop() with active watcher
