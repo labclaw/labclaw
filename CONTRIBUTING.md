@@ -51,7 +51,7 @@ uv sync --extra dev --extra science
 ## Running Tests
 
 ```bash
-# Full test suite with coverage (90% minimum enforced)
+# Full test suite with coverage (100% minimum enforced)
 make test
 
 # Quick run without coverage
@@ -203,7 +203,7 @@ See `src/labclaw/plugins/` for the plugin loader and protocol definitions.
 All PRs go through code review. Reviewers look for:
 
 - **Correctness** — does the code do what it claims?
-- **Test coverage** — are edge cases tested? Is coverage ≥90%?
+- **Test coverage** — are edge cases tested? Is coverage = 100%?
 - **Type safety** — are public functions properly annotated?
 - **Schema validation** — are new data types using Pydantic models?
 - **Error handling** — no bare `except`, no silently swallowed errors

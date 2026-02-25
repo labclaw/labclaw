@@ -1,5 +1,61 @@
 # Changelog
 
+## 0.0.10 — 2026-02-25
+
+### Features
+
+- RBAC server-side role mapping with middleware enforcement
+- Governance 403 responses sanitized to avoid leaking internal role details
+- Role-based permission checks on all sensitive API endpoints
+
+## 0.0.9 — 2026-02-24
+
+### Features
+
+- Crash recovery: daemon restarts cleanly after unexpected termination
+- Structured logging (JSON format) with timestamps on all pipeline steps
+- Enhanced health endpoint reports subsystem status (event bus, graph, memory)
+
+## 0.0.8 — 2026-02-24
+
+### Features
+
+- Full provenance chains (C4 TRACE): every finding links back to raw data via SHA256 checksums
+- NWB export: provenance chains exportable as Neurodata Without Borders `.nwb` files
+- ProvenanceChain `to_dict` / `from_dict` for serialization round-trips
+
+## 0.0.7 — 2026-02-24
+
+### Features
+
+- Persistent memory (C3 REMEMBER): Tier-A markdown memory survives process restarts
+- Knowledge graph (Tier B) backed by SQLite FTS5 with temporal entity tracking
+- Memory search API with `limit` validation and ranked results
+
+## 0.0.6 — 2026-02-24
+
+### Features
+
+- Evolution engine: 7-step self-improvement cycle with auto-rollback on regression
+- Ablation testing: component contribution scored against held-out validation set
+- Fitness scoring with configurable thresholds and promotion gates
+
+## 0.0.5 — 2026-02-24
+
+### Features
+
+- Discovery pipeline rewritten with scipy/numpy: z-score, Pearson r, Mann-Whitney U
+- Statistical validation: permutation test, bootstrap CI, Holm correction
+- Pattern mining returns findings with p-values and effect sizes
+
+## 0.0.4 — 2026-02-24
+
+### Tests
+
+- 100% test coverage enforced (`--cov-fail-under=100`)
+- TDD + BDD dual-layer testing: unit tests mirror source, BDD features in `tests/features/`
+- 1,055 tests passing across all modules
+
 ## 0.0.3 — 2026-02-24
 
 ### Features
