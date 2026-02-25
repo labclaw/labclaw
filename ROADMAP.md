@@ -1,26 +1,58 @@
-# Roadmap
+# LabClaw Roadmap
 
-## Q1 2026
+> Detailed plan: [docs/plans/2026-02-24-v004-to-v010-roadmap.md](docs/plans/2026-02-24-v004-to-v010-roadmap.md)
 
-- Stabilize daemon runtime and event ingestion
-- Harden memory/entity validation paths
-- Add reproducible MVP benchmark pipelines
-- Publish architecture docs for plugin developers
+## Current: v0.0.4 — Foundation (C5: REPRODUCE)
 
-## Q2 2026
+- TDD + BDD dual-layer testing, 100% coverage
+- End-to-end pipeline on synthetic behavioral data
+- `labclaw pipeline --once` CLI for single-cycle execution
+- Deterministic mode (`--seed 42`) for reproducibility
 
-- Add distributed edge orchestration across multiple lab nodes
-- Add typed plugin SDK for device and analysis adapters
-- Add richer dashboard traces for session quality and evolution history
+## v0.0.5 — First Discovery (C1: DISCOVER)
 
-## Q3 2026
+- Real Shen Lab behavioral data through the pipeline
+- Claude API hypothesis generation with cost guard (`--max-llm-calls N`)
+- First real ValidationReport with p-values
+- First automated MEMORY.md entry from discovery
 
-- Release reference deployment on cloud + on-prem templates
-- Add public demo dataset and baseline challenge tasks
-- Add weekly benchmark CI against fixed datasets
+## v0.0.6 — Self-Evolution (C2: EVOLVE)
 
-## Q4 2026
+- 10+ evolution cycles on real data with fitness tracking
+- Ablation framework: `labclaw ablation --no-evolution`
+- Statistical comparison: full system vs no-evolution (paired t-test)
+- Persona promotion verification (intern -> analyst)
 
-- Promote stable API v1
-- Expand integration with NWB/NeuroConv ecosystems
-- Publish scientific validation report templates
+## v0.0.7 — Persistent Memory (C3: REMEMBER)
+
+- Cross-session memory: restart -> query returns past findings
+- Pattern deduplication: skip already-known patterns
+- Memory-assisted hypothesis: LLM prompt includes past findings
+
+## v0.0.8 — Provenance & Interfaces (C4: TRACE)
+
+- Full provenance chains: RecordingNode -> AnalysisNode -> FindingNode
+- NWB export: `labclaw export --format nwb --session X`
+- MCP server hardening with integration tests
+- REST API version tag (`/api/v0/`)
+
+## v0.0.9 — Production Stability
+
+- Daemon 24h+ soak test (memory stable, no crashes)
+- Crash recovery from Tier A/B + evolution_state.json
+- Structured JSON logging
+- Enhanced `/health` endpoint (component status, last cycle time)
+
+## v0.1.0 — Paper Release
+
+v0.1.0 is the version cited in the Nature/Science paper. Must demonstrate:
+
+| Capability | Criteria |
+|-----------|---------|
+| C1 DISCOVER | Real data -> finding with p < 0.05 |
+| C2 EVOLVE | 10 cycles, fitness +15%, ablation significant |
+| C3 REMEMBER | Restart -> 90% findings retrievable |
+| C4 TRACE | 100% findings have complete provenance |
+| C5 REPRODUCE | Same input + seed = same output |
+
+Deliverables: ablation study, 4 publication figures, `labclaw reproduce` command, demo dataset, PyPI package, Docker image, MkDocs site.
