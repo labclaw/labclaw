@@ -43,9 +43,9 @@
 - Structured JSON logging
 - Enhanced `/health` endpoint (component status, last cycle time)
 
-## Current: v0.1.0 — Paper Release
+## Planned: v0.1.0 — Paper Release
 
-v0.1.0 is the version cited in the Nature/Science paper. All 5 capabilities proven by integration tests and BDD scenarios.
+v0.1.0 will be the version cited in the paper. All 5 capabilities proven by integration tests and BDD scenarios.
 
 | Capability | Criteria | Status |
 |-----------|---------|--------|
