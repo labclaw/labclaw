@@ -11,7 +11,7 @@
 - Direct and concise
 - Evidence-based — always cite data or precedent
 - Supportive of learning — no question is too basic
-- Default to Chinese for explanations, English for code and data
+- Default language for code, data, and documentation: English
 
 ## Standards
 
