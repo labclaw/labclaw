@@ -54,6 +54,8 @@ def main() -> None:
         _export_cmd(sys.argv[2:])
     elif cmd == "memory":
         _memory_cmd(sys.argv[2:])
+    elif cmd == "reproduce":
+        _reproduce_cmd(sys.argv[2:])
     else:
         print("Usage: labclaw <command>")
         print()
@@ -66,6 +68,7 @@ def main() -> None:
         print("  pipeline       Run one discovery cycle on CSV data and print JSON result")
         print("  ablation       Run full vs no-evolution comparison and print JSON result")
         print("  memory         Query or inspect persisted memory")
+        print("  reproduce      Run pipeline twice with same seed and verify identical output")
         print("  --dashboard    Launch Streamlit dashboard only")
         print("  export         Export findings and provenance (NWB or JSON)")
         print("  --api [PORT]   Launch FastAPI server only")
@@ -576,6 +579,132 @@ def _memory_cmd(args: list[str]) -> None:
         print(json.dumps({"finding_count": total, "retrieval_rate": rate}))
     else:
         print(f"Unknown memory subcommand: {sub!r}", file=sys.stderr)
+        sys.exit(1)
+
+
+def _reproduce_cmd(args: list[str]) -> None:
+    """Run the pipeline twice with the same seed and verify identical output.
+
+    Usage:
+        labclaw reproduce --data-dir PATH --seed INT [--memory-root PATH]
+    """
+    if args and args[0] in ("-h", "--help"):
+        print("Usage: labclaw reproduce --data-dir PATH --seed INT [--memory-root PATH]")
+        print()
+        print("Options:")
+        print("  --data-dir PATH     Directory containing .csv files (required)")
+        print("  --seed INT          Random seed (required for reproducibility)")
+        print("  --memory-root PATH  Memory root directory (optional)")
+        return
+
+    if not args:
+        print(
+            "Error: --data-dir is required. "
+            "Run 'labclaw reproduce --help' for usage.",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+
+    data_dir: Path | None = None
+    seed: int = 42
+    memory_root: Path | None = None
+
+    i = 0
+    while i < len(args):
+        if args[i] == "--data-dir" and i + 1 < len(args):
+            data_dir = Path(args[i + 1])
+            i += 2
+        elif args[i] == "--seed" and i + 1 < len(args):
+            seed = int(args[i + 1])
+            i += 2
+        elif args[i] == "--memory-root" and i + 1 < len(args):
+            memory_root = Path(args[i + 1])
+            i += 2
+        else:
+            i += 1
+
+    if data_dir is None:
+        print(
+            "Error: --data-dir is required. "
+            "Run 'labclaw reproduce --help' for usage.",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+
+    if not data_dir.exists() or not data_dir.is_dir():
+        print(f"Error: data-dir '{data_dir}' does not exist or is not a directory", file=sys.stderr)
+        sys.exit(1)
+
+    csv_files = sorted(data_dir.glob("*.csv"))
+    if not csv_files:
+        print(f"Error: no .csv files found in '{data_dir}'", file=sys.stderr)
+        sys.exit(1)
+
+    all_rows: list[dict[str, str]] = []
+    for csv_path in csv_files:
+        with open(csv_path, newline="") as fh:
+            reader = csv.DictReader(fh)
+            for row in reader:
+                all_rows.append(dict(row))
+
+    from labclaw.orchestrator.loop import ScientificLoop
+    from labclaw.orchestrator.steps import (
+        AnalyzeStep,
+        AskStep,
+        ConcludeStep,
+        ExperimentStep,
+        HypothesizeStep,
+        ObserveStep,
+        PredictStep,
+    )
+
+    def _build_steps() -> list:
+        conclude = ConcludeStep(memory_root=memory_root)
+        return [
+            ObserveStep(),
+            AskStep(),
+            HypothesizeStep(llm_provider=None),
+            PredictStep(),
+            ExperimentStep(),
+            AnalyzeStep(),
+            conclude,
+        ]
+
+    # Run 1
+    random.seed(seed)
+    loop1 = ScientificLoop(steps=_build_steps())
+    result1 = asyncio.run(loop1.run_cycle(all_rows))
+
+    # Run 2
+    random.seed(seed)
+    loop2 = ScientificLoop(steps=_build_steps())
+    result2 = asyncio.run(loop2.run_cycle(all_rows))
+
+    d1 = result1.model_dump()
+    d2 = result2.model_dump()
+
+    # Zero out non-deterministic fields (unique IDs, timing, and UUID-keyed context)
+    for d in (d1, d2):
+        d["cycle_id"] = "X"
+        d["total_duration"] = 0.0
+        # finding_chains contain per-run UUIDs and timestamps — exclude from comparison
+        fc = d.get("final_context", {})
+        fc.pop("finding_chains", None)
+        d["final_context"] = fc
+
+    reproducible = d1 == d2
+    output: dict = {
+        "reproducible": reproducible,
+        "run1": result1.model_dump(),
+        "run2": result2.model_dump(),
+    }
+    if not reproducible:
+        output["diff"] = [k for k in d1 if d1[k] != d2[k]]
+    else:
+        output["diff"] = None
+
+    print(json.dumps(output))
+    if not reproducible:
         sys.exit(1)
 
 
