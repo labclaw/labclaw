@@ -173,9 +173,12 @@ class SessionMemoryManager:
         )
         return findings
 
-    def _filter_findings(
-        self, findings: list[dict[str, Any]], query: str
-    ) -> list[dict[str, Any]]:
+    async def close(self) -> None:
+        """Close optional Tier B resources."""
+        if self._tier_b is not None:
+            await self._tier_b.close()
+
+    def _filter_findings(self, findings: list[dict[str, Any]], query: str) -> list[dict[str, Any]]:
         """Simple substring filter over stringified findings."""
         if not query:
             return list(findings)

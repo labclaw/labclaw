@@ -6,9 +6,16 @@ import asyncio
 import csv
 import json
 import random
+import re
 import subprocess
 import sys
 from pathlib import Path
+from typing import Any
+
+# Matches UUID v4 strings embedded in finding descriptions (e.g. pattern IDs)
+_uuid_re = re.compile(
+    r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}", re.I
+)
 
 
 def main() -> None:
@@ -78,6 +85,22 @@ def main() -> None:
         print("  --memory-root PATH     Memory directory (default: /opt/labclaw/memory)")
         print("  --port PORT            API port (default: 18800)")
         print("  --dashboard-port PORT  Dashboard port (default: 18801)")
+
+
+def _coerce_row_values(row: dict[str, str | None]) -> dict[str, Any]:
+    """Parse CSV row values into numeric types when possible."""
+    parsed: dict[str, Any] = {}
+    for key, value in row.items():
+        if key is None or value is None:
+            continue
+        raw = value.strip()
+        if raw == "":
+            continue
+        try:
+            parsed[key] = float(raw)
+        except ValueError:
+            parsed[key] = value
+    return parsed
 
 
 def _demo_cmd(args: list[str]) -> None:
@@ -161,8 +184,10 @@ def _init_cmd(args: list[str]) -> None:
             "  api_key_env: ANTHROPIC_API_KEY\n"
         )
 
-    # Create lab SOUL.md and MEMORY.md
-    (project_dir / "lab" / "SOUL.md").write_text(
+    # Create Tier A entity docs under lab/lab/...
+    entity_dir = project_dir / "lab" / "lab"
+    entity_dir.mkdir(parents=True, exist_ok=True)
+    soul_text = (
         f"# {name}\n\n"
         "## Identity\n\n"
         f"This is the lab profile for **{name}**.\n\n"
@@ -171,9 +196,15 @@ def _init_cmd(args: list[str]) -> None:
         "## Protocols\n\n"
         "<!-- List standard operating procedures -->\n"
     )
-    (project_dir / "lab" / "MEMORY.md").write_text(
+    memory_text = (
         f"# {name} — Memory Log\n\n<!-- LabClaw will append observations and discoveries here -->\n"
     )
+    (entity_dir / "SOUL.md").write_text(soul_text)
+    (entity_dir / "MEMORY.md").write_text(memory_text)
+
+    # Backward-compatible legacy paths expected by older tooling.
+    (project_dir / "lab" / "SOUL.md").write_text(soul_text)
+    (project_dir / "lab" / "MEMORY.md").write_text(memory_text)
 
     print(f"Project scaffolded: {project_dir}")
     print()
@@ -181,8 +212,8 @@ def _init_cmd(args: list[str]) -> None:
     print(f"    {name}/")
     print(f"    {name}/configs/default.yaml")
     print(f"    {name}/data/")
-    print(f"    {name}/lab/SOUL.md")
-    print(f"    {name}/lab/MEMORY.md")
+    print(f"    {name}/lab/lab/SOUL.md")
+    print(f"    {name}/lab/lab/MEMORY.md")
     print()
     print("  Next steps:")
     print(f"    cd {name}")
@@ -324,12 +355,14 @@ def _pipeline_cmd(args: list[str]) -> None:
     if seed is not None:
         random.seed(seed)
 
-    all_rows: list[dict[str, str]] = []
+    all_rows: list[dict[str, Any]] = []
     for csv_path in csv_files:
         with open(csv_path, newline="") as fh:
             reader = csv.DictReader(fh)
             for row in reader:
-                all_rows.append(dict(row))
+                parsed = _coerce_row_values(row)
+                if parsed:
+                    all_rows.append(parsed)
 
     from labclaw.orchestrator.loop import ScientificLoop
     from labclaw.orchestrator.steps import (
@@ -415,12 +448,14 @@ def _ablation_cmd(args: list[str]) -> None:
         print(f"Error: no .csv files found in '{data_dir}'", file=sys.stderr)
         sys.exit(1)
 
-    all_rows: list[dict[str, str]] = []
+    all_rows: list[dict[str, Any]] = []
     for csv_path in csv_files:
         with open(csv_path, newline="") as fh:
             reader = csv.DictReader(fh)
             for row in reader:
-                all_rows.append(dict(row))
+                parsed = _coerce_row_values(row)
+                if parsed:
+                    all_rows.append(parsed)
 
     from labclaw.evolution.runner import EvolutionRunner
     from labclaw.validation.statistics import StatisticalValidator, ValidationConfig
@@ -567,19 +602,33 @@ def _memory_cmd(args: list[str]) -> None:
 
     from labclaw.memory.session_memory import SessionMemoryManager
 
-    mgr = SessionMemoryManager(memory_root, db_path)
-    asyncio.run(mgr.init())
+    async def _run_memory_command() -> tuple[list[dict[str, Any]] | None, dict[str, Any] | None]:
+        mgr = SessionMemoryManager(memory_root, db_path)
+        await mgr.init()
+        try:
+            if sub == "query":
+                findings = await mgr.retrieve_findings(query=query_term)
+                return findings, None
+            if sub == "stats":
+                stats = {
+                    "finding_count": len(mgr._findings),
+                    "retrieval_rate": mgr.get_retrieval_rate(),
+                }
+                return None, stats
+            raise ValueError(f"Unknown memory subcommand: {sub!r}")
+        finally:
+            await mgr.close()
 
-    if sub == "query":
-        findings = asyncio.run(mgr.retrieve_findings(query=query_term))
-        print(json.dumps(findings, default=str, indent=2))
-    elif sub == "stats":
-        total = len(mgr._findings)
-        rate = mgr.get_retrieval_rate()
-        print(json.dumps({"finding_count": total, "retrieval_rate": rate}))
-    else:
-        print(f"Unknown memory subcommand: {sub!r}", file=sys.stderr)
+    try:
+        findings, stats = asyncio.run(_run_memory_command())
+    except ValueError as exc:
+        print(f"{exc}", file=sys.stderr)
         sys.exit(1)
+
+    if findings is not None:
+        print(json.dumps(findings, default=str, indent=2))
+    elif stats is not None:
+        print(json.dumps(stats))
 
 
 def _reproduce_cmd(args: list[str]) -> None:
@@ -640,12 +689,14 @@ def _reproduce_cmd(args: list[str]) -> None:
         print(f"Error: no .csv files found in '{data_dir}'", file=sys.stderr)
         sys.exit(1)
 
-    all_rows: list[dict[str, str]] = []
+    all_rows: list[dict[str, Any]] = []
     for csv_path in csv_files:
         with open(csv_path, newline="") as fh:
             reader = csv.DictReader(fh)
             for row in reader:
-                all_rows.append(dict(row))
+                parsed = _coerce_row_values(row)
+                if parsed:
+                    all_rows.append(parsed)
 
     from labclaw.orchestrator.loop import ScientificLoop
     from labclaw.orchestrator.steps import (
@@ -680,17 +731,20 @@ def _reproduce_cmd(args: list[str]) -> None:
     loop2 = ScientificLoop(steps=_build_steps())
     result2 = asyncio.run(loop2.run_cycle(all_rows))
 
-    d1 = result1.model_dump()
-    d2 = result2.model_dump()
-
-    # Zero out non-deterministic fields (unique IDs, timing, and UUID-keyed context)
-    for d in (d1, d2):
+    def _normalize(d: dict) -> None:
         d["cycle_id"] = "X"
         d["total_duration"] = 0.0
+        # Redact embedded UUIDs in finding strings (e.g. pattern IDs in per-pattern lines)
+        d["findings"] = [_uuid_re.sub("<uuid>", f) for f in d.get("findings", [])]
         # finding_chains contain per-run UUIDs and timestamps — exclude from comparison
         fc = d.get("final_context", {})
         fc.pop("finding_chains", None)
         d["final_context"] = fc
+
+    d1 = result1.model_dump()
+    d2 = result2.model_dump()
+    _normalize(d1)
+    _normalize(d2)
 
     reproducible = d1 == d2
     output: dict = {

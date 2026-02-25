@@ -564,7 +564,8 @@ def show_knowledge_graph() -> None:
         st.subheader("Recent Nodes")
         recent = sorted(nodes, key=lambda n: n.created_at, reverse=True)[:10]
         for node in recent:
-            st.text(f"[{node.node_type}] {node.node_id[:8]} — {node.label}")
+            label = getattr(node, "label", node.node_id[:8])
+            st.text(f"[{node.node_type}] {node.node_id[:8]} — {label}")
 
 
 # ---------------------------------------------------------------------------

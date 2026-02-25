@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import json
 import logging
+import os
+import tempfile
 from pathlib import Path
 
 logger = logging.getLogger(__name__)
@@ -23,9 +25,18 @@ class StateRecovery:
     def save_state(self, state: dict) -> None:
         """Atomically save daemon state to disk."""
         self._state_file.parent.mkdir(parents=True, exist_ok=True)
-        tmp = self._state_file.with_suffix(".tmp")
-        tmp.write_text(json.dumps(state, default=str))
-        tmp.rename(self._state_file)  # atomic on POSIX
+        payload = json.dumps(state, default=str)
+        with tempfile.NamedTemporaryFile(
+            mode="w",
+            encoding="utf-8",
+            dir=self._state_file.parent,
+            prefix=f"{self._state_file.name}.",
+            suffix=".tmp",
+            delete=False,
+        ) as tmp:
+            tmp.write(payload)
+            tmp_path = Path(tmp.name)
+        os.replace(tmp_path, self._state_file)  # atomic on POSIX
         logger.debug("Daemon state saved to %s", self._state_file)
 
     def load_state(self) -> dict | None:

@@ -132,6 +132,30 @@ class TestOrchestratorException:
         assert resp.status_code == 500
         assert resp.json()["detail"] == "Internal server error"
 
+    @pytest.mark.asyncio
+    async def test_cycle_history_trimmed_when_over_max(self) -> None:
+        """When _cycle_history exceeds _MAX_CYCLE_HISTORY, oldest entries are evicted."""
+        import labclaw.api.routers.orchestrator as orch_mod
+        from labclaw.orchestrator.loop import CycleResult
+
+        fake_result = CycleResult(cycle_id="trim-test")
+        original_history = orch_mod._cycle_history
+        big_history: list = [CycleResult() for _ in range(orch_mod._MAX_CYCLE_HISTORY)]
+        orch_mod._cycle_history = big_history
+        try:
+            with patch(
+                "labclaw.orchestrator.loop.ScientificLoop.run_cycle",
+                new=AsyncMock(return_value=fake_result),
+            ):
+                async with AsyncClient(
+                    transport=ASGITransport(app=app), base_url="http://test"
+                ) as client:
+                    resp = await client.post("/api/orchestrator/cycle", json={"data_rows": []})
+            assert resp.status_code == 201
+            assert len(orch_mod._cycle_history) == orch_mod._MAX_CYCLE_HISTORY
+        finally:
+            orch_mod._cycle_history = original_history
+
 
 # ---------------------------------------------------------------------------
 # evolution/fitness.py — get_latest returns None (lines 63-66)
