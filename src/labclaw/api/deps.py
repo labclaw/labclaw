@@ -165,6 +165,38 @@ def _api_tokens() -> tuple[str, ...]:
     return tokens
 
 
+@lru_cache
+def _token_role_map() -> dict[str, str]:
+    """Parse ``LABCLAW_TOKEN_ROLES`` into a token-to-role mapping.
+
+    Format: ``token1:role1,token2:role2,...``
+    Tokens not in this map fall back to ``LABCLAW_API_DEFAULT_ROLE``.
+    """
+    raw = os.environ.get("LABCLAW_TOKEN_ROLES", "")
+    mapping: dict[str, str] = {}
+    for entry in raw.split(","):
+        entry = entry.strip()
+        if ":" not in entry:
+            continue
+        token, role = entry.split(":", 1)
+        token, role = token.strip(), role.strip()
+        if token and role:
+            mapping[token] = role
+    return mapping
+
+
+def _resolve_role_for_token(presented_token: str | None) -> str:
+    """Determine the server-side role for an authenticated token."""
+    default_role = os.environ.get("LABCLAW_API_DEFAULT_ROLE", "digital_intern")
+    if presented_token is None:
+        return default_role
+    role_map = _token_role_map()
+    for registered_token, role in role_map.items():
+        if secrets.compare_digest(presented_token, registered_token):
+            return role
+    return default_role
+
+
 def _extract_presented_token(request: Request) -> str | None:
     auth_header = request.headers.get("authorization", "")
     if auth_header.startswith("Bearer "):
@@ -263,10 +295,8 @@ async def enforce_request_security(request: Request) -> None:
     if _governance_required():
         action = _map_action_from_request(request)
         actor = request.headers.get("x-labclaw-actor", "api-client")
-        role = request.headers.get(
-            "x-labclaw-role",
-            os.environ.get("LABCLAW_API_DEFAULT_ROLE", "digital_intern"),
-        )
+        presented = _extract_presented_token(request)
+        role = _resolve_role_for_token(presented)
         decision = get_governance_engine().check(
             action=action,
             actor=actor,
@@ -278,9 +308,16 @@ async def enforce_request_security(request: Request) -> None:
             or decision.safety_level == SafetyLevel.BLOCKED
             or decision.safety_level == SafetyLevel.REQUIRES_APPROVAL
         ):
+            logger.warning(
+                "Governance denied: actor=%s role=%s action=%s reason=%s",
+                actor,
+                role,
+                action,
+                decision.reason,
+            )
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail=decision.reason or "Forbidden",
+                detail="Forbidden",
             )
 
 
@@ -320,6 +357,7 @@ def reset_all() -> None:
         get_governance_engine,
         get_llm_provider,
         _api_tokens,
+        _token_role_map,
     ):
         fn.cache_clear()
     with _rate_limit_lock:

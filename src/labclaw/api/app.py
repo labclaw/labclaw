@@ -53,7 +53,6 @@ app.add_middleware(
         "Content-Type",
         "X-API-Key",
         "X-Labclaw-Actor",
-        "X-Labclaw-Role",
     ],
 )
 

@@ -6,6 +6,7 @@ and governance integration via the enforce_request_security dependency.
 
 from __future__ import annotations
 
+import os
 from unittest.mock import AsyncMock, patch
 
 import pytest
@@ -177,6 +178,20 @@ def _given_default_role(
     reset_all()
 
 
+@given(parsers.parse('token "{token}" is mapped to role "{role}"'))
+def _given_token_role_mapping(
+    token: str,
+    role: str,
+    monkeypatch: pytest.MonkeyPatch,
+    sec_client: TestClient,
+) -> None:
+    existing = os.environ.get("LABCLAW_TOKEN_ROLES", "")
+    new_entry = f"{token}:{role}"
+    value = f"{existing},{new_entry}" if existing else new_entry
+    monkeypatch.setenv("LABCLAW_TOKEN_ROLES", value)
+    reset_all()
+
+
 # ---------------------------------------------------------------------------
 # When: HTTP calls
 # ---------------------------------------------------------------------------
@@ -325,11 +340,11 @@ def _when_post_session_bearer(
 @when(
     parsers.parse(
         'I POST "/api/sessions/" with operator "{operator}"'
-        ' as role "{role}" with Bearer token "{token}"'
+        ' claiming role "{role}" with Bearer token "{token}"'
     ),
     target_fixture="response",
 )
-def _when_post_session_with_role(
+def _when_post_session_claiming_role(
     sec_client: TestClient,
     operator: str,
     role: str,
