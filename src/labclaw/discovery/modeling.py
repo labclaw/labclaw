@@ -14,19 +14,14 @@ quantify uncertainty and feature importance for each target variable.
 from __future__ import annotations
 
 import logging
-import math
 import uuid
 from datetime import UTC, datetime
 from typing import Any
 
+import numpy as np
 from pydantic import BaseModel, Field
 
 from labclaw.core.events import event_registry
-
-try:
-    import numpy as np
-except ImportError:  # pragma: no cover
-    np = None  # type: ignore[assignment]
 
 try:
     from sklearn.ensemble import RandomForestRegressor
@@ -65,20 +60,6 @@ def _uuid() -> str:
 
 def _now() -> datetime:
     return datetime.now(UTC)
-
-
-def _mean(values: list[float]) -> float:
-    if not values:
-        return 0.0
-    return sum(values) / len(values)
-
-
-def _std(values: list[float], ddof: int = 0) -> float:
-    if len(values) <= ddof:
-        return 0.0
-    m = _mean(values)
-    variance = sum((x - m) ** 2 for x in values) / (len(values) - ddof)
-    return math.sqrt(variance)
 
 
 # ---------------------------------------------------------------------------
@@ -135,7 +116,7 @@ class PredictionResult(BaseModel):
 
 
 # ---------------------------------------------------------------------------
-# Pure-Python linear regression fallback
+# Numpy-based math helpers (replacing pure-Python fallbacks)
 # ---------------------------------------------------------------------------
 
 
@@ -143,65 +124,24 @@ def _linreg_pure(
     X: list[list[float]],
     y: list[float],
 ) -> tuple[list[float], float]:
-    """Pure-Python OLS linear regression.
+    """OLS linear regression via numpy least-squares.
 
     Returns: (coefficients, intercept)
-    Solves via normal equations: beta = (X^T X)^{-1} X^T y
     """
     n = len(X)
     if n == 0:
         return [], 0.0
     p = len(X[0])
 
+    X_arr = np.array(X)
+    y_arr = np.array(y)
+
     # Add intercept column
-    X_aug = [[1.0] + row for row in X]
-    p_aug = p + 1
+    ones = np.ones((n, 1))
+    X_aug = np.hstack([ones, X_arr])
 
-    # X^T X
-    XtX = [[0.0] * p_aug for _ in range(p_aug)]
-    for i in range(p_aug):
-        for j in range(p_aug):
-            XtX[i][j] = sum(X_aug[k][i] * X_aug[k][j] for k in range(n))
-
-    # X^T y
-    Xty = [sum(X_aug[k][i] * y[k] for k in range(n)) for i in range(p_aug)]
-
-    # Solve via Gauss elimination
-    beta = _solve_linear_system(XtX, Xty)
-    if beta is None:
-        return [0.0] * p, _mean(y)
-
-    return beta[1:], beta[0]
-
-
-def _solve_linear_system(
-    A: list[list[float]],
-    b: list[float],
-) -> list[float] | None:
-    """Solve Ax = b via Gaussian elimination with partial pivoting."""
-    n = len(A)
-    # Augment
-    aug = [A[i][:] + [b[i]] for i in range(n)]
-
-    for col in range(n):
-        # Pivot
-        max_row = max(range(col, n), key=lambda r: abs(aug[r][col]))
-        aug[col], aug[max_row] = aug[max_row], aug[col]
-
-        if abs(aug[col][col]) < 1e-12:
-            return None
-
-        for row in range(col + 1, n):
-            factor = aug[row][col] / aug[col][col]
-            for j in range(col, n + 1):
-                aug[row][j] -= factor * aug[col][j]
-
-    # Back-substitute
-    x = [0.0] * n
-    for i in range(n - 1, -1, -1):
-        x[i] = (aug[i][n] - sum(aug[i][j] * x[j] for j in range(i + 1, n))) / aug[i][i]
-
-    return x
+    result, _, _, _ = np.linalg.lstsq(X_aug, y_arr, rcond=None)
+    return result[1:].tolist(), float(result[0])
 
 
 def _predict_pure(
@@ -210,18 +150,19 @@ def _predict_pure(
     intercept: float,
 ) -> list[float]:
     """Predict using linear model coefficients."""
-    return [intercept + sum(c * x for c, x in zip(coefficients, row)) for row in X]
+    return (np.array(X) @ np.array(coefficients) + intercept).tolist()
 
 
 def _r_squared(y_true: list[float], y_pred: list[float]) -> float:
     """Compute R-squared (coefficient of determination)."""
     if len(y_true) < 2:
         return 0.0
-    y_mean = _mean(y_true)
-    ss_tot = sum((y - y_mean) ** 2 for y in y_true)
-    ss_res = sum((yt - yp) ** 2 for yt, yp in zip(y_true, y_pred))
+    yt = np.array(y_true)
+    yp = np.array(y_pred)
+    ss_tot = float(np.sum((yt - np.mean(yt)) ** 2))
     if ss_tot == 0:
         return 0.0
+    ss_res = float(np.sum((yt - yp) ** 2))
     return 1.0 - ss_res / ss_tot
 
 
@@ -234,7 +175,7 @@ class PredictiveModel:
     """Trains on experimental data, outputs predictions with confidence intervals.
 
     Uses sklearn when available (LinearRegression or RandomForestRegressor),
-    falls back to pure-Python OLS.
+    falls back to numpy OLS.
     """
 
     def __init__(self) -> None:
@@ -281,7 +222,7 @@ class PredictiveModel:
         cv_score = 0.0
         importances: list[FeatureImportance] = []
 
-        if np is not None and SklearnLR is not None:
+        if SklearnLR is not None:
             X_arr = np.array(X)
             y_arr = np.array(y)
 
@@ -323,7 +264,7 @@ class PredictiveModel:
                     cv = cross_val_score(model, X_arr, y_arr, cv=min(5, len(X)))
                     cv_score = float(cv.mean())
         else:
-            # Pure Python fallback
+            # Numpy-only fallback (no sklearn)
             self._coefficients, self._intercept = _linreg_pure(X, y)
             y_pred = _predict_pure(X, self._coefficients, self._intercept)
             r_squared = _r_squared(y, y_pred)
@@ -396,7 +337,7 @@ class PredictiveModel:
 
     def _predict_single(self, x: list[float]) -> float:
         """Predict a single point."""
-        if self._model is not None and np is not None:
+        if self._model is not None:
             return float(self._model.predict(np.array([x]))[0])
         return self._intercept + sum(c * xi for c, xi in zip(self._coefficients, x))
 
@@ -422,11 +363,9 @@ class PredictiveModel:
 
             if self._model is not None and hasattr(self._model, "get_params"):
                 try:
-                    import numpy as np_boot
-
                     boot_model = type(self._model)(**self._model.get_params())
-                    boot_model.fit(np_boot.array(X_boot), np_boot.array(y_boot))
-                    pred = float(boot_model.predict(np_boot.array([x]))[0])
+                    boot_model.fit(np.array(X_boot), np.array(y_boot))
+                    pred = float(boot_model.predict(np.array([x]))[0])
                 except Exception:
                     coefs, intercept = _linreg_pure(X_boot, y_boot)
                     pred = intercept + sum(c * xi for c, xi in zip(coefs, x))
@@ -450,13 +389,12 @@ class PredictiveModel:
         if not X or not self._coefficients:
             return []
 
-        n = len(X)
+        X_arr = np.array(X)
         p = len(feature_cols)
         importances: list[tuple[str, float]] = []
 
         for j in range(min(p, len(self._coefficients))):
-            col_values = [X[i][j] for i in range(n)]
-            std_val = _std(col_values)
+            std_val = float(np.std(X_arr[:, j]))
             imp = abs(self._coefficients[j]) * std_val
             importances.append((feature_cols[j], imp))
 
