@@ -14,6 +14,7 @@ from labclaw.api.deps import (
     get_event_registry,
     get_evolution_engine,
 )
+from labclaw.api.health_collector import get_health_collector
 from labclaw.hardware.registry import DeviceRegistry
 
 router = APIRouter()
@@ -70,14 +71,17 @@ def _check_evolution() -> dict[str, str]:
 
 @router.get("/health")
 def health() -> JSONResponse:
-    components = {
+    collector = get_health_collector()
+    snap = collector.snapshot()
+
+    components_detail = {
         "memory": _check_memory(),
         "data": _check_data(),
         "event_bus": _check_event_bus(),
         "evolution": _check_evolution(),
     }
 
-    statuses = [c["status"] for c in components.values()]
+    statuses = [c["status"] for c in components_detail.values()]
     if any(s == "unhealthy" for s in statuses):
         overall = "unhealthy"
     elif any(s == "degraded" for s in statuses):
@@ -87,12 +91,23 @@ def health() -> JSONResponse:
 
     status_code = 503 if overall == "unhealthy" else 200
 
+    # Build components dict: merge HealthCollector statuses with subsystem checks.
+    collector_components = snap["components"]
+    merged_components: dict[str, object] = {
+        name: status for name, status in collector_components.items()
+    }
+    # Include subsystem detail checks under their own keys.
+    merged_components.update(components_detail)
+
     return JSONResponse(
         content={
             "status": overall,
-            "components": components,
             "version": __version__,
-            "uptime_seconds": round(time.monotonic() - _START_TIME, 2),
+            "uptime_seconds": snap["uptime_seconds"],
+            "components": merged_components,
+            "last_cycle_at": snap["last_cycle_at"],
+            "cycle_count": snap["cycle_count"],
+            "memory_usage_mb": snap["memory_usage_mb"],
         },
         status_code=status_code,
     )
