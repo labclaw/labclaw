@@ -68,11 +68,18 @@ def test_reproduce_missing_data_dir_exits(capsys: pytest.CaptureFixture[str]) ->
 
 def test_reproduce_nonexistent_dir_exits(tmp_path: Path) -> None:
     """Non-existent --data-dir → exits with error."""
-    with patch.object(sys, "argv", [
-        "labclaw", "reproduce",
-        "--data-dir", str(tmp_path / "no_such_dir"),
-        "--seed", "42",
-    ]):
+    with patch.object(
+        sys,
+        "argv",
+        [
+            "labclaw",
+            "reproduce",
+            "--data-dir",
+            str(tmp_path / "no_such_dir"),
+            "--seed",
+            "42",
+        ],
+    ):
         with pytest.raises(SystemExit):
             main()
 
@@ -81,11 +88,18 @@ def test_reproduce_empty_dir_exits(tmp_path: Path) -> None:
     """Empty directory (no CSV files) → exits with error."""
     empty = tmp_path / "empty"
     empty.mkdir()
-    with patch.object(sys, "argv", [
-        "labclaw", "reproduce",
-        "--data-dir", str(empty),
-        "--seed", "42",
-    ]):
+    with patch.object(
+        sys,
+        "argv",
+        [
+            "labclaw",
+            "reproduce",
+            "--data-dir",
+            str(empty),
+            "--seed",
+            "42",
+        ],
+    ):
         with pytest.raises(SystemExit):
             main()
 
@@ -95,15 +109,20 @@ def test_reproduce_empty_dir_exits(tmp_path: Path) -> None:
 # ---------------------------------------------------------------------------
 
 
-def test_reproduce_runs_successfully(
-    data_dir: Path, capsys: pytest.CaptureFixture[str]
-) -> None:
+def test_reproduce_runs_successfully(data_dir: Path, capsys: pytest.CaptureFixture[str]) -> None:
     """With synthetic CSV data and fixed seed, pipeline is reproducible."""
-    with patch.object(sys, "argv", [
-        "labclaw", "reproduce",
-        "--data-dir", str(data_dir),
-        "--seed", "42",
-    ]):
+    with patch.object(
+        sys,
+        "argv",
+        [
+            "labclaw",
+            "reproduce",
+            "--data-dir",
+            str(data_dir),
+            "--seed",
+            "42",
+        ],
+    ):
         main()
     out = capsys.readouterr().out
     result = json.loads(out)
@@ -120,12 +139,20 @@ def test_reproduce_with_memory_root(
 ) -> None:
     """--memory-root is optional and accepted without error."""
     memory = tmp_path / "memory"
-    with patch.object(sys, "argv", [
-        "labclaw", "reproduce",
-        "--data-dir", str(data_dir),
-        "--seed", "42",
-        "--memory-root", str(memory),
-    ]):
+    with patch.object(
+        sys,
+        "argv",
+        [
+            "labclaw",
+            "reproduce",
+            "--data-dir",
+            str(data_dir),
+            "--seed",
+            "42",
+            "--memory-root",
+            str(memory),
+        ],
+    ):
         main()
     out = capsys.readouterr().out
     result = json.loads(out)
@@ -161,11 +188,18 @@ def test_reproduce_not_reproducible_exits_1(
         return result_a if call_count["n"] == 1 else result_b
 
     with (
-        patch.object(sys, "argv", [
-            "labclaw", "reproduce",
-            "--data-dir", str(data_dir),
-            "--seed", "42",
-        ]),
+        patch.object(
+            sys,
+            "argv",
+            [
+                "labclaw",
+                "reproduce",
+                "--data-dir",
+                str(data_dir),
+                "--seed",
+                "42",
+            ],
+        ),
         patch.object(cli_mod, "asyncio") as mock_asyncio,
     ):
         mock_asyncio.run.side_effect = fake_run
@@ -185,16 +219,21 @@ def test_reproduce_not_reproducible_exits_1(
 # ---------------------------------------------------------------------------
 
 
-def test_reproduce_ignores_unknown_args(
-    data_dir: Path, capsys: pytest.CaptureFixture[str]
-) -> None:
+def test_reproduce_ignores_unknown_args(data_dir: Path, capsys: pytest.CaptureFixture[str]) -> None:
     """Unknown args are skipped (else branch) and pipeline still runs."""
-    with patch.object(sys, "argv", [
-        "labclaw", "reproduce",
-        "--data-dir", str(data_dir),
-        "--seed", "42",
-        "--unknown-flag",  # triggers else: i += 1
-    ]):
+    with patch.object(
+        sys,
+        "argv",
+        [
+            "labclaw",
+            "reproduce",
+            "--data-dir",
+            str(data_dir),
+            "--seed",
+            "42",
+            "--unknown-flag",  # triggers else: i += 1
+        ],
+    ):
         main()
     out = capsys.readouterr().out
     result = json.loads(out)

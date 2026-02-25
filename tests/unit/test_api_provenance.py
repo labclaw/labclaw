@@ -112,8 +112,7 @@ def test_legacy_prefix_get_returns_200() -> None:
 
 def test_chain_preserves_all_steps() -> None:
     steps = [
-        {"node_id": f"n{i}", "node_type": "stage", "description": f"step {i}"}
-        for i in range(5)
+        {"node_id": f"n{i}", "node_type": "stage", "description": f"step {i}"} for i in range(5)
     ]
     resp = client.post(
         "/api/v0/provenance/",

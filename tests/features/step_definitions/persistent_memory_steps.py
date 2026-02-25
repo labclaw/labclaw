@@ -23,8 +23,7 @@ from labclaw.memory.session_memory import SessionMemoryManager
 
 def _make_known_patterns(n: int) -> list[dict[str, Any]]:
     return [
-        {"column_a": f"a{i}", "column_b": f"b{i}", "pattern_type": "correlation"}
-        for i in range(n)
+        {"column_a": f"a{i}", "column_b": f"b{i}", "pattern_type": "correlation"} for i in range(n)
     ]
 
 
@@ -74,9 +73,7 @@ def fresh_session_mgr(tmp_path: Path) -> dict[str, Any]:
 @when("I store 5 findings and create a new manager instance")
 def store_5_findings_and_restart(session_mgr_ctx: dict[str, Any]) -> None:
     async def _run() -> None:
-        mgr1 = SessionMemoryManager(
-            session_mgr_ctx["memory_root"], session_mgr_ctx["db_path"]
-        )
+        mgr1 = SessionMemoryManager(session_mgr_ctx["memory_root"], session_mgr_ctx["db_path"])
         await mgr1.init()
         for i in range(5):
             await mgr1.store_finding(_make_finding(i))
@@ -84,9 +81,7 @@ def store_5_findings_and_restart(session_mgr_ctx: dict[str, Any]) -> None:
         if mgr1._tier_b is not None:
             await mgr1._tier_b.close()
 
-        mgr2 = SessionMemoryManager(
-            session_mgr_ctx["memory_root"], session_mgr_ctx["db_path"]
-        )
+        mgr2 = SessionMemoryManager(session_mgr_ctx["memory_root"], session_mgr_ctx["db_path"])
         await mgr2.init()
         session_mgr_ctx["mgr2"] = mgr2
 
@@ -135,9 +130,7 @@ def at_least_4_retrievable(session_mgr_ctx: dict[str, Any]) -> None:
 
     retrieved = asyncio.run(_retrieve())
     stored = session_mgr_ctx["stored_count"]
-    assert len(retrieved) >= 4, (
-        f"Expected ≥4 findings, retrieved {len(retrieved)}/{stored}"
-    )
+    assert len(retrieved) >= 4, f"Expected ≥4 findings, retrieved {len(retrieved)}/{stored}"
     if mgr2._tier_b is not None:
         asyncio.run(mgr2._tier_b.close())
 

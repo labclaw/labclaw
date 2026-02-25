@@ -94,9 +94,7 @@ def test_governance_allows_write_for_postdoc(
     assert resp.status_code == 201
 
 
-def test_client_role_header_ignored(
-    client: TestClient, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_client_role_header_ignored(client: TestClient, monkeypatch: pytest.MonkeyPatch) -> None:
     """X-Labclaw-Role header must not override server-side role resolution."""
     monkeypatch.setenv("LABCLAW_API_AUTH_REQUIRED", "1")
     monkeypatch.setenv("LABCLAW_API_TOKEN", "secret-token")
@@ -185,9 +183,7 @@ def test_rate_limit_enforced(client: TestClient, monkeypatch: pytest.MonkeyPatch
     assert client.get("/api/events/").status_code == 429
 
 
-def test_rate_limit_window_eviction(
-    client: TestClient, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_rate_limit_window_eviction(client: TestClient, monkeypatch: pytest.MonkeyPatch) -> None:
     """Verify _rate_limit_window evicts oldest key when exceeding max size."""
     import labclaw.api.deps as deps_mod
 

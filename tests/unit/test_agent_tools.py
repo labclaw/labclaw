@@ -309,7 +309,6 @@ class TestGetEvolutionStatus:
 
     @pytest.mark.asyncio
     async def test_with_mock_engine(self) -> None:
-
         cycle = SimpleNamespace(
             cycle_id="c1",
             target=SimpleNamespace(value="protocol"),

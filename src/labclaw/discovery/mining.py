@@ -160,7 +160,6 @@ class PatternMiner:
 
         for i, col_a in enumerate(numeric_cols):
             for col_b in numeric_cols[i + 1 :]:
-
                 # Build paired observations — only rows where both columns exist
                 vals_a: list[float] = []
                 vals_b: list[float] = []

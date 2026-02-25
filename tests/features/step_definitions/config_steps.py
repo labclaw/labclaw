@@ -90,9 +90,7 @@ def check_llm_section(loaded_config: LabClawConfig) -> None:
 
 @then(parsers.parse("the api port is {port:d}"))
 def check_api_port(loaded_config: LabClawConfig, port: int) -> None:
-    assert loaded_config.api.port == port, (
-        f"Expected api.port={port}, got {loaded_config.api.port}"
-    )
+    assert loaded_config.api.port == port, f"Expected api.port={port}, got {loaded_config.api.port}"
 
 
 @then(parsers.parse('the graph backend is "{backend}"'))
@@ -121,9 +119,7 @@ def check_llm_provider(loaded_config: LabClawConfig, provider: str) -> None:
     # llm may be a Pydantic model or a raw dict depending on import order
     llm = loaded_config.llm
     actual = llm.get("provider") if isinstance(llm, dict) else getattr(llm, "provider", None)
-    assert actual == provider, (
-        f"Expected llm.provider={provider!r}, got {actual!r}"
-    )
+    assert actual == provider, f"Expected llm.provider={provider!r}, got {actual!r}"
 
 
 @then("the edge watch_paths is a list")

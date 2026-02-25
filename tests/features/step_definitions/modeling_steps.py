@@ -42,8 +42,7 @@ def predictive_model_initialized(event_capture: object) -> PredictiveModel:
 
 @given(
     parsers.parse(
-        'training data with target "{target}" and features "{f1}" and "{f2}" '
-        "over {n:d} rows"
+        'training data with target "{target}" and features "{f1}" and "{f2}" over {n:d} rows'
     ),
     target_fixture="train_data",
 )
@@ -56,12 +55,14 @@ def training_data(target: str, f1: str, f2: str, n: int) -> list[dict[str, Any]]
         x2 = rng.gauss(5, 2)
         # y = 2*x1 + 3*x2 + noise
         y = 2.0 * x1 + 3.0 * x2 + rng.gauss(0, 1.0)
-        data.append({
-            f1: x1,
-            f2: x2,
-            target: y,
-            "session_id": f"s{i}",
-        })
+        data.append(
+            {
+                f1: x1,
+                f2: x2,
+                target: y,
+                "session_id": f"s{i}",
+            }
+        )
     return data
 
 
@@ -77,9 +78,7 @@ def training_data_few_rows(n: int) -> list[dict[str, Any]]:
 
 
 @given(
-    parsers.parse(
-        'the model is trained with target "{target}"'
-    ),
+    parsers.parse('the model is trained with target "{target}"'),
     target_fixture="train_result",
 )
 def model_pretrained(
@@ -98,9 +97,7 @@ def model_pretrained(
     ),
     target_fixture="train_data",
 )
-def training_data_constant_feature(
-    const_col: str, var_col: str, n: int
-) -> list[dict[str, Any]]:
+def training_data_constant_feature(const_col: str, var_col: str, n: int) -> list[dict[str, Any]]:
     """Data where one feature is constant (zero variance)."""
     rng = random.Random(42)
     data: list[dict[str, Any]] = []
@@ -147,8 +144,7 @@ def predict_new_data(
 ) -> PredictionResult:
     rng = random.Random(99)
     new_data = [
-        {"x1": rng.gauss(10, 3), "x2": rng.gauss(5, 2), "session_id": f"new_{i}"}
-        for i in range(n)
+        {"x1": rng.gauss(10, 3), "x2": rng.gauss(5, 2), "session_id": f"new_{i}"} for i in range(n)
     ]
     return pred_model.predict(new_data)
 
@@ -216,8 +212,7 @@ def check_prediction_count(prediction_result: PredictionResult, n: int) -> None:
 @then("each prediction has lower and upper bounds")
 def check_prediction_bounds(prediction_result: PredictionResult) -> None:
     for p in prediction_result.predictions:
-        assert p.lower_bound <= p.predicted <= p.upper_bound or \
-            p.lower_bound <= p.upper_bound, (
+        assert p.lower_bound <= p.predicted <= p.upper_bound or p.lower_bound <= p.upper_bound, (
             f"Bounds invalid: lower={p.lower_bound}, pred={p.predicted}, upper={p.upper_bound}"
         )
 
@@ -234,9 +229,7 @@ def check_runtime_error(predict_error: Exception | None) -> None:
 def check_feature_importance_names(train_result: ModelTrainResult) -> None:
     expected_cols = {"x1", "x2"}
     actual_cols = {fi.feature for fi in train_result.feature_importances}
-    assert actual_cols == expected_cols, (
-        f"Expected feature cols {expected_cols}, got {actual_cols}"
-    )
+    assert actual_cols == expected_cols, f"Expected feature cols {expected_cols}, got {actual_cols}"
 
 
 @then("each prediction has a lower bound less than or equal to the upper bound")

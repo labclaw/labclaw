@@ -38,11 +38,19 @@ def test_pipeline_once_runs_and_prints_json(
     data_dir: Path, tmp_path: Path, capsys: pytest.CaptureFixture[str]
 ) -> None:
     memory = tmp_path / "memory"
-    with patch.object(sys, "argv", [
-        "labclaw", "pipeline", "--once",
-        "--data-dir", str(data_dir),
-        "--memory-root", str(memory),
-    ]):
+    with patch.object(
+        sys,
+        "argv",
+        [
+            "labclaw",
+            "pipeline",
+            "--once",
+            "--data-dir",
+            str(data_dir),
+            "--memory-root",
+            str(memory),
+        ],
+    ):
         main()
     out = capsys.readouterr().out
     result = json.loads(out)
@@ -54,10 +62,17 @@ def test_pipeline_once_without_memory_root(
     data_dir: Path, capsys: pytest.CaptureFixture[str]
 ) -> None:
     """--memory-root is optional; omitting it runs fine."""
-    with patch.object(sys, "argv", [
-        "labclaw", "pipeline", "--once",
-        "--data-dir", str(data_dir),
-    ]):
+    with patch.object(
+        sys,
+        "argv",
+        [
+            "labclaw",
+            "pipeline",
+            "--once",
+            "--data-dir",
+            str(data_dir),
+        ],
+    ):
         main()
     out = capsys.readouterr().out
     result = json.loads(out)
@@ -75,12 +90,21 @@ def test_pipeline_once_with_seed(
     results = []
     for i in range(2):
         mem = tmp_path / f"mem_{i}"
-        with patch.object(sys, "argv", [
-            "labclaw", "pipeline", "--once",
-            "--data-dir", str(data_dir),
-            "--memory-root", str(mem),
-            "--seed", "42",
-        ]):
+        with patch.object(
+            sys,
+            "argv",
+            [
+                "labclaw",
+                "pipeline",
+                "--once",
+                "--data-dir",
+                str(data_dir),
+                "--memory-root",
+                str(mem),
+                "--seed",
+                "42",
+            ],
+        ):
             main()
         out = capsys.readouterr().out
         results.append(json.loads(out))
@@ -111,20 +135,34 @@ def test_pipeline_args_but_no_data_dir_flag(capsys: pytest.CaptureFixture[str]) 
 def test_pipeline_empty_data_dir(tmp_path: Path) -> None:
     empty = tmp_path / "empty"
     empty.mkdir()
-    with patch.object(sys, "argv", [
-        "labclaw", "pipeline", "--once",
-        "--data-dir", str(empty),
-    ]):
+    with patch.object(
+        sys,
+        "argv",
+        [
+            "labclaw",
+            "pipeline",
+            "--once",
+            "--data-dir",
+            str(empty),
+        ],
+    ):
         with pytest.raises(SystemExit):
             main()
 
 
 def test_pipeline_nonexistent_data_dir(tmp_path: Path) -> None:
     """A data-dir path that does not exist should exit with error."""
-    with patch.object(sys, "argv", [
-        "labclaw", "pipeline", "--once",
-        "--data-dir", str(tmp_path / "does_not_exist"),
-    ]):
+    with patch.object(
+        sys,
+        "argv",
+        [
+            "labclaw",
+            "pipeline",
+            "--once",
+            "--data-dir",
+            str(tmp_path / "does_not_exist"),
+        ],
+    ):
         with pytest.raises(SystemExit):
             main()
 
@@ -156,10 +194,17 @@ def test_pipeline_combines_multiple_csvs(
     _write_csv(d / "a.csv", rows_a)
     _write_csv(d / "b.csv", rows_b)
 
-    with patch.object(sys, "argv", [
-        "labclaw", "pipeline", "--once",
-        "--data-dir", str(d),
-    ]):
+    with patch.object(
+        sys,
+        "argv",
+        [
+            "labclaw",
+            "pipeline",
+            "--once",
+            "--data-dir",
+            str(d),
+        ],
+    ):
         main()
     out = capsys.readouterr().out
     result = json.loads(out)

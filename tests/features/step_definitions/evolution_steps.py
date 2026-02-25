@@ -378,9 +378,7 @@ def check_history_ordered(history: list[EvolutionCycle]) -> None:
 
 @then("a ValueError is raised")
 def check_value_error_raised(advance_error: Exception | None) -> None:
-    assert isinstance(advance_error, ValueError), (
-        f"Expected ValueError, got {type(advance_error)}"
-    )
+    assert isinstance(advance_error, ValueError), f"Expected ValueError, got {type(advance_error)}"
 
 
 @then(parsers.parse('the rollback reason is "{reason}"'))

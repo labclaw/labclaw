@@ -318,9 +318,7 @@ def check_config_provider(llm_config: LLMConfig, provider: str) -> None:
 
 @then(parsers.parse('the config model is "{model}"'))
 def check_config_model(llm_config: LLMConfig, model: str) -> None:
-    assert llm_config.model == model, (
-        f"Expected model {model!r}, got {llm_config.model!r}"
-    )
+    assert llm_config.model == model, f"Expected model {model!r}, got {llm_config.model!r}"
 
 
 @then(parsers.parse("the config temperature is {temp:f}"))

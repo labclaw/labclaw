@@ -52,24 +52,17 @@ def hypothesis_generator_initialized() -> HypothesisGenerator:
 
 
 @given(
-    parsers.parse(
-        'experimental data with columns "{col1}", "{col2}", "{col3}"'
-    ),
+    parsers.parse('experimental data with columns "{col1}", "{col2}", "{col3}"'),
     target_fixture="exp_data",
 )
 def experimental_data_columns(col1: str, col2: str, col3: str) -> list[dict[str, Any]]:
     """Create a base data frame with 3 named columns (empty, to be filled by next step)."""
     # Return placeholder; next step will replace with correlated data
-    return [
-        {col1: 0.0, col2: 0.0, col3: 0.0, "session_id": f"s{i}"}
-        for i in range(20)
-    ]
+    return [{col1: 0.0, col2: 0.0, col3: 0.0, "session_id": f"s{i}"} for i in range(20)]
 
 
 @given(
-    parsers.parse(
-        "{n:d} rows where speed and accuracy are strongly correlated"
-    ),
+    parsers.parse("{n:d} rows where speed and accuracy are strongly correlated"),
     target_fixture="exp_data",
 )
 def rows_with_strong_correlation(n: int) -> list[dict[str, Any]]:
@@ -81,12 +74,14 @@ def rows_with_strong_correlation(n: int) -> list[dict[str, Any]]:
         # accuracy strongly tracks speed
         accuracy = 50.0 + speed * 2.0 + rng.gauss(0, 0.5)
         temperature = 22.0 + rng.gauss(0, 1.0)
-        data.append({
-            "speed": speed,
-            "accuracy": accuracy,
-            "temperature": temperature,
-            "session_id": f"s{i}",
-        })
+        data.append(
+            {
+                "speed": speed,
+                "accuracy": accuracy,
+                "temperature": temperature,
+                "session_id": f"s{i}",
+            }
+        )
     return data
 
 
@@ -97,26 +92,28 @@ def rows_with_strong_correlation(n: int) -> list[dict[str, Any]]:
     ),
     target_fixture="exp_data",
 )
-def data_with_anomalies(
-    n_normal: int, n_anomaly: int, column: str
-) -> list[dict[str, Any]]:
+def data_with_anomalies(n_normal: int, n_anomaly: int, column: str) -> list[dict[str, Any]]:
     """Generate data with normal values and outliers."""
     rng = random.Random(42)
     data: list[dict[str, Any]] = []
 
     # Normal rows: mean=100, std=5
     for i in range(n_normal):
-        data.append({
-            column: 100.0 + rng.gauss(0, 5.0),
-            "session_id": f"s{i}",
-        })
+        data.append(
+            {
+                column: 100.0 + rng.gauss(0, 5.0),
+                "session_id": f"s{i}",
+            }
+        )
 
     # Anomalous rows: far from the mean (mean + 5*std = 125)
     for i in range(n_anomaly):
-        data.append({
-            column: 100.0 + 50.0 + rng.gauss(0, 1.0),
-            "session_id": f"s{n_normal + i}",
-        })
+        data.append(
+            {
+                column: 100.0 + 50.0 + rng.gauss(0, 1.0),
+                "session_id": f"s{n_normal + i}",
+            }
+        )
 
     return data
 
@@ -133,13 +130,15 @@ def data_with_correlations_and_anomalies() -> list[dict[str, Any]]:
     for i in range(20):
         x = 10.0 + i * 0.5 + rng.gauss(0, 0.3)
         y = 50.0 + x * 2.0 + rng.gauss(0, 0.5)
-        data.append({
-            "x": x,
-            "y": y,
-            "z": 5.0 + rng.gauss(0, 1.0),
-            "session_id": f"s{i}",
-            "timestamp": i,
-        })
+        data.append(
+            {
+                "x": x,
+                "y": y,
+                "z": 5.0 + rng.gauss(0, 1.0),
+                "session_id": f"s{i}",
+                "timestamp": i,
+            }
+        )
 
     # Add anomaly in z
     data[18]["z"] = 50.0
@@ -154,10 +153,7 @@ def data_with_correlations_and_anomalies() -> list[dict[str, Any]]:
 )
 def data_with_few_rows(n: int) -> list[dict[str, Any]]:
     """Generate minimal data."""
-    return [
-        {"x": float(i), "y": float(i * 2), "session_id": f"s{i}"}
-        for i in range(n)
-    ]
+    return [{"x": float(i), "y": float(i * 2), "session_id": f"s{i}"} for i in range(n)]
 
 
 @given(
@@ -238,8 +234,7 @@ def data_without_timestamp(n: int) -> list[dict[str, Any]]:
     """Generate data rows without a timestamp column."""
     rng = random.Random(42)
     return [
-        {"x": rng.gauss(0, 1.0), "y": rng.gauss(0, 1.0), "session_id": f"s{i}"}
-        for i in range(n)
+        {"x": rng.gauss(0, 1.0), "y": rng.gauss(0, 1.0), "session_id": f"s{i}"} for i in range(n)
     ]
 
 
@@ -260,8 +255,7 @@ def data_with_weak_correlation(n: int) -> list[dict[str, Any]]:
     """Columns with r << 0.8 threshold."""
     rng = random.Random(99)
     return [
-        {"x": rng.gauss(0, 1.0), "y": rng.gauss(0, 1.0), "session_id": f"s{i}"}
-        for i in range(n)
+        {"x": rng.gauss(0, 1.0), "y": rng.gauss(0, 1.0), "session_id": f"s{i}"} for i in range(n)
     ]
 
 
@@ -314,10 +308,7 @@ def data_with_string_columns(n: int) -> list[dict[str, Any]]:
 def data_with_identical_column(n: int, col: str) -> list[dict[str, Any]]:
     """All values in col are the same — std=0, no anomalies possible."""
     rng = random.Random(42)
-    return [
-        {col: 42.0, "other": rng.gauss(0, 1.0), "session_id": f"s{i}"}
-        for i in range(n)
-    ]
+    return [{col: 42.0, "other": rng.gauss(0, 1.0), "session_id": f"s{i}"} for i in range(n)]
 
 
 @given(
@@ -326,10 +317,7 @@ def data_with_identical_column(n: int, col: str) -> list[dict[str, Any]]:
 )
 def data_with_identical_single_column(n: int, col: str) -> list[dict[str, Any]]:
     """Only one numeric column, all values identical — std=0, no anomalies possible."""
-    return [
-        {col: 42.0, "session_id": f"s{i}"}
-        for i in range(n)
-    ]
+    return [{col: 42.0, "session_id": f"s{i}"} for i in range(n)]
 
 
 @given(
@@ -475,9 +463,7 @@ def find_anomalies(
     "I run the full mining pipeline",
     target_fixture="mining_result",
 )
-def run_full_mining(
-    miner: PatternMiner, exp_data: list[dict[str, Any]]
-) -> MiningResult:
+def run_full_mining(miner: PatternMiner, exp_data: list[dict[str, Any]]) -> MiningResult:
     return miner.mine(exp_data)
 
 
@@ -542,14 +528,15 @@ def check_correlation_count(correlation_patterns: list[PatternRecord], count: in
     parsers.parse('the pattern describes "{col_a}" and "{col_b}"'),
 )
 def check_pattern_columns(
-    correlation_patterns: list[PatternRecord], col_a: str, col_b: str,
+    correlation_patterns: list[PatternRecord],
+    col_a: str,
+    col_b: str,
 ) -> None:
     found = False
     for p in correlation_patterns:
         ev = p.evidence
-        if (
-            (ev.get("col_a") == col_a and ev.get("col_b") == col_b)
-            or (ev.get("col_a") == col_b and ev.get("col_b") == col_a)
+        if (ev.get("col_a") == col_a and ev.get("col_b") == col_b) or (
+            ev.get("col_a") == col_b and ev.get("col_b") == col_a
         ):
             found = True
             break
@@ -683,9 +670,7 @@ def check_miner_no_error(correlation_patterns: list[PatternRecord]) -> None:
     parsers.parse("at least {count:d} hypotheses are generated"),
 )
 def check_hypothesis_count(hypotheses: list[HypothesisOutput], count: int) -> None:
-    assert len(hypotheses) >= count, (
-        f"Expected >= {count} hypotheses, got {len(hypotheses)}"
-    )
+    assert len(hypotheses) >= count, f"Expected >= {count} hypotheses, got {len(hypotheses)}"
 
 
 @then(parsers.parse("at least {count:d} hypothesis is generated"))
@@ -715,6 +700,5 @@ def check_hypothesis_keyword(hypotheses: list[HypothesisOutput], keyword: str) -
     assert hypotheses, "No hypotheses to check"
     found = any(keyword in h.statement for h in hypotheses)
     assert found, (
-        f"No hypothesis mentions {keyword!r}. "
-        f"Statements: {[h.statement[:80] for h in hypotheses]}"
+        f"No hypothesis mentions {keyword!r}. Statements: {[h.statement[:80] for h in hypotheses]}"
     )

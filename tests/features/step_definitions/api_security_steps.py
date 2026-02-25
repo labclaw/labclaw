@@ -301,7 +301,7 @@ def _when_make_n_requests(
     return responses[-1]
 
 
-@when("I POST \"/api/orchestrator/cycle\" with empty data rows", target_fixture="response")
+@when('I POST "/api/orchestrator/cycle" with empty data rows', target_fixture="response")
 def _when_post_orchestrator_error(
     sec_client: TestClient,
     sec_context: dict,
@@ -316,9 +316,7 @@ def _when_post_orchestrator_error(
 
 
 @when(
-    parsers.parse(
-        'I POST "/api/sessions/" with operator "{operator}" and Bearer token "{token}"'
-    ),
+    parsers.parse('I POST "/api/sessions/" with operator "{operator}" and Bearer token "{token}"'),
     target_fixture="response",
 )
 def _when_post_session_bearer(
@@ -373,9 +371,7 @@ def _when_post_session_claiming_role(
 @then(parsers.parse("the response status is {code:d}"))
 def _then_sec_status(response, code: int, sec_context: dict) -> None:
     resp = sec_context.get("response", response)
-    assert resp.status_code == code, (
-        f"Expected {code}, got {resp.status_code}: {resp.text}"
-    )
+    assert resp.status_code == code, f"Expected {code}, got {resp.status_code}: {resp.text}"
 
 
 @then("the response includes an Access-Control-Allow-Origin header")
@@ -417,9 +413,7 @@ def _then_third_request_status(code: int, sec_context: dict) -> None:
 def _then_detail(response, detail: str, sec_context: dict) -> None:
     resp = sec_context.get("response", response)
     body = resp.json()
-    assert body.get("detail") == detail, (
-        f"Expected detail={detail!r}, got: {body}"
-    )
+    assert body.get("detail") == detail, f"Expected detail={detail!r}, got: {body}"
 
 
 @then("the response detail does not contain internal error information")

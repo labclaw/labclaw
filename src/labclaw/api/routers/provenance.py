@@ -57,9 +57,7 @@ def create_provenance_chain(body: ProvenanceRequest) -> ProvenanceChain:
     try:
         chain = tracker.build_chain(body.finding_id, steps)
     except ValueError as exc:
-        raise HTTPException(
-            status_code=400, detail="Invalid provenance chain"
-        ) from exc
+        raise HTTPException(status_code=400, detail="Invalid provenance chain") from exc
     if body.finding_id in _chains:
         _chains.move_to_end(body.finding_id)
     _chains[body.finding_id] = chain

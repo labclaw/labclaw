@@ -7,7 +7,6 @@ from __future__ import annotations
 
 from labclaw.discovery.mining import PatternMiner
 
-
 # ---------------------------------------------------------------------------
 # find_correlations — deduplication and sparse data
 # ---------------------------------------------------------------------------

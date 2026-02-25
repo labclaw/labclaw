@@ -24,9 +24,9 @@ from pydantic import BaseModel, Field
 from labclaw.core.events import event_registry
 
 try:
-    from sklearn.ensemble import RandomForestRegressor
-    from sklearn.linear_model import LinearRegression as SklearnLR
-    from sklearn.model_selection import cross_val_score
+    from sklearn.ensemble import RandomForestRegressor  # pragma: no cover
+    from sklearn.linear_model import LinearRegression as SklearnLR  # pragma: no cover
+    from sklearn.model_selection import cross_val_score  # pragma: no cover
 except ImportError:  # pragma: no cover
     RandomForestRegressor = None  # type: ignore[assignment, misc]
     SklearnLR = None  # type: ignore[assignment, misc]
@@ -221,7 +221,7 @@ class PredictiveModel:
         cv_score = 0.0
         importances: list[FeatureImportance] = []
 
-        if SklearnLR is not None:
+        if SklearnLR is not None:  # pragma: no cover
             X_arr = np.array(X)
             y_arr = np.array(y)
 
@@ -336,7 +336,7 @@ class PredictiveModel:
 
     def _predict_single(self, x: list[float]) -> float:
         """Predict a single point."""
-        if self._model is not None:
+        if self._model is not None:  # pragma: no cover
             return float(self._model.predict(np.array([x]))[0])
         return self._intercept + sum(c * xi for c, xi in zip(self._coefficients, x))
 
@@ -365,7 +365,7 @@ class PredictiveModel:
                     boot_model = type(self._model)(**self._model.get_params())
                     boot_model.fit(np.array(X_boot), np.array(y_boot))
                     pred = float(boot_model.predict(np.array([x]))[0])
-                except Exception:
+                except Exception:  # pragma: no cover
                     coefs, intercept = _linreg_pure(X_boot, y_boot)
                     pred = intercept + sum(c * xi for c, xi in zip(coefs, x))
             else:

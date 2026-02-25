@@ -50,15 +50,17 @@ def _load_typed_rows() -> list[dict[str, Any]]:
         with open(csv_path, newline="") as f:
             reader = csv.DictReader(f)
             for row in reader:
-                rows.append({
-                    "timestamp": row["timestamp"],
-                    "x": float(row["x"]),
-                    "y": float(row["y"]),
-                    "speed": float(row["speed"]),
-                    "angle": float(row["angle"]),
-                    "zone": row["zone"],
-                    "animal_id": row["animal_id"],
-                })
+                rows.append(
+                    {
+                        "timestamp": row["timestamp"],
+                        "x": float(row["x"]),
+                        "y": float(row["y"]),
+                        "speed": float(row["speed"]),
+                        "angle": float(row["angle"]),
+                        "zone": row["zone"],
+                        "animal_id": row["animal_id"],
+                    }
+                )
     return rows
 
 
@@ -126,9 +128,7 @@ def _normalize_result(d: dict[str, Any]) -> dict[str, Any]:
 class TestPaperCapabilities:
     """Integration tests proving the 5 paper capabilities for v0.1.0."""
 
-    def test_c1_discover_finding_with_significance(
-        self, data_rows: list[dict[str, Any]]
-    ) -> None:
+    def test_c1_discover_finding_with_significance(self, data_rows: list[dict[str, Any]]) -> None:
         """C1: Real data -> finding with p < 0.05."""
         loop = _build_loop()
         result: CycleResult = asyncio.run(loop.run_cycle(data_rows))
@@ -154,9 +154,7 @@ class TestPaperCapabilities:
             f"p_value must be in [0, 1], got {stat_result.p_value}"
         )
 
-    def test_c2_evolve_fitness_improvement(
-        self, data_rows: list[dict[str, Any]]
-    ) -> None:
+    def test_c2_evolve_fitness_improvement(self, data_rows: list[dict[str, Any]]) -> None:
         """C2: 10 cycles, fitness +15%, ablation significant."""
         runner = EvolutionRunner(
             loop=_make_mock_loop(patterns=5, hypotheses=2),
@@ -229,9 +227,7 @@ class TestPaperCapabilities:
             f"got {rate:.1%} ({len(retrieved)}/{stored_count})"
         )
 
-    def test_c4_trace_complete_provenance(
-        self, data_rows: list[dict[str, Any]]
-    ) -> None:
+    def test_c4_trace_complete_provenance(self, data_rows: list[dict[str, Any]]) -> None:
         """C4: 100% findings have complete provenance chains."""
         loop = _build_loop()
         result: CycleResult = asyncio.run(loop.run_cycle(data_rows))

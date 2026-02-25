@@ -15,7 +15,6 @@ from labclaw.discovery.modeling import (
     _r_squared,
 )
 
-
 # ---------------------------------------------------------------------------
 # ModelTrainResult — insufficient data path
 # ---------------------------------------------------------------------------

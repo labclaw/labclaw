@@ -112,8 +112,8 @@ def test_dedup_filters_list() -> None:
 
     patterns = [
         {"column_a": "a", "column_b": "b", "pattern_type": "correlation"},  # dup
-        {"column_a": "c", "column_b": "d", "pattern_type": "cluster"},       # new
-        {"column_a": "e", "column_b": "f", "pattern_type": "anomaly"},       # new
+        {"column_a": "c", "column_b": "d", "pattern_type": "cluster"},  # new
+        {"column_a": "e", "column_b": "f", "pattern_type": "anomaly"},  # new
     ]
     result = dedup.deduplicate(patterns)
     assert len(result) == 2

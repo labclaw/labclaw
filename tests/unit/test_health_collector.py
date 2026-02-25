@@ -94,7 +94,11 @@ class TestSnapshot:
         hc = HealthCollector()
         snap = hc.snapshot()
         required = (
-            "components", "uptime_seconds", "last_cycle_at", "cycle_count", "memory_usage_mb"
+            "components",
+            "uptime_seconds",
+            "last_cycle_at",
+            "cycle_count",
+            "memory_usage_mb",
         )
         for key in required:
             assert key in snap, f"Key {key!r} missing from snapshot"

@@ -84,18 +84,14 @@ class TestMemoryCmdHelp:
 
 
 class TestMemoryCmdQuery:
-    def test_query_empty_memory(
-        self, tmp_path: Path, capsys: pytest.CaptureFixture[str]
-    ) -> None:
+    def test_query_empty_memory(self, tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
         memory_root = tmp_path / "mem"
         _memory_cmd(["query", "anything", "--memory-root", str(memory_root)])
         out = capsys.readouterr().out
         result = json.loads(out)
         assert isinstance(result, list)
 
-    def test_query_with_findings(
-        self, tmp_path: Path, capsys: pytest.CaptureFixture[str]
-    ) -> None:
+    def test_query_with_findings(self, tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
         import asyncio
 
         from labclaw.memory.session_memory import SessionMemoryManager
@@ -110,9 +106,7 @@ class TestMemoryCmdQuery:
         result = json.loads(out)
         assert len(result) == 1
 
-    def test_query_with_db(
-        self, tmp_path: Path, capsys: pytest.CaptureFixture[str]
-    ) -> None:
+    def test_query_with_db(self, tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
         import asyncio
 
         from labclaw.memory.session_memory import SessionMemoryManager
@@ -136,9 +130,7 @@ class TestMemoryCmdQuery:
 
 
 class TestMemoryCmdStats:
-    def test_stats_empty(
-        self, tmp_path: Path, capsys: pytest.CaptureFixture[str]
-    ) -> None:
+    def test_stats_empty(self, tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
         memory_root = tmp_path / "mem"
         _memory_cmd(["stats", "--memory-root", str(memory_root)])
         out = capsys.readouterr().out
@@ -146,9 +138,7 @@ class TestMemoryCmdStats:
         assert result["finding_count"] == 0
         assert result["retrieval_rate"] == 1.0
 
-    def test_stats_with_findings(
-        self, tmp_path: Path, capsys: pytest.CaptureFixture[str]
-    ) -> None:
+    def test_stats_with_findings(self, tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
         import asyncio
 
         from labclaw.memory.session_memory import SessionMemoryManager

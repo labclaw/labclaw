@@ -198,8 +198,6 @@ def test_find_temporal_patterns_skips_non_numeric_values() -> None:
             return {"timestamp": float(i), "metric": "bad"}
         return {"timestamp": float(i), "metric": float(i)}
 
-    data = [
-        _row(i) for i in range(20)
-    ]
+    data = [_row(i) for i in range(20)]
     patterns = miner.find_temporal_patterns(data)
     assert isinstance(patterns, list)

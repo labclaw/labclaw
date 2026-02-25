@@ -233,11 +233,12 @@ def user_asks_with_system(agent_runtime: AgentRuntime, question: str, system: st
 
 
 @when(
-    parsers.parse("the LLM returns a tool call for \"{tool_name}\""),
+    parsers.parse('the LLM returns a tool call for "{tool_name}"'),
     target_fixture="tool_call_result",
 )
 def llm_returns_tool_call(
-    agent_runtime_no_tools: AgentRuntime, tool_name: str,
+    agent_runtime_no_tools: AgentRuntime,
+    tool_name: str,
 ) -> dict[str, Any]:
     _run_async(agent_runtime_no_tools.chat("test question"))
     # The tool result is recorded in message history
@@ -302,13 +303,10 @@ def check_tool_error(tool_call_result: dict[str, Any]) -> None:
     assert tool_call_result.get("success") is False, (
         f"Expected success=False, got {tool_call_result}"
     )
-    has_error = (
-        "error" in tool_call_result
-        or "Unknown tool" in str(tool_call_result.get("error", ""))
+    has_error = "error" in tool_call_result or "Unknown tool" in str(
+        tool_call_result.get("error", "")
     )
-    assert has_error, (
-        f"Expected error message, got {tool_call_result}"
-    )
+    assert has_error, f"Expected error message, got {tool_call_result}"
 
 
 @then("available tools should be listed")
@@ -321,9 +319,7 @@ def check_available_tools_listed(tool_call_result: dict[str, Any]) -> None:
 
 @then(parsers.parse("the agent has {n:d} tools registered"))
 def check_agent_tool_count(agent_runtime: AgentRuntime, n: int) -> None:
-    assert len(agent_runtime.tools) == n, (
-        f"Expected {n} tools, got {len(agent_runtime.tools)}"
-    )
+    assert len(agent_runtime.tools) == n, f"Expected {n} tools, got {len(agent_runtime.tools)}"
 
 
 @then("the message history contains a tool result entry")

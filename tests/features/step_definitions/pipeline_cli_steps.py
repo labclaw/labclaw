@@ -60,11 +60,19 @@ def run_pipeline_once(
     memory = tmp_path / "memory"
     from labclaw.cli import main
 
-    with patch.object(sys, "argv", [
-        "labclaw", "pipeline", "--once",
-        "--data-dir", str(pipeline_data_dir),
-        "--memory-root", str(memory),
-    ]):
+    with patch.object(
+        sys,
+        "argv",
+        [
+            "labclaw",
+            "pipeline",
+            "--once",
+            "--data-dir",
+            str(pipeline_data_dir),
+            "--memory-root",
+            str(memory),
+        ],
+    ):
         main()
     out = capsys.readouterr().out
     return json.loads(out)
@@ -79,12 +87,21 @@ def run_pipeline_twice_with_seed(
     results = []
     for i in range(2):
         mem = tmp_path / f"mem_{i}"
-        with patch.object(sys, "argv", [
-            "labclaw", "pipeline", "--once",
-            "--data-dir", str(pipeline_data_dir),
-            "--memory-root", str(mem),
-            "--seed", "42",
-        ]):
+        with patch.object(
+            sys,
+            "argv",
+            [
+                "labclaw",
+                "pipeline",
+                "--once",
+                "--data-dir",
+                str(pipeline_data_dir),
+                "--memory-root",
+                str(mem),
+                "--seed",
+                "42",
+            ],
+        ):
             main()
         out = capsys.readouterr().out
         results.append(json.loads(out))
@@ -105,10 +122,17 @@ def run_pipeline_no_data_dir(capsys: pytest.CaptureFixture[str]) -> int:
 def run_pipeline_empty_dir(pipeline_data_dir: Path, capsys: pytest.CaptureFixture[str]) -> int:
     from labclaw.cli import main
 
-    with patch.object(sys, "argv", [
-        "labclaw", "pipeline", "--once",
-        "--data-dir", str(pipeline_data_dir),
-    ]):
+    with patch.object(
+        sys,
+        "argv",
+        [
+            "labclaw",
+            "pipeline",
+            "--once",
+            "--data-dir",
+            str(pipeline_data_dir),
+        ],
+    ):
         with pytest.raises(SystemExit) as exc_info:
             main()
     return exc_info.value.code  # type: ignore[return-value]
@@ -120,10 +144,17 @@ def run_pipeline_without_memory_root(
 ) -> dict[str, Any]:
     from labclaw.cli import main
 
-    with patch.object(sys, "argv", [
-        "labclaw", "pipeline", "--once",
-        "--data-dir", str(pipeline_data_dir),
-    ]):
+    with patch.object(
+        sys,
+        "argv",
+        [
+            "labclaw",
+            "pipeline",
+            "--once",
+            "--data-dir",
+            str(pipeline_data_dir),
+        ],
+    ):
         main()
     out = capsys.readouterr().out
     return json.loads(out)

@@ -43,15 +43,17 @@ def _load_data() -> list[dict[str, Any]]:
         with open(path, newline="") as fh:
             reader = csv.DictReader(fh)
             for row in reader:
-                rows.append({
-                    "timestamp": row["timestamp"],
-                    "x": float(row["x"]),
-                    "y": float(row["y"]),
-                    "speed": float(row["speed"]),
-                    "angle": float(row["angle"]),
-                    "zone": row["zone"],
-                    "animal_id": row["animal_id"],
-                })
+                rows.append(
+                    {
+                        "timestamp": row["timestamp"],
+                        "x": float(row["x"]),
+                        "y": float(row["y"]),
+                        "speed": float(row["speed"]),
+                        "angle": float(row["angle"]),
+                        "zone": row["zone"],
+                        "animal_id": row["animal_id"],
+                    }
+                )
     return rows
 
 
@@ -182,6 +184,7 @@ def each_chain_starts_from_source(provenance_cycle_result: CycleResult) -> None:
 @then("the export file contains provenance metadata")
 def export_contains_provenance(nwb_export_path: Path) -> None:
     import json
+
     assert nwb_export_path.exists()
     payload = json.loads(nwb_export_path.read_text())
     assert "provenance_steps" in payload or "finding_chains" in payload
@@ -195,6 +198,7 @@ def all_steps_present(verification_result: bool) -> None:
 @then("a JSON fallback file is created")
 def json_fallback_created(json_fallback_path: Path) -> None:
     import json
+
     assert json_fallback_path.exists()
     payload = json.loads(json_fallback_path.read_text())
     assert payload["format"] == "labclaw-json-stub"

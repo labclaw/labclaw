@@ -135,9 +135,11 @@ class TestEvolutionRunnerRun:
     def test_improvement_pct_calculated_correctly(self) -> None:
         runner = EvolutionRunner(loop=_mock_loop(), n_cycles=3)
         result = runner.run(_sample_rows())
-        expected_pct = (result.final_fitness - result.fitness_scores[0]) / abs(
-            result.fitness_scores[0]
-        ) * 100.0
+        expected_pct = (
+            (result.final_fitness - result.fitness_scores[0])
+            / abs(result.fitness_scores[0])
+            * 100.0
+        )
         assert result.improvement_pct == pytest.approx(expected_pct, abs=1e-6)
 
     def test_mean_fitness_is_correct(self) -> None:

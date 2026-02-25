@@ -257,9 +257,7 @@ def _when_run_reproduce_seed_42(
 
 
 @when('I run "labclaw reproduce --help"', target_fixture="hardening_ctx")
-def _when_run_reproduce_help(
-    tmp_path: Path, capsys: pytest.CaptureFixture[str]
-) -> dict[str, Any]:
+def _when_run_reproduce_help(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> dict[str, Any]:
     from labclaw.cli import main
 
     with patch.object(sys, "argv", ["labclaw", "reproduce", "--help"]):

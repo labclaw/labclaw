@@ -138,16 +138,13 @@ def run_evolution_with_engine(
 
 @then(parsers.parse("{n:d} cycles are completed"))
 def check_cycles_completed(evolution_result: EvolutionResult, n: int) -> None:
-    assert evolution_result.n_cycles == n, (
-        f"Expected {n} cycles, got {evolution_result.n_cycles}"
-    )
+    assert evolution_result.n_cycles == n, f"Expected {n} cycles, got {evolution_result.n_cycles}"
 
 
 @then("fitness scores are recorded for each cycle")
 def check_fitness_scores_recorded(evolution_result: EvolutionResult) -> None:
     assert len(evolution_result.fitness_scores) == evolution_result.n_cycles, (
-        f"Expected {evolution_result.n_cycles} scores, "
-        f"got {len(evolution_result.fitness_scores)}"
+        f"Expected {evolution_result.n_cycles} scores, got {len(evolution_result.fitness_scores)}"
     )
     assert all(s > 0.0 for s in evolution_result.fitness_scores), (
         "All fitness scores should be positive"
@@ -211,11 +208,7 @@ def check_improvement_threshold(evolution_result: EvolutionResult, threshold: in
     )
 
 
-@then(
-    parsers.parse(
-        "the engine tracker has {n:d} fitness entries for {target_name}"
-    )
-)
+@then(parsers.parse("the engine tracker has {n:d} fitness entries for {target_name}"))
 def check_engine_tracker_entries(
     runner_with_engine: tuple[EvolutionRunner, EvolutionEngine],
     n: int,

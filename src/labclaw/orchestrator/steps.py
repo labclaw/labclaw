@@ -633,8 +633,7 @@ class ConcludeStep:
                         pid = v.get("pattern_id", "?")
                         if p_val is not None:
                             findings.append(
-                                f"  Pattern {pid}: p={p_val:.4f}, "
-                                f"significant={sig} (alpha=0.05)."
+                                f"  Pattern {pid}: p={p_val:.4f}, significant={sig} (alpha=0.05)."
                             )
 
             if not findings:
