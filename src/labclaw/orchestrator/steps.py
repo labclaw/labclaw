@@ -209,8 +209,9 @@ class HypothesizeStep:
 
     name = StepName.HYPOTHESIZE
 
-    def __init__(self, llm_provider: Any | None = None) -> None:
+    def __init__(self, llm_provider: Any | None = None, max_llm_calls: int = 50) -> None:
         self._llm_provider = llm_provider
+        self._max_llm_calls = max_llm_calls
 
     async def run(self, context: StepContext) -> StepResult:
         t0 = time.monotonic()
@@ -239,7 +240,9 @@ class HypothesizeStep:
                         LLMHypothesisGenerator,  # type: ignore[attr-error]
                     )
 
-                    generator = LLMHypothesisGenerator(llm=self._llm_provider)
+                    generator = LLMHypothesisGenerator(
+                        llm=self._llm_provider, max_calls=self._max_llm_calls
+                    )
                 except (ImportError, AttributeError):
                     pass  # Fall back to template-based generator
 
@@ -550,6 +553,18 @@ class ConcludeStep:
                 findings.append(
                     f"Statistical validation: {sig_count}/{len(validated)} patterns significant."
                 )
+                # Write per-pattern p-values for C1 DISCOVER traceability
+                for v in validated:
+                    test = v.get("test", {})
+                    if test:
+                        p_val = test.get("p_value")
+                        sig = test.get("significant", False)
+                        pid = v.get("pattern_id", "?")
+                        if p_val is not None:
+                            findings.append(
+                                f"  Pattern {pid}: p={p_val:.4f}, "
+                                f"significant={sig} (alpha=0.05)."
+                            )
 
             if not findings:
                 findings.append("No notable findings in this cycle.")
