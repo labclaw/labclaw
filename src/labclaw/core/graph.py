@@ -171,7 +171,7 @@ class AnalysisNode(GraphNode):
 
     recording_id: str | None = None  # RecordingNode reference
     session_id: str | None = None  # SessionNode reference
-    pipeline: str  # e.g. "sam_behavior", "kilosort3", "suite2p"
+    pipeline: str  # e.g. "deeplabcut", "kilosort3", "suite2p"
     parameters: dict[str, Any] = Field(default_factory=dict)
     output_files: list[FileReference] = Field(default_factory=list)
     quality: QualityLevel = QualityLevel.UNKNOWN

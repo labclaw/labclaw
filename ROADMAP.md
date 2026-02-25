@@ -1,6 +1,5 @@
 # LabClaw Roadmap
 
-> Detailed plan: [docs/plans/2026-02-24-v004-to-v010-roadmap.md](docs/plans/2026-02-24-v004-to-v010-roadmap.md)
 
 ## v0.0.4 — Foundation (C5: REPRODUCE)
 
@@ -43,9 +42,9 @@
 - Structured JSON logging
 - Enhanced `/health` endpoint (component status, last cycle time)
 
-## Planned: v0.1.0 — Paper Release
+## Planned: v0.1.0 — Public Release
 
-v0.1.0 will be the version cited in the paper. All 5 capabilities proven by integration tests and BDD scenarios.
+v0.1.0 will be the first public release. All 5 capabilities proven by integration tests and BDD scenarios.
 
 | Capability | Criteria | Status |
 |-----------|---------|--------|
@@ -55,4 +54,4 @@ v0.1.0 will be the version cited in the paper. All 5 capabilities proven by inte
 | C4 TRACE | 100% findings have complete provenance | Proven |
 | C5 REPRODUCE | Same input + seed = same output | Proven |
 
-Deliverables: ablation study, 4 publication figures, `labclaw reproduce` command, demo dataset, PyPI package, Docker image, MkDocs site.
+Deliverables: ablation study, demo figures, `labclaw reproduce` command, demo dataset, PyPI package, Docker image, MkDocs site.

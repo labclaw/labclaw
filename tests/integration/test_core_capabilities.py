@@ -1,7 +1,7 @@
-"""Integration tests proving the 5 paper capabilities for LabClaw v0.1.0.
+"""Integration tests proving the 5 core capabilities for LabClaw.
 
 These tests use the fixture data at tests/fixtures/sample_lab/ to demonstrate
-each of the 5 capabilities required for the Nature/Science paper submission.
+each of the 5 core capabilities.
 
 C1 DISCOVER  — Real data -> finding with p < 0.05
 C2 EVOLVE    — 10 cycles, fitness +15%, ablation significant
@@ -99,8 +99,8 @@ def _make_mock_loop(patterns: int = 5, hypotheses: int = 2) -> ScientificLoop:
 
 def _make_finding(n: int) -> dict[str, Any]:
     return {
-        "finding_id": f"paper-finding-{n}",
-        "description": f"Paper capability finding number {n}",
+        "finding_id": f"cap-finding-{n}",
+        "description": f"Core capability finding number {n}",
         "column_a": f"col_a_{n}",
         "column_b": f"col_b_{n}",
         "pattern_type": "correlation",
@@ -120,13 +120,13 @@ def _normalize_result(d: dict[str, Any]) -> dict[str, Any]:
 
 
 # ---------------------------------------------------------------------------
-# Test class proving all 5 paper capabilities
+# Test class proving all 5 core capabilities
 # ---------------------------------------------------------------------------
 
 
 @pytest.mark.e2e
-class TestPaperCapabilities:
-    """Integration tests proving the 5 paper capabilities for v0.1.0."""
+class TestCoreCapabilities:
+    """Integration tests proving the 5 core capabilities."""
 
     def test_c1_discover_finding_with_significance(self, data_rows: list[dict[str, Any]]) -> None:
         """C1: Real data -> finding with p < 0.05."""

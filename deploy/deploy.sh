@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# deploy.sh — Deploy LabClaw to the DO server
+# deploy.sh — Deploy LabClaw to a remote server
 # Usage: bash deploy/deploy.sh
 set -euo pipefail
 
 # ── Config ──────────────────────────────────────────────────────────────────
-REMOTE="claw"                           # SSH alias (root@100.86.84.5)
+REMOTE="${LABCLAW_REMOTE:-labclaw-server}"  # SSH alias (configure in ~/.ssh/config)
 REMOTE_DIR="/opt/labclaw"
 LOCAL_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 REMOTE_IP=$(ssh "$REMOTE" 'hostname -I | awk "{print \$1}"')
@@ -189,6 +189,6 @@ echo "║                                                  ║"
 echo "║  API:       http://${REMOTE_IP}:18800/api/health  ║"
 echo "║  Dashboard: http://${REMOTE_IP}:18801             ║"
 echo "║                                                  ║"
-echo "║  Logs: ssh claw journalctl -u labclaw -f         ║"
-echo "║  Status: ssh claw systemctl status labclaw       ║"
+echo "║  Logs: ssh ${REMOTE} journalctl -u labclaw -f     ║"
+echo "║  Status: ssh ${REMOTE} systemctl status labclaw  ║"
 echo "╚══════════════════════════════════════════════════╝"

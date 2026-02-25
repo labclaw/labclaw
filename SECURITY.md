@@ -8,9 +8,7 @@
 
 ## Reporting a Vulnerability
 
-**Do NOT open a public GitHub issue for security vulnerabilities.**
-
-Please report security issues via email to: **security@labclaw.org**
+Please report security issues via [GitHub Security Advisories](https://github.com/labclaw/labclaw/security/advisories/new).
 
 Include:
 
