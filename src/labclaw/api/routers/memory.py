@@ -13,7 +13,7 @@ from labclaw.memory.markdown import MemoryEntry, SearchResult, TierABackend
 
 router = APIRouter()
 
-_ENTITY_ID_PATTERN = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]{0,127}")
+_ENTITY_ID_PATTERN = re.compile(r"[A-Za-z0-9](?:[A-Za-z0-9_-]|\.(?!\.)){0,127}")
 
 
 def _validate_entity_id_or_400(entity_id: str) -> None:
@@ -21,7 +21,7 @@ def _validate_entity_id_or_400(entity_id: str) -> None:
         return
     raise HTTPException(
         status_code=400,
-        detail="entity_id must match [A-Za-z0-9][A-Za-z0-9._-]{0,127}",
+        detail="entity_id must match [A-Za-z0-9](?:[A-Za-z0-9_-]|\\.(?!\\.)){0,127}",
     )
 
 
