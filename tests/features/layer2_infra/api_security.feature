@@ -108,8 +108,16 @@ Feature: API Security
     When I POST "/api/sessions/" with operator "robot" and Bearer token "test-secret"
     Then the response status is 403
 
-  Scenario: Postdoc role is allowed write access
+  Scenario: Postdoc role is allowed write access via token-role mapping
     Given authentication is required with token "test-secret"
     And governance enforcement is enabled
-    When I POST "/api/sessions/" with operator "robot" as role "postdoc" with Bearer token "test-secret"
+    And token "test-secret" is mapped to role "postdoc"
+    When I POST "/api/sessions/" with operator "robot" and Bearer token "test-secret"
     Then the response status is 201
+
+  Scenario: Client-supplied role header is ignored
+    Given authentication is required with token "test-secret"
+    And governance enforcement is enabled
+    And the default role is "digital_intern"
+    When I POST "/api/sessions/" with operator "robot" claiming role "pi" with Bearer token "test-secret"
+    Then the response status is 403

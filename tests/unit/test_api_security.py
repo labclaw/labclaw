@@ -81,6 +81,7 @@ def test_governance_allows_write_for_postdoc(
     monkeypatch.setenv("LABCLAW_API_AUTH_REQUIRED", "1")
     monkeypatch.setenv("LABCLAW_API_TOKEN", "secret-token")
     monkeypatch.setenv("LABCLAW_GOVERNANCE_ENFORCE", "1")
+    monkeypatch.setenv("LABCLAW_TOKEN_ROLES", "secret-token:postdoc")
     reset_all()
     resp = client.post(
         "/api/sessions/",
@@ -88,10 +89,88 @@ def test_governance_allows_write_for_postdoc(
         headers={
             "Authorization": "Bearer secret-token",
             "X-Labclaw-Actor": "alice",
-            "X-Labclaw-Role": "postdoc",
         },
     )
     assert resp.status_code == 201
+
+
+def test_client_role_header_ignored(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """X-Labclaw-Role header must not override server-side role resolution."""
+    monkeypatch.setenv("LABCLAW_API_AUTH_REQUIRED", "1")
+    monkeypatch.setenv("LABCLAW_API_TOKEN", "secret-token")
+    monkeypatch.setenv("LABCLAW_GOVERNANCE_ENFORCE", "1")
+    monkeypatch.delenv("LABCLAW_API_DEFAULT_ROLE", raising=False)
+    monkeypatch.delenv("LABCLAW_TOKEN_ROLES", raising=False)
+    reset_all()
+    resp = client.post(
+        "/api/sessions/",
+        json={"operator": "robot"},
+        headers={
+            "Authorization": "Bearer secret-token",
+            "X-Labclaw-Role": "pi",
+        },
+    )
+    assert resp.status_code == 403
+
+
+def test_token_role_map_assigns_correct_role(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("LABCLAW_API_AUTH_REQUIRED", "1")
+    monkeypatch.setenv("LABCLAW_API_TOKENS", "tok-pi,tok-intern")
+    monkeypatch.setenv("LABCLAW_GOVERNANCE_ENFORCE", "1")
+    monkeypatch.setenv("LABCLAW_TOKEN_ROLES", "tok-pi:pi,tok-intern:digital_intern")
+    reset_all()
+    resp_pi = client.post(
+        "/api/sessions/",
+        json={"operator": "robot"},
+        headers={"Authorization": "Bearer tok-pi"},
+    )
+    assert resp_pi.status_code == 201
+    resp_intern = client.post(
+        "/api/sessions/",
+        json={"operator": "robot"},
+        headers={"Authorization": "Bearer tok-intern"},
+    )
+    assert resp_intern.status_code == 403
+
+
+def test_governance_403_does_not_leak_reason(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("LABCLAW_API_AUTH_REQUIRED", "1")
+    monkeypatch.setenv("LABCLAW_API_TOKEN", "secret-token")
+    monkeypatch.setenv("LABCLAW_GOVERNANCE_ENFORCE", "1")
+    monkeypatch.delenv("LABCLAW_API_DEFAULT_ROLE", raising=False)
+    monkeypatch.delenv("LABCLAW_TOKEN_ROLES", raising=False)
+    reset_all()
+    resp = client.post(
+        "/api/sessions/",
+        json={"operator": "robot"},
+        headers={"Authorization": "Bearer secret-token"},
+    )
+    assert resp.status_code == 403
+    body = resp.json()
+    assert body["detail"] == "Forbidden"
+    assert "digital_intern" not in body["detail"]
+
+
+def test_governance_uses_default_role_when_no_token(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """When auth is off but governance is on, unauthenticated requests get default role."""
+    monkeypatch.setenv("LABCLAW_API_AUTH_REQUIRED", "0")
+    monkeypatch.setenv("LABCLAW_GOVERNANCE_ENFORCE", "1")
+    monkeypatch.delenv("LABCLAW_API_DEFAULT_ROLE", raising=False)
+    monkeypatch.delenv("LABCLAW_TOKEN_ROLES", raising=False)
+    reset_all()
+    resp = client.post(
+        "/api/sessions/",
+        json={"operator": "robot"},
+    )
+    assert resp.status_code == 403
 
 
 def test_rate_limit_enforced(client: TestClient, monkeypatch: pytest.MonkeyPatch) -> None:
