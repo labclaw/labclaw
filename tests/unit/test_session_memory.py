@@ -345,3 +345,47 @@ class TestSQLiteFindingsStore:
         await store.close()
         await store.close()  # second close is safe
         assert store._db is None
+
+
+class TestSQLiteCorruptRecord:
+    """Cover session_memory.py lines 288-289: corrupt JSON in SQLite."""
+
+    def test_corrupt_json_in_sqlite_is_skipped(self, tmp_path: Path) -> None:
+        import asyncio
+
+        import aiosqlite
+
+        db_path = tmp_path / "corrupt.db"
+
+        async def _setup():
+            db = await aiosqlite.connect(str(db_path))
+            await db.execute("""
+                CREATE TABLE IF NOT EXISTS findings (
+                    finding_id TEXT PRIMARY KEY,
+                    data_json TEXT NOT NULL,
+                    stored_at TEXT NOT NULL
+                )
+            """)
+            # Insert a corrupt record
+            await db.execute(
+                "INSERT INTO findings (finding_id, data_json, stored_at) VALUES (?, ?, ?)",
+                ("bad-1", "{not valid json!!", "2026-01-01T00:00:00"),
+            )
+            # Insert a valid record
+            import json
+            await db.execute(
+                "INSERT INTO findings (finding_id, data_json, stored_at) VALUES (?, ?, ?)",
+                ("good-1", json.dumps({"desc": "valid"}), "2026-01-01T00:00:00"),
+            )
+            await db.commit()
+            await db.close()
+
+        asyncio.run(_setup())
+
+        from labclaw.memory.session_memory import SessionMemoryManager
+        mgr = SessionMemoryManager(tmp_path / "mem", db_path)
+        asyncio.run(mgr.init())
+        findings = asyncio.run(mgr.retrieve_findings())
+        # Only the valid record should be returned
+        assert len(findings) == 1
+        assert findings[0]["desc"] == "valid"
