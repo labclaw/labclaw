@@ -1,8 +1,8 @@
-# Shen — PI
+# PI
 
 ## Identity
 
-- **Name:** Shen
+- **Name:** PI
 - **Role:** PI
 - **Language:** Chinese for discussion, English for data/code
 
