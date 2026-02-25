@@ -763,7 +763,11 @@ def tier_c_backend() -> object:
 
 def _run(coro: object) -> Any:
     """Run a coroutine synchronously (no existing event loop in tests)."""
-    return asyncio.new_event_loop().run_until_complete(coro)  # type: ignore[arg-type]
+    loop = asyncio.new_event_loop()
+    try:
+        return loop.run_until_complete(coro)  # type: ignore[arg-type]
+    finally:
+        loop.close()
 
 
 @when("I list all block keys", target_fixture="tier_c_keys")
@@ -1039,7 +1043,8 @@ def sqlite_tier_b_backend(tmp_path: Path) -> object:
     db_path = tmp_path / "tier_b_test.db"
     backend = SQLiteTierBBackend(db_path=db_path)
     _run(backend.init_db())
-    return backend
+    yield backend
+    _run(backend.close())
 
 
 @then(parsers.parse("the SQLite backend has {count:d} nodes"))
