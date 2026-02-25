@@ -2,7 +2,7 @@
 
 > Detailed plan: [docs/plans/2026-02-24-v004-to-v010-roadmap.md](docs/plans/2026-02-24-v004-to-v010-roadmap.md)
 
-## Current: v0.0.4 — Foundation (C5: REPRODUCE)
+## v0.0.4 — Foundation (C5: REPRODUCE)
 
 - TDD + BDD dual-layer testing, 100% coverage
 - End-to-end pipeline on synthetic behavioral data
@@ -43,16 +43,16 @@
 - Structured JSON logging
 - Enhanced `/health` endpoint (component status, last cycle time)
 
-## v0.1.0 — Paper Release
+## Current: v0.1.0 — Paper Release
 
-v0.1.0 is the version cited in the Nature/Science paper. Must demonstrate:
+v0.1.0 is the version cited in the Nature/Science paper. All 5 capabilities proven by integration tests and BDD scenarios.
 
-| Capability | Criteria |
-|-----------|---------|
-| C1 DISCOVER | Real data -> finding with p < 0.05 |
-| C2 EVOLVE | 10 cycles, fitness +15%, ablation significant |
-| C3 REMEMBER | Restart -> 90% findings retrievable |
-| C4 TRACE | 100% findings have complete provenance |
-| C5 REPRODUCE | Same input + seed = same output |
+| Capability | Criteria | Status |
+|-----------|---------|--------|
+| C1 DISCOVER | Real data -> finding with p < 0.05 | Proven |
+| C2 EVOLVE | 10 cycles, fitness +15%, ablation significant | Proven |
+| C3 REMEMBER | Restart -> 90% findings retrievable | Proven |
+| C4 TRACE | 100% findings have complete provenance | Proven |
+| C5 REPRODUCE | Same input + seed = same output | Proven |
 
 Deliverables: ablation study, 4 publication figures, `labclaw reproduce` command, demo dataset, PyPI package, Docker image, MkDocs site.
