@@ -39,12 +39,13 @@ jobs:
       DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
       DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
       DEPLOY_PORT: ${{ secrets.DEPLOY_SSH_PORT }}
+      DEPLOY_HOST_KEY: ${{ secrets.DEPLOY_HOST_KEY }}
       REMOTE_DIR: ${{ vars.DEPLOY_REMOTE_DIR || '/opt/labclaw' }}
       SERVICE_NAME: ${{ vars.DEPLOY_SERVICE_NAME || 'labclaw' }}
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           ref: ${{ github.event.inputs.ref }}
 
@@ -53,19 +54,19 @@ jobs:
           set -euo pipefail
           test -n "${DEPLOY_HOST}" || { echo "::error ::Missing secret DEPLOY_HOST"; exit 1; }
           test -n "${DEPLOY_USER}" || { echo "::error ::Missing secret DEPLOY_USER"; exit 1; }
+          test -n "${DEPLOY_HOST_KEY}" || { echo "::error ::Missing secret DEPLOY_HOST_KEY"; exit 1; }
           echo "Configuration looks valid."
 
       - name: Start SSH agent
-        uses: webfactory/ssh-agent@v0.9.1
+        uses: webfactory/ssh-agent@a6f90b1f127823b31d4d4a8d96047790581349bd # v0.9.1
         with:
           ssh-private-key: ${{ secrets.DEPLOY_SSH_PRIVATE_KEY }}
 
       - name: Add host key
         run: |
           set -euo pipefail
-          PORT="${DEPLOY_PORT:-22}"
           mkdir -p "${HOME}/.ssh"
-          ssh-keyscan -p "${PORT}" -H "${DEPLOY_HOST}" >> "${HOME}/.ssh/known_hosts"
+          echo "${DEPLOY_HOST_KEY}" >> "${HOME}/.ssh/known_hosts"
 
       - name: Preflight remote access
         run: |
@@ -73,11 +74,11 @@ jobs:
           PORT="${DEPLOY_PORT:-22}"
           TARGET="${DEPLOY_USER}@${DEPLOY_HOST}"
           REMOTE_UID="$(ssh -p "${PORT}" "${TARGET}" "id -u")"
-          if [ "${REMOTE_UID}" != "0" ]; then
-            echo "::error ::Deploy user must be root for systemd + user provisioning."
-            echo "::error ::Current remote uid: ${REMOTE_UID}"
+          if [ "${REMOTE_UID}" = "0" ]; then
+            echo "::error ::Deploy over root SSH is forbidden. Use a least-privilege user with sudo."
             exit 1
           fi
+          ssh -p "${PORT}" "${TARGET}" "sudo -n true"
 
       - name: Sync source code
         run: |
@@ -85,10 +86,10 @@ jobs:
           PORT="${DEPLOY_PORT:-22}"
           TARGET="${DEPLOY_USER}@${DEPLOY_HOST}"
 
-          ssh -p "${PORT}" "${TARGET}" "mkdir -p ${REMOTE_DIR}/{data,memory,logs}"
+          ssh -p "${PORT}" "${TARGET}" "sudo mkdir -p ${REMOTE_DIR}/{data,memory,logs}"
           ssh -p "${PORT}" "${TARGET}" \
-            "id labclaw >/dev/null 2>&1 || useradd -r -s /usr/sbin/nologin --no-create-home -d ${REMOTE_DIR} labclaw"
-          ssh -p "${PORT}" "${TARGET}" "chown -R labclaw:labclaw ${REMOTE_DIR}"
+            "id labclaw >/dev/null 2>&1 || sudo useradd -r -s /usr/sbin/nologin --no-create-home -d ${REMOTE_DIR} labclaw"
+          ssh -p "${PORT}" "${TARGET}" "sudo chown -R ${DEPLOY_USER}:${DEPLOY_USER} ${REMOTE_DIR}"
 
           rsync -az --delete \
             -e "ssh -p ${PORT}" \
@@ -112,7 +113,9 @@ jobs:
             ./ "${TARGET}:${REMOTE_DIR}/"
 
           scp -P "${PORT}" deploy/labclaw.service \
-            "${TARGET}:/etc/systemd/system/${SERVICE_NAME}.service"
+            "${TARGET}:/tmp/${SERVICE_NAME}.service"
+          ssh -p "${PORT}" "${TARGET}" \
+            "sudo mv /tmp/${SERVICE_NAME}.service /etc/systemd/system/${SERVICE_NAME}.service"
 
       - name: Install and restart service
         run: |
@@ -129,12 +132,14 @@ jobs:
           fi
 
           venv/bin/pip install --upgrade pip
-          venv/bin/pip install -e ".[science]"
+          venv/bin/pip install ".[science]"
 
-          systemctl daemon-reload
-          systemctl enable "${SERVICE_NAME}"
-          systemctl restart "${SERVICE_NAME}"
-          systemctl status "${SERVICE_NAME}" --no-pager | head -20
+          sudo chown -R labclaw:labclaw "${REMOTE_DIR}/data" "${REMOTE_DIR}/memory" "${REMOTE_DIR}/logs"
+
+          sudo systemctl daemon-reload
+          sudo systemctl enable "${SERVICE_NAME}"
+          sudo systemctl restart "${SERVICE_NAME}"
+          sudo systemctl status "${SERVICE_NAME}" --no-pager | head -20
           EOF
 
       - name: Run smoke checks
@@ -146,7 +151,7 @@ jobs:
 
           ssh -p "${PORT}" "${TARGET}" "curl -fsS http://127.0.0.1:18800/api/health >/dev/null"
           ssh -p "${PORT}" "${TARGET}" \
-            "systemctl is-active --quiet ${SERVICE_NAME}"
+            "sudo systemctl is-active --quiet ${SERVICE_NAME}"
 
       - name: Deployment summary
         run: |
