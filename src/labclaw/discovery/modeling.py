@@ -131,7 +131,6 @@ def _linreg_pure(
     n = len(X)
     if n == 0:
         return [], 0.0
-    p = len(X[0])
 
     X_arr = np.array(X)
     y_arr = np.array(y)
