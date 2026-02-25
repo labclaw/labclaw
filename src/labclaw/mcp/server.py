@@ -50,6 +50,20 @@ def _get_search_engine():  # noqa: ANN202
     return HybridSearchEngine(tier_a=get_tier_a_backend())
 
 
+def _get_provenance_for_entity(entity_id: str) -> dict[str, Any] | None:
+    """Return provenance chain dict for an entity if available, else None."""
+    try:
+        from labclaw.api.routers.provenance import _chains
+
+        chain = _chains.get(entity_id)
+        if chain is None:
+            return None
+        return chain.model_dump(mode="json")
+    except Exception:
+        logger.debug("Could not look up provenance for %s", entity_id, exc_info=True)
+        return None
+
+
 def create_server() -> FastMCP:
     """Create and configure the LabClaw MCP server."""
     mcp = FastMCP("labclaw")
@@ -62,11 +76,16 @@ def create_server() -> FastMCP:
     ) -> str:
         """Run pattern mining on lab data.
 
+        Returns structured JSON with patterns and provenance metadata.
+
         Args:
             min_sessions: Minimum number of sessions required to mine patterns.
             correlation_threshold: Minimum absolute correlation to report.
             anomaly_z_threshold: Z-score threshold for anomaly detection.
         """
+        import uuid as _uuid_mod
+        from datetime import UTC, datetime
+
         from labclaw.discovery.mining import MiningConfig
 
         miner = _get_pattern_miner()
@@ -92,12 +111,30 @@ def create_server() -> FastMCP:
                 {
                     "patterns": [],
                     "data_summary": {"row_count": 0},
+                    "provenance": {
+                        "tool": "discover",
+                        "run_id": str(_uuid_mod.uuid4()),
+                        "timestamp": datetime.now(UTC).isoformat(),
+                        "row_count": 0,
+                    },
                     "message": "No experiment data available. Ingest data first.",
                 },
                 indent=2,
             )
         result = miner.mine(rows, config=config)
-        return result.model_dump_json(indent=2)
+        output = result.model_dump(mode="json")
+        output["provenance"] = {
+            "tool": "discover",
+            "run_id": str(_uuid_mod.uuid4()),
+            "timestamp": datetime.now(UTC).isoformat(),
+            "row_count": len(rows),
+            "config": {
+                "min_sessions": min_sessions,
+                "correlation_threshold": correlation_threshold,
+                "anomaly_z_threshold": anomaly_z_threshold,
+            },
+        }
+        return json.dumps(output, indent=2, default=str)
 
     @mcp.tool()
     def hypothesize(context: str = "", constraints: str = "") -> str:
@@ -170,7 +207,7 @@ def create_server() -> FastMCP:
 
     @mcp.tool()
     def query_memory(query: str) -> str:
-        """Search lab memory for information.
+        """Search lab memory for information, including provenance chains.
 
         Args:
             query: Search query text.
@@ -187,6 +224,7 @@ def create_server() -> FastMCP:
                     "snippet": r.snippet,
                     "score": r.score,
                     "source": f"tier-{r.source_tier}:{r.source_detail}",
+                    "provenance": _get_provenance_for_entity(r.entity_id),
                 }
             )
         return json.dumps(output, indent=2, default=str)
@@ -215,6 +253,38 @@ def create_server() -> FastMCP:
                 }
             )
         return json.dumps(output, indent=2, default=str)
+
+    @mcp.tool()
+    def provenance(finding_id: str) -> str:
+        """Query the provenance chain for a specific finding.
+
+        Returns the full traceability chain from raw data to conclusion,
+        or an informative message when no chain is registered.
+
+        Args:
+            finding_id: The finding ID whose provenance chain is requested.
+        """
+        chain = _get_provenance_for_entity(finding_id)
+        if chain is None:
+            return json.dumps(
+                {
+                    "finding_id": finding_id,
+                    "chain": None,
+                    "message": (
+                        f"No provenance chain registered for finding {finding_id!r}. "
+                        "Run a discovery cycle first."
+                    ),
+                },
+                indent=2,
+            )
+        return json.dumps(
+            {
+                "finding_id": finding_id,
+                "chain": chain,
+            },
+            indent=2,
+            default=str,
+        )
 
     return mcp
 

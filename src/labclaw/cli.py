@@ -50,6 +50,8 @@ def main() -> None:
         _pipeline_cmd(sys.argv[2:])
     elif cmd == "ablation":
         _ablation_cmd(sys.argv[2:])
+    elif cmd == "export":
+        _export_cmd(sys.argv[2:])
     elif cmd == "memory":
         _memory_cmd(sys.argv[2:])
     else:
@@ -65,6 +67,7 @@ def main() -> None:
         print("  ablation       Run full vs no-evolution comparison and print JSON result")
         print("  memory         Query or inspect persisted memory")
         print("  --dashboard    Launch Streamlit dashboard only")
+        print("  export         Export findings and provenance (NWB or JSON)")
         print("  --api [PORT]   Launch FastAPI server only")
         print()
         print("Serve options (pass after 'serve'):")
@@ -452,6 +455,70 @@ def _ablation_cmd(args: list[str]) -> None:
         },
     }
     print(json.dumps(output))
+
+
+def _export_cmd(args: list[str]) -> None:
+    """Export findings and provenance to NWB or JSON.
+
+    Usage:
+        labclaw export --format nwb --session SESSION_ID --output PATH
+        labclaw export --format json --session SESSION_ID --output PATH
+    """
+    if not args or args[0] in ("-h", "--help"):
+        print("Usage: labclaw export --format nwb|json --session SESSION_ID --output PATH")
+        print()
+        print("Options:")
+        print("  --format nwb|json   Output format (default: json)")
+        print("  --session ID        Session ID to export")
+        print("  --output PATH       Destination file path (required)")
+        if not args:
+            sys.exit(1)
+        return
+
+    fmt: str = "json"
+    session_id: str = ""
+    output_path: Path | None = None
+
+    i = 0
+    while i < len(args):
+        if args[i] == "--format" and i + 1 < len(args):
+            fmt = args[i + 1]
+            i += 2
+        elif args[i] == "--session" and i + 1 < len(args):
+            session_id = args[i + 1]
+            i += 2
+        elif args[i] == "--output" and i + 1 < len(args):
+            output_path = Path(args[i + 1])
+            i += 2
+        else:
+            i += 1
+
+    if output_path is None:
+        print("Error: --output is required.", file=sys.stderr)
+        sys.exit(1)
+
+    if fmt not in ("nwb", "json"):
+        print(f"Error: unsupported format {fmt!r}. Use 'nwb' or 'json'.", file=sys.stderr)
+        sys.exit(1)
+
+    from labclaw.export.nwb import NWBExporter
+
+    session_data: dict = {
+        "session_id": session_id or "unknown",
+        "findings": [],
+        "provenance_steps": [],
+        "finding_chains": [],
+        "metadata": {},
+        "description": f"LabClaw export for session {session_id or 'unknown'}",
+    }
+
+    exporter = NWBExporter()
+    if fmt == "nwb":
+        out = exporter.export_session(session_data, output_path)
+    else:
+        out = exporter._export_json_stub(session_data, output_path)
+
+    print(f"Exported to: {out}")
 
 
 def _memory_cmd(args: list[str]) -> None:

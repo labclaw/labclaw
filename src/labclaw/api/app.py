@@ -19,6 +19,7 @@ from labclaw.api.routers.memory import router as memory_router
 from labclaw.api.routers.metrics import router as metrics_router
 from labclaw.api.routers.orchestrator import router as orchestrator_router
 from labclaw.api.routers.plugins import router as plugins_router
+from labclaw.api.routers.provenance import router as provenance_router
 from labclaw.api.routers.sessions import router as sessions_router
 
 app = FastAPI(
@@ -40,3 +41,6 @@ app.include_router(events_router, prefix="/api/events", tags=["events"])
 app.include_router(agents_router, prefix="/api/agents", tags=["agents"])
 app.include_router(plugins_router, prefix="/api/plugins", tags=["plugins"])
 app.include_router(orchestrator_router, prefix="/api/orchestrator", tags=["orchestrator"])
+# Provenance endpoints — both versioned and legacy prefixes
+app.include_router(provenance_router, prefix="/api/v0/provenance", tags=["provenance"])
+app.include_router(provenance_router, prefix="/api/provenance", tags=["provenance"])

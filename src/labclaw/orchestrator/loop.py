@@ -67,6 +67,8 @@ class CycleResult(BaseModel):
     patterns_found: int = 0
     hypotheses_generated: int = 0
     success: bool = True
+    findings: list[str] = Field(default_factory=list)
+    final_context: dict[str, Any] = Field(default_factory=dict)
 
 
 # ---------------------------------------------------------------------------
@@ -169,6 +171,8 @@ class ScientificLoop:
             patterns_found=len(context.patterns),
             hypotheses_generated=len(context.hypotheses),
             success=success,
+            findings=list(context.findings),
+            final_context=dict(context.metadata),
         )
 
         event_registry.emit(

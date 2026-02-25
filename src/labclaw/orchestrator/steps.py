@@ -53,6 +53,7 @@ class StepContext(BaseModel):
     findings: list[str] = Field(default_factory=list)
     metadata: dict[str, Any] = Field(default_factory=dict)
     cycle_id: str = ""
+    provenance_steps: list[dict[str, Any]] = Field(default_factory=list)
 
 
 class StepResult(BaseModel):
@@ -123,6 +124,14 @@ class ObserveStep:
                 if numeric_count > len(rows[:5]) / 2:
                     numeric_cols.append(key)
 
+            prov_entry: dict[str, Any] = {
+                "step": self.name.value,
+                "node_id": str(uuid.uuid4()),
+                "node_type": "observation",
+                "inputs": [],
+                "outputs": [f"{row_count} rows, {len(all_keys)} columns"],
+                "timestamp": datetime.now(UTC).isoformat(),
+            }
             ctx = context.model_copy(
                 update={
                     "metadata": {
@@ -134,6 +143,7 @@ class ObserveStep:
                             "null_counts": null_counts,
                         },
                     },
+                    "provenance_steps": [*context.provenance_steps, prov_entry],
                 }
             )
 
@@ -182,7 +192,20 @@ class AskStep:
             miner = PatternMiner()
             result = miner.mine(context.data_rows, MiningConfig())
 
-            ctx = context.model_copy(update={"patterns": result.patterns})
+            prov_entry: dict[str, Any] = {
+                "step": self.name.value,
+                "node_id": str(uuid.uuid4()),
+                "node_type": "pattern_mining",
+                "inputs": [f"{len(context.data_rows)} rows"],
+                "outputs": [f"{len(result.patterns)} patterns"],
+                "timestamp": datetime.now(UTC).isoformat(),
+            }
+            ctx = context.model_copy(
+                update={
+                    "patterns": result.patterns,
+                    "provenance_steps": [*context.provenance_steps, prov_entry],
+                }
+            )
 
             logger.info("AskStep: found %d patterns", len(result.patterns))
             return StepResult(
@@ -249,7 +272,20 @@ class HypothesizeStep:
             hyp_input = HypothesisInput(patterns=context.patterns)
             hypotheses = generator.generate(hyp_input)
 
-            ctx = context.model_copy(update={"hypotheses": hypotheses})
+            prov_entry: dict[str, Any] = {
+                "step": self.name.value,
+                "node_id": str(uuid.uuid4()),
+                "node_type": "hypothesis_generation",
+                "inputs": [f"{len(context.patterns)} patterns"],
+                "outputs": [f"{len(hypotheses)} hypotheses"],
+                "timestamp": datetime.now(UTC).isoformat(),
+            }
+            ctx = context.model_copy(
+                update={
+                    "hypotheses": hypotheses,
+                    "provenance_steps": [*context.provenance_steps, prov_entry],
+                }
+            )
 
             logger.info("HypothesizeStep: generated %d hypotheses", len(hypotheses))
             return StepResult(
@@ -325,7 +361,20 @@ class PredictStep:
                 ],
             }
 
-            ctx = context.model_copy(update={"predictions": predictions_dict})
+            prov_entry: dict[str, Any] = {
+                "step": self.name.value,
+                "node_id": str(uuid.uuid4()),
+                "node_type": "predictive_model",
+                "inputs": [f"target={target_col}", f"features={feature_cols}"],
+                "outputs": [f"r_squared={train_result.r_squared:.3f}"],
+                "timestamp": datetime.now(UTC).isoformat(),
+            }
+            ctx = context.model_copy(
+                update={
+                    "predictions": predictions_dict,
+                    "provenance_steps": [*context.provenance_steps, prov_entry],
+                }
+            )
 
             logger.info("PredictStep: R^2=%.3f, target=%s", train_result.r_squared, target_col)
             return StepResult(
@@ -401,6 +450,14 @@ class ExperimentStep:
             optimizer = BayesianOptimizer(space)
             proposals = optimizer.suggest(n=1)
 
+            prov_entry: dict[str, Any] = {
+                "step": self.name.value,
+                "node_id": str(uuid.uuid4()),
+                "node_type": "experiment_proposal",
+                "inputs": [f"space={space.name}", f"dims={len(dimensions)}"],
+                "outputs": [f"{len(proposals)} proposals"],
+                "timestamp": datetime.now(UTC).isoformat(),
+            }
             ctx = context.model_copy(
                 update={
                     "proposals": [
@@ -410,7 +467,8 @@ class ExperimentStep:
                             "iteration": p.iteration,
                         }
                         for p in proposals
-                    ]
+                    ],
+                    "provenance_steps": [*context.provenance_steps, prov_entry],
                 }
             )
 
@@ -488,7 +546,20 @@ class AnalyzeStep:
 
                 analysis["validated_patterns"].append(pattern_info)
 
-            ctx = context.model_copy(update={"analysis_results": analysis})
+            prov_entry: dict[str, Any] = {
+                "step": self.name.value,
+                "node_id": str(uuid.uuid4()),
+                "node_type": "statistical_analysis",
+                "inputs": [f"{len(context.patterns)} patterns"],
+                "outputs": [f"{len(analysis['validated_patterns'])} validated"],
+                "timestamp": datetime.now(UTC).isoformat(),
+            }
+            ctx = context.model_copy(
+                update={
+                    "analysis_results": analysis,
+                    "provenance_steps": [*context.provenance_steps, prov_entry],
+                }
+            )
 
             logger.info(
                 "AnalyzeStep: validated %d patterns",
@@ -569,6 +640,43 @@ class ConcludeStep:
             if not findings:
                 findings.append("No notable findings in this cycle.")
 
+            # Build a ProvenanceChain for each finding
+            from labclaw.validation.provenance import ProvenanceTracker
+            from labclaw.validation.statistics import ProvenanceStep
+
+            tracker = ProvenanceTracker()
+            finding_chains: list[dict[str, Any]] = []
+            for finding_text in findings:
+                finding_id = str(uuid.uuid4())
+                prov_steps = [
+                    ProvenanceStep(
+                        node_id=entry["node_id"],
+                        node_type=entry["node_type"],
+                        description=f"step={entry['step']} outputs={entry.get('outputs', [])}",
+                        timestamp=datetime.fromisoformat(entry["timestamp"]),
+                    )
+                    for entry in context.provenance_steps
+                ]
+                # Always add a conclude step entry
+                prov_steps.append(
+                    ProvenanceStep(
+                        node_id=str(uuid.uuid4()),
+                        node_type="conclusion",
+                        description=finding_text,
+                    )
+                )
+                chain = tracker.build_chain(finding_id, prov_steps)
+                finding_chains.append(chain.model_dump(mode="json"))
+
+            conclude_prov: dict[str, Any] = {
+                "step": self.name.value,
+                "node_id": str(uuid.uuid4()),
+                "node_type": "conclusion",
+                "inputs": [f"{len(context.patterns)} patterns", f"{len(context.hypotheses)} hyp"],
+                "outputs": [f"{len(findings)} findings"],
+                "timestamp": datetime.now(UTC).isoformat(),
+            }
+
             # Log to Tier A memory if root is set
             if self._memory_root is not None:
                 try:
@@ -584,7 +692,16 @@ class ConcludeStep:
                 except Exception:
                     logger.exception("Failed to log findings to Tier A memory")
 
-            ctx = context.model_copy(update={"findings": findings})
+            ctx = context.model_copy(
+                update={
+                    "findings": findings,
+                    "provenance_steps": [*context.provenance_steps, conclude_prov],
+                    "metadata": {
+                        **context.metadata,
+                        "finding_chains": finding_chains,
+                    },
+                }
+            )
 
             logger.info("ConcludeStep: %d findings", len(findings))
             return StepResult(
