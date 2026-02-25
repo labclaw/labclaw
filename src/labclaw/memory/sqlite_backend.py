@@ -3,6 +3,7 @@
 Drop-in replacement for the in-memory TierBBackend.
 Uses aiosqlite for async SQLite access.
 """
+
 from __future__ import annotations
 
 import json
@@ -413,11 +414,13 @@ class SQLiteTierBBackend:
                 node = await self.get_node(fts_row["node_id"])
             except KeyError:
                 continue
-            results.append(KGSearchResult(
-                node=node,
-                score=max(0.0, float(fts_row["score"])),
-                matched_field="content",
-            ))
+            results.append(
+                KGSearchResult(
+                    node=node,
+                    score=max(0.0, float(fts_row["score"])),
+                    matched_field="content",
+                )
+            )
 
         event_registry.emit(
             "memory.tier_b.search_executed",

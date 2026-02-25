@@ -114,7 +114,8 @@ class ObserveStep:
             numeric_cols: list[str] = []
             for key in sorted(all_keys):
                 numeric_count = sum(
-                    1 for row in rows[:5]
+                    1
+                    for row in rows[:5]
                     if key in row
                     and isinstance(row[key], (int, float))
                     and not isinstance(row[key], bool)
@@ -138,7 +139,9 @@ class ObserveStep:
 
             logger.info(
                 "ObserveStep: %d rows, %d columns, %d numeric",
-                row_count, len(all_keys), len(numeric_cols),
+                row_count,
+                len(all_keys),
+                len(numeric_cols),
             )
             return StepResult(
                 step=self.name,
@@ -179,9 +182,7 @@ class AskStep:
             miner = PatternMiner()
             result = miner.mine(context.data_rows, MiningConfig())
 
-            ctx = context.model_copy(
-                update={"patterns": result.patterns}
-            )
+            ctx = context.model_copy(update={"patterns": result.patterns})
 
             logger.info("AskStep: found %d patterns", len(result.patterns))
             return StepResult(
@@ -237,6 +238,7 @@ class HypothesizeStep:
                     from labclaw.discovery.hypothesis import (
                         LLMHypothesisGenerator,  # type: ignore[attr-error]
                     )
+
                     generator = LLMHypothesisGenerator(llm=self._llm_provider)
                 except (ImportError, AttributeError):
                     pass  # Fall back to template-based generator
@@ -244,9 +246,7 @@ class HypothesizeStep:
             hyp_input = HypothesisInput(patterns=context.patterns)
             hypotheses = generator.generate(hyp_input)
 
-            ctx = context.model_copy(
-                update={"hypotheses": hypotheses}
-            )
+            ctx = context.model_copy(update={"hypotheses": hypotheses})
 
             logger.info("HypothesizeStep: generated %d hypotheses", len(hypotheses))
             return StepResult(
@@ -285,9 +285,7 @@ class PredictStep:
                     duration_seconds=time.monotonic() - t0,
                 )
 
-            numeric_cols = context.metadata.get("data_stats", {}).get(
-                "numeric_columns", []
-            )
+            numeric_cols = context.metadata.get("data_stats", {}).get("numeric_columns", [])
             if len(numeric_cols) < 2:
                 return StepResult(
                     step=self.name,
@@ -324,13 +322,9 @@ class PredictStep:
                 ],
             }
 
-            ctx = context.model_copy(
-                update={"predictions": predictions_dict}
-            )
+            ctx = context.model_copy(update={"predictions": predictions_dict})
 
-            logger.info(
-                "PredictStep: R^2=%.3f, target=%s", train_result.r_squared, target_col
-            )
+            logger.info("PredictStep: R^2=%.3f, target=%s", train_result.r_squared, target_col)
             return StepResult(
                 step=self.name,
                 success=True,
@@ -355,9 +349,7 @@ class ExperimentStep:
     async def run(self, context: StepContext) -> StepResult:
         t0 = time.monotonic()
         try:
-            numeric_cols = context.metadata.get("data_stats", {}).get(
-                "numeric_columns", []
-            )
+            numeric_cols = context.metadata.get("data_stats", {}).get("numeric_columns", [])
             if not numeric_cols:
                 return StepResult(
                     step=self.name,
@@ -379,7 +371,8 @@ class ExperimentStep:
             dimensions: list[ParameterDimension] = []
             for col in numeric_cols:
                 values = [
-                    float(row[col]) for row in data
+                    float(row[col])
+                    for row in data
                     if col in row
                     and isinstance(row[col], (int, float))
                     and not isinstance(row[col], bool)
@@ -473,16 +466,16 @@ class AnalyzeStep:
                     col_b = evidence.get("col_b")
                     if col_a and col_b:
                         vals_a = [
-                            float(row[col_a]) for row in data
-                            if col_a in row and col_b in row
+                            float(row[col_a]) for row in data if col_a in row and col_b in row
                         ]
                         vals_b = [
-                            float(row[col_b]) for row in data
-                            if col_a in row and col_b in row
+                            float(row[col_b]) for row in data if col_a in row and col_b in row
                         ]
                         if len(vals_a) >= 5 and len(vals_b) >= 5:
                             test_result = validator.run_test(
-                                "permutation", vals_a, vals_b,
+                                "permutation",
+                                vals_a,
+                                vals_b,
                             )
                             pattern_info["test"] = {
                                 "test_name": test_result.test_name,
@@ -492,9 +485,7 @@ class AnalyzeStep:
 
                 analysis["validated_patterns"].append(pattern_info)
 
-            ctx = context.model_copy(
-                update={"analysis_results": analysis}
-            )
+            ctx = context.model_copy(update={"analysis_results": analysis})
 
             logger.info(
                 "AnalyzeStep: validated %d patterns",
@@ -545,9 +536,7 @@ class ConcludeStep:
                 r2 = context.predictions.get("r_squared")
                 target = context.predictions.get("target_column")
                 if r2 is not None and target:
-                    findings.append(
-                        f"Predictive model for {target}: R^2={r2:.3f}."
-                    )
+                    findings.append(f"Predictive model for {target}: R^2={r2:.3f}.")
 
             # Summarize proposals
             n_proposals = len(context.proposals)
@@ -557,13 +546,9 @@ class ConcludeStep:
             # Summarize analysis
             validated = context.analysis_results.get("validated_patterns", [])
             if validated:
-                sig_count = sum(
-                    1 for v in validated
-                    if v.get("test", {}).get("significant", False)
-                )
+                sig_count = sum(1 for v in validated if v.get("test", {}).get("significant", False))
                 findings.append(
-                    f"Statistical validation: {sig_count}/{len(validated)} "
-                    f"patterns significant."
+                    f"Statistical validation: {sig_count}/{len(validated)} patterns significant."
                 )
 
             if not findings:

@@ -17,6 +17,7 @@ router = APIRouter()
 # Request / response models
 # ---------------------------------------------------------------------------
 
+
 class DeviceCreateRequest(BaseModel):
     name: str
     device_type: str
@@ -32,6 +33,7 @@ class DeviceStatusUpdate(BaseModel):
 # ---------------------------------------------------------------------------
 # Endpoints
 # ---------------------------------------------------------------------------
+
 
 @router.get("/")
 def list_devices(

@@ -290,9 +290,7 @@ class TestEvents:
         from labclaw.core.events import event_registry
 
         received: list[Any] = []
-        event_registry.subscribe(
-            "persona.agent.message_received", lambda e: received.append(e)
-        )
+        event_registry.subscribe("persona.agent.message_received", lambda e: received.append(e))
 
         llm = _make_llm("response")
         rt = AgentRuntime(llm_provider=llm)
@@ -304,9 +302,7 @@ class TestEvents:
         from labclaw.core.events import event_registry
 
         generated: list[Any] = []
-        event_registry.subscribe(
-            "persona.agent.response_generated", lambda e: generated.append(e)
-        )
+        event_registry.subscribe("persona.agent.response_generated", lambda e: generated.append(e))
 
         llm = _make_llm("response")
         rt = AgentRuntime(llm_provider=llm)
@@ -318,9 +314,7 @@ class TestEvents:
         from labclaw.core.events import event_registry
 
         called: list[Any] = []
-        event_registry.subscribe(
-            "persona.agent.tool_called", lambda e: called.append(e)
-        )
+        event_registry.subscribe("persona.agent.tool_called", lambda e: called.append(e))
 
         tool_json = json.dumps({"tool": "my_tool", "arguments": {}})
         llm = _make_llm(tool_json, "done")

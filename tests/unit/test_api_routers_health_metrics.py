@@ -91,9 +91,7 @@ class TestHealthEndpoint:
                 return_value={"status": "unhealthy", "detail": "bus down"},
             ),
         ):
-            async with AsyncClient(
-                transport=ASGITransport(app=app), base_url="http://test"
-            ) as c:
+            async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
                 resp = await c.get("/api/health")
 
         assert resp.status_code == 503
@@ -107,9 +105,7 @@ class TestHealthEndpoint:
             "labclaw.api.routers.health._check_data",
             return_value={"status": "degraded", "detail": "data dir missing"},
         ):
-            async with AsyncClient(
-                transport=ASGITransport(app=app), base_url="http://test"
-            ) as c:
+            async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
                 resp = await c.get("/api/health")
         # degraded still returns 200 (not 503)
         assert resp.status_code == 200
@@ -129,9 +125,7 @@ class TestMetricsExceptionPaths:
             "labclaw.api.routers.metrics.get_pattern_miner",
             side_effect=RuntimeError("miner unavailable"),
         ):
-            async with AsyncClient(
-                transport=ASGITransport(app=app), base_url="http://test"
-            ) as c:
+            async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
                 resp = await c.get("/api/metrics")
         assert resp.status_code == 200
         assert "labclaw_patterns_discovered_total 0" in resp.text
@@ -143,9 +137,7 @@ class TestMetricsExceptionPaths:
             "labclaw.api.routers.metrics.get_evolution_engine",
             side_effect=RuntimeError("engine unavailable"),
         ):
-            async with AsyncClient(
-                transport=ASGITransport(app=app), base_url="http://test"
-            ) as c:
+            async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
                 resp = await c.get("/api/metrics")
         assert resp.status_code == 200
         assert 'labclaw_evolution_cycles_total{status="promoted"} 0' in resp.text

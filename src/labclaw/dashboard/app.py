@@ -1,4 +1,5 @@
 """LabClaw Dashboard — Streamlit-based monitoring UI."""
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -19,6 +20,7 @@ from labclaw.hardware.schemas import DeviceRecord
 # ---------------------------------------------------------------------------
 # Shared state (singleton per Streamlit session)
 # ---------------------------------------------------------------------------
+
 
 def _get_device_registry() -> DeviceRegistry:
     if "device_registry" not in st.session_state:
@@ -42,6 +44,7 @@ def _get_evolution_engine() -> EvolutionEngine:
 # Pages
 # ---------------------------------------------------------------------------
 
+
 def show_overview() -> None:
     st.title("LabClaw -- Lab Intelligence Dashboard")
     st.caption(f"v{__version__}")
@@ -59,8 +62,10 @@ def show_overview() -> None:
     layers = [
         ("L1 Hardware", "Device registry, safety, interfaces"),
         ("L2 Software Infra", "Gateway, Event Bus, API, Dashboard"),
-        ("L3 Scientific Engine",
-         "OBSERVE -> ASK -> HYPOTHESIZE -> PREDICT -> EXPERIMENT -> ANALYZE -> CONCLUDE"),
+        (
+            "L3 Scientific Engine",
+            "OBSERVE -> ASK -> HYPOTHESIZE -> PREDICT -> EXPERIMENT -> ANALYZE -> CONCLUDE",
+        ),
         ("L4 Memory", "Markdown + Knowledge Graph + Shared Blocks"),
         ("L5 Persona", "Human + AI members, training, promotion"),
     ]
@@ -84,14 +89,16 @@ def show_devices() -> None:
                 DeviceStatus.IN_USE: "blue",
                 DeviceStatus.RESERVED: "purple",
             }.get(d.status, "gray")
-            rows.append({
-                "ID": d.device_id[:8],
-                "Name": d.name,
-                "Type": d.device_type,
-                "Status": f":{color}_circle: {d.status.value}",
-                "Location": d.location,
-                "Registered": d.registered_at.strftime("%Y-%m-%d %H:%M"),
-            })
+            rows.append(
+                {
+                    "ID": d.device_id[:8],
+                    "Name": d.name,
+                    "Type": d.device_type,
+                    "Status": f":{color}_circle: {d.status.value}",
+                    "Location": d.location,
+                    "Registered": d.registered_at.strftime("%Y-%m-%d %H:%M"),
+                }
+            )
         st.dataframe(rows, use_container_width=True)
     else:
         st.info("No devices registered yet.")
@@ -104,7 +111,9 @@ def show_devices() -> None:
         submitted = st.form_submit_button("Register")
         if submitted and name:
             record = DeviceRecord(
-                name=name, device_type=device_type or "microscope", location=location,
+                name=name,
+                device_type=device_type or "microscope",
+                location=location,
             )
             registry.register(record)
             st.success(f"Registered: {name} ({record.device_id[:8]})")
@@ -129,13 +138,15 @@ def show_sessions() -> None:
 
     rows: list[dict[str, Any]] = []
     for s in sessions:
-        rows.append({
-            "ID": s.node_id[:8],
-            "Operator": s.operator_id or "-",
-            "Experiment": s.experiment_id or "-",
-            "Date": s.session_date.strftime("%Y-%m-%d %H:%M"),
-            "Duration (s)": f"{s.duration_seconds:.1f}" if s.duration_seconds else "active",
-        })
+        rows.append(
+            {
+                "ID": s.node_id[:8],
+                "Operator": s.operator_id or "-",
+                "Experiment": s.experiment_id or "-",
+                "Date": s.session_date.strftime("%Y-%m-%d %H:%M"),
+                "Duration (s)": f"{s.duration_seconds:.1f}" if s.duration_seconds else "active",
+            }
+        )
     st.dataframe(rows, use_container_width=True)
 
     st.subheader("Session Details")
@@ -190,8 +201,7 @@ def show_discovery() -> None:
             if result.patterns:
                 for p in result.patterns:
                     st.markdown(
-                        f"**[{p.pattern_type}]** {p.description} "
-                        f"(confidence: {p.confidence:.2f})",
+                        f"**[{p.pattern_type}]** {p.description} (confidence: {p.confidence:.2f})",
                     )
             else:
                 st.info("No significant patterns found.")
@@ -217,7 +227,8 @@ def show_discovery() -> None:
     if st.button("Run Demo Mining"):
         demo_data: list[dict[str, Any]] = [
             {
-                "session_id": f"s{i}", "timestamp": i,
+                "session_id": f"s{i}",
+                "timestamp": i,
                 "firing_rate": 10 + i * 0.5 + (5 if i == 8 else 0),
                 "speed": 20 - i * 0.3,
             }
@@ -270,11 +281,13 @@ def show_evolution() -> None:
             chart_data: list[dict[str, Any]] = []
             for s in scores:
                 avg = sum(s.metrics.values()) / len(s.metrics) if s.metrics else 0.0
-                chart_data.append({
-                    "time": s.measured_at.strftime("%H:%M:%S"),
-                    "avg_fitness": round(avg, 4),
-                    "data_points": s.data_points,
-                })
+                chart_data.append(
+                    {
+                        "time": s.measured_at.strftime("%H:%M:%S"),
+                        "avg_fitness": round(avg, 4),
+                        "data_points": s.data_points,
+                    }
+                )
 
             # Line chart of average fitness over measurements
             fitness_vals = [r["avg_fitness"] for r in chart_data]
@@ -312,14 +325,16 @@ def show_evolution() -> None:
 
         rows: list[dict[str, Any]] = []
         for c in history:
-            rows.append({
-                "Cycle": c.cycle_id[:8],
-                "Target": c.target.value,
-                "Stage": c.stage.value,
-                "Promoted": c.promoted,
-                "Started": c.started_at.strftime("%Y-%m-%d %H:%M"),
-                "Rollback": c.rollback_reason or "-",
-            })
+            rows.append(
+                {
+                    "Cycle": c.cycle_id[:8],
+                    "Target": c.target.value,
+                    "Stage": c.stage.value,
+                    "Promoted": c.promoted,
+                    "Started": c.started_at.strftime("%Y-%m-%d %H:%M"),
+                    "Rollback": c.rollback_reason or "-",
+                }
+            )
         st.dataframe(rows, use_container_width=True)
     else:
         st.info("No evolution cycles yet.")
@@ -331,13 +346,17 @@ def show_evolution() -> None:
     if st.button("Run Demo Evolution Cycle"):
         target = EvolutionTarget.ANALYSIS_PARAMS
         baseline = engine.measure_fitness(
-            target, {"accuracy": 0.75, "recall": 0.80}, data_points=100,
+            target,
+            {"accuracy": 0.75, "recall": 0.80},
+            data_points=100,
         )
         candidates = engine.propose_candidates(target, n=1)
         if candidates:
             cycle = engine.start_cycle(candidates[0], baseline)
             improved = engine.measure_fitness(
-                target, {"accuracy": 0.78, "recall": 0.82}, data_points=120,
+                target,
+                {"accuracy": 0.78, "recall": 0.82},
+                data_points=120,
             )
             engine.advance_stage(cycle.cycle_id, improved)
             st.success(f"Cycle {cycle.cycle_id[:8]} advanced to {cycle.stage.value}")
@@ -391,13 +410,15 @@ def show_plugins() -> None:
     st.subheader("Registered Plugins")
     rows: list[dict[str, Any]] = []
     for p in plugins:
-        rows.append({
-            "Name": p.name,
-            "Version": p.version,
-            "Type": p.plugin_type,
-            "Author": p.author or "-",
-            "Description": p.description,
-        })
+        rows.append(
+            {
+                "Name": p.name,
+                "Version": p.version,
+                "Type": p.plugin_type,
+                "Author": p.author or "-",
+                "Description": p.description,
+            }
+        )
     st.dataframe(rows, use_container_width=True)
 
 
@@ -447,15 +468,17 @@ def show_orchestrator() -> None:
         st.subheader("All Cycles")
         cycle_rows: list[dict[str, Any]] = []
         for r in results:
-            cycle_rows.append({
-                "Cycle": r.cycle_id[:8],
-                "Completed Steps": len(r.steps_completed),
-                "Skipped Steps": len(r.steps_skipped),
-                "Patterns": r.patterns_found,
-                "Hypotheses": r.hypotheses_generated,
-                "Duration (s)": f"{r.total_duration:.2f}",
-                "Success": r.success,
-            })
+            cycle_rows.append(
+                {
+                    "Cycle": r.cycle_id[:8],
+                    "Completed Steps": len(r.steps_completed),
+                    "Skipped Steps": len(r.steps_skipped),
+                    "Patterns": r.patterns_found,
+                    "Hypotheses": r.hypotheses_generated,
+                    "Duration (s)": f"{r.total_duration:.2f}",
+                    "Success": r.success,
+                }
+            )
         st.dataframe(cycle_rows, use_container_width=True)
     else:
         st.info("No orchestration cycles run yet.")
@@ -470,7 +493,8 @@ def show_orchestrator() -> None:
 
         demo_data: list[dict[str, Any]] = [
             {
-                "session_id": f"s{i}", "timestamp": i,
+                "session_id": f"s{i}",
+                "timestamp": i,
                 "firing_rate": 10 + i * 0.5 + (5 if i == 8 else 0),
                 "speed": 20 - i * 0.3,
             }
@@ -549,17 +573,20 @@ def show_knowledge_graph() -> None:
 
 st.set_page_config(page_title="LabClaw", page_icon="\U0001f9e0", layout="wide")
 
-page = st.sidebar.selectbox("Navigate", [
-    "Overview",
-    "Devices",
-    "Sessions",
-    "Discovery",
-    "Evolution",
-    "Orchestrator",
-    "Plugins",
-    "Knowledge Graph",
-    "Events",
-])
+page = st.sidebar.selectbox(
+    "Navigate",
+    [
+        "Overview",
+        "Devices",
+        "Sessions",
+        "Discovery",
+        "Evolution",
+        "Orchestrator",
+        "Plugins",
+        "Knowledge Graph",
+        "Events",
+    ],
+)
 
 if page == "Overview":
     show_overview()

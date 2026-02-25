@@ -98,7 +98,8 @@ def check_plugin_in_list(plugin_registry: PluginRegistry) -> None:
 
 @then(parsers.parse('it should be retrievable by type "{plugin_type}"'))
 def check_retrievable_by_type(
-    plugin_registry: PluginRegistry, plugin_type: str,
+    plugin_registry: PluginRegistry,
+    plugin_type: str,
 ) -> None:
     plugins = plugin_registry.get_by_type(plugin_type)
     assert len(plugins) >= 1, f"Expected >= 1 {plugin_type} plugin, got {len(plugins)}"

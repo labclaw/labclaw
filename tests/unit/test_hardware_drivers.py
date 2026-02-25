@@ -138,11 +138,7 @@ class TestQPCRExport:
         assert result["samples"][0]["ct"] == pytest.approx(22.4)
 
     def test_undetermined_ct(self, tmp_path: Path) -> None:
-        content = (
-            "Well\tSample Name\tCt\n"
-            "A1\tSample1\tUndetermined\n"
-            "A2\tSample2\tN/A\n"
-        )
+        content = "Well\tSample Name\tCt\nA1\tSample1\tUndetermined\nA2\tSample2\tN/A\n"
         qpcr_file = self._write_qpcr_file(tmp_path, content)
         driver = QPCRExportDriver("qpcr-3", "qpcr", tmp_path)
         result = driver.parse_file(qpcr_file)
@@ -152,10 +148,7 @@ class TestQPCRExport:
 
     def test_alternative_column_names(self, tmp_path: Path) -> None:
         """Test with 'Well Position' and 'Cycle Threshold' columns."""
-        content = (
-            "Well Position\tSample\tTarget Name\tCycle Threshold\n"
-            "A1\tCtrl\tGAPDH\t20.0\n"
-        )
+        content = "Well Position\tSample\tTarget Name\tCycle Threshold\nA1\tCtrl\tGAPDH\t20.0\n"
         qpcr_file = self._write_qpcr_file(tmp_path, content)
         driver = QPCRExportDriver("qpcr-4", "qpcr", tmp_path)
         result = driver.parse_file(qpcr_file)

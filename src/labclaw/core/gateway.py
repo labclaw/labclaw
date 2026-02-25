@@ -26,6 +26,7 @@ logger = logging.getLogger(__name__)
 # Helper factories
 # ---------------------------------------------------------------------------
 
+
 def _uuid() -> str:
     return str(uuid.uuid4())
 
@@ -37,6 +38,7 @@ def _now() -> datetime:
 # ---------------------------------------------------------------------------
 # Pydantic schemas
 # ---------------------------------------------------------------------------
+
 
 class GatewayMessage(BaseModel):
     """A message routed through the gateway."""
@@ -86,6 +88,7 @@ for _evt in _GATEWAY_EVENTS:
 # ---------------------------------------------------------------------------
 # Gateway
 # ---------------------------------------------------------------------------
+
 
 class Gateway:
     """In-memory message router for the lab control plane."""
@@ -205,9 +208,7 @@ class Gateway:
                 try:
                     handler(message)
                 except Exception:
-                    logger.exception(
-                        "Handler error broadcasting to %s", client_id
-                    )
+                    logger.exception("Handler error broadcasting to %s", client_id)
 
         event_registry.emit(
             "infra.gateway.message_routed",
@@ -234,9 +235,7 @@ class Gateway:
         except KeyError:
             raise KeyError(f"Connection {connection_id!r} not found") from None
 
-    def subscribe_client(
-        self, client_id: str, handler: Callable[[GatewayMessage], None]
-    ) -> None:
+    def subscribe_client(self, client_id: str, handler: Callable[[GatewayMessage], None]) -> None:
         """Register a message handler for a client.
 
         Args:

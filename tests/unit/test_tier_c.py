@@ -185,10 +185,7 @@ class TestTierCEvents:
         events: list = []
         event_registry.subscribe("memory.tier_c.block_set", events.append)
         await mem_backend.set_block("k", {"v": 1}, agent_id="a1")
-        assert any(
-            e.payload["key"] == "k" and e.payload["agent_id"] == "a1"
-            for e in events
-        )
+        assert any(e.payload["key"] == "k" and e.payload["agent_id"] == "a1" for e in events)
 
     @pytest.mark.asyncio
     async def test_block_deleted_event(self, mem_backend: TierCBackend) -> None:
@@ -212,10 +209,7 @@ class TestTierCEvents:
         events: list = []
         event_registry.subscribe("memory.tier_c.block_set", events.append)
         await sqlite_backend.set_block("k", {"v": 1}, agent_id="a1")
-        assert any(
-            e.payload["key"] == "k" and e.payload["agent_id"] == "a1"
-            for e in events
-        )
+        assert any(e.payload["key"] == "k" and e.payload["agent_id"] == "a1" for e in events)
 
     @pytest.mark.asyncio
     async def test_sqlite_block_deleted_event(self, sqlite_backend: TierCBackend) -> None:

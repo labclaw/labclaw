@@ -42,7 +42,7 @@ safe_floats = st.floats(
 json_primitive = st.one_of(
     st.none(),
     st.booleans(),
-    st.integers(min_value=-2**31, max_value=2**31),
+    st.integers(min_value=-(2**31), max_value=2**31),
     safe_floats,
     safe_text,
 )
@@ -60,6 +60,7 @@ json_value = st.recursive(
 # ---------------------------------------------------------------------------
 # 1. StepContext: any combination of valid fields produces a valid model
 # ---------------------------------------------------------------------------
+
 
 @given(
     data_rows=st.lists(
@@ -80,6 +81,7 @@ def test_step_context_roundtrip(data_rows: list[dict], cycle_id: str) -> None:
 # ---------------------------------------------------------------------------
 # 2. FitnessScore: arbitrary float metrics serialize/deserialize
 # ---------------------------------------------------------------------------
+
 
 @given(
     metrics=st.dictionaries(
@@ -107,6 +109,7 @@ def test_fitness_score_roundtrip(metrics: dict[str, float], data_points: int) ->
 # 3. EvolutionCandidate: arbitrary config_diff dicts are handled
 # ---------------------------------------------------------------------------
 
+
 @given(
     config_diff=st.dictionaries(safe_text, json_value, max_size=10),
     description=safe_text,
@@ -129,6 +132,7 @@ def test_evolution_candidate_arbitrary_config(
 # ---------------------------------------------------------------------------
 # 4. DataAccumulator thread safety: concurrent ingest_file calls
 # ---------------------------------------------------------------------------
+
 
 @given(
     num_files=st.integers(min_value=2, max_value=5),
@@ -176,10 +180,12 @@ def test_data_accumulator_thread_safety(num_files: int, rows_per_file: int) -> N
 # 5. CSV parsing fuzz: arbitrary CSV content doesn't crash
 # ---------------------------------------------------------------------------
 
+
 @given(
     header=st.lists(
         safe_text.filter(lambda s: "," not in s and "\n" not in s),
-        min_size=1, max_size=5,
+        min_size=1,
+        max_size=5,
     ),
     rows=st.lists(
         st.lists(safe_text.filter(lambda s: "\n" not in s), min_size=1, max_size=5),
@@ -199,7 +205,7 @@ def test_data_accumulator_csv_fuzz(header: list[str], rows: list[list[str]]) -> 
         writer.writerow(header)
         for row in rows:
             # Pad or trim row to match header length
-            padded = (row + [""] * len(header))[:len(header)]
+            padded = (row + [""] * len(header))[: len(header)]
             writer.writerow(padded)
 
     # Should not raise
@@ -210,6 +216,7 @@ def test_data_accumulator_csv_fuzz(header: list[str], rows: list[list[str]]) -> 
 # ---------------------------------------------------------------------------
 # 6. GovernanceDecision: any role string produces a valid decision
 # ---------------------------------------------------------------------------
+
 
 @given(role=safe_text)
 @settings(max_examples=50, suppress_health_check=[HealthCheck.too_slow])
@@ -232,6 +239,7 @@ def test_governance_any_role(role: str) -> None:
 # ---------------------------------------------------------------------------
 # 7. PluginMetadata: arbitrary strings produce valid model
 # ---------------------------------------------------------------------------
+
 
 @given(
     name=safe_text,

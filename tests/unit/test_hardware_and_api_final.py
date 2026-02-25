@@ -152,9 +152,7 @@ class TestDevicesConflict:
 
         app.dependency_overrides[get_device_registry] = lambda: mock_registry
         try:
-            async with AsyncClient(
-                transport=ASGITransport(app=app), base_url="http://test"
-            ) as c:
+            async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
                 resp = await c.post(
                     "/api/devices/",
                     json={"name": "CamX", "device_type": "camera"},

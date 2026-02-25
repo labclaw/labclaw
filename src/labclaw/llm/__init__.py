@@ -36,7 +36,6 @@ def get_llm_provider(provider_name: str, **kwargs: object) -> LLMProvider:
     cls = _PROVIDERS.get(provider_name)
     if cls is None:
         raise ValueError(
-            f"Unknown LLM provider {provider_name!r}. "
-            f"Available: {', '.join(_PROVIDERS)}"
+            f"Unknown LLM provider {provider_name!r}. Available: {', '.join(_PROVIDERS)}"
         )
     return cls(**kwargs)

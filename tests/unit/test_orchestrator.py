@@ -29,10 +29,7 @@ from labclaw.orchestrator.steps import (
 
 
 def _numeric_rows(n: int = 20) -> list[dict[str, Any]]:
-    return [
-        {"x": float(i), "y": float(i * 2 + 1), "label": f"s{i}"}
-        for i in range(n)
-    ]
+    return [{"x": float(i), "y": float(i * 2 + 1), "label": f"s{i}"} for i in range(n)]
 
 
 def _non_numeric_rows(n: int = 5) -> list[dict[str, Any]]:
@@ -102,10 +99,9 @@ class TestAskStep:
     async def test_sufficient_rows_calls_miner(self):
         mock_result = MagicMock()
         mock_result.patterns = ["p1", "p2"]
-        with patch(
-            "labclaw.discovery.mining.PatternMiner"
-        ) as mock_miner_cls, patch(
-            "labclaw.discovery.mining.MiningConfig"
+        with (
+            patch("labclaw.discovery.mining.PatternMiner") as mock_miner_cls,
+            patch("labclaw.discovery.mining.MiningConfig"),
         ):
             mock_miner_cls.return_value.mine.return_value = mock_result
             ctx = StepContext(data_rows=_numeric_rows(15))
@@ -142,11 +138,14 @@ class TestHypothesizeStep:
     async def test_with_patterns_calls_generator(self):
         mock_gen = MagicMock()
         mock_gen.generate.return_value = ["hyp1"]
-        with patch(
-            "labclaw.discovery.hypothesis.HypothesisGenerator",
-            return_value=mock_gen,
-        ), patch(
-            "labclaw.discovery.hypothesis.HypothesisInput",
+        with (
+            patch(
+                "labclaw.discovery.hypothesis.HypothesisGenerator",
+                return_value=mock_gen,
+            ),
+            patch(
+                "labclaw.discovery.hypothesis.HypothesisInput",
+            ),
         ):
             ctx = StepContext(patterns=["p1"])
             result = await HypothesizeStep().run(ctx)
@@ -158,13 +157,17 @@ class TestHypothesizeStep:
         mock_llm = MagicMock()
         mock_llm_gen = MagicMock()
         mock_llm_gen.generate.return_value = ["llm_hyp"]
-        with patch(
-            "labclaw.discovery.hypothesis.HypothesisGenerator",
-        ), patch(
-            "labclaw.discovery.hypothesis.HypothesisInput",
-        ), patch(
-            "labclaw.discovery.hypothesis.LLMHypothesisGenerator",
-            return_value=mock_llm_gen,
+        with (
+            patch(
+                "labclaw.discovery.hypothesis.HypothesisGenerator",
+            ),
+            patch(
+                "labclaw.discovery.hypothesis.HypothesisInput",
+            ),
+            patch(
+                "labclaw.discovery.hypothesis.LLMHypothesisGenerator",
+                return_value=mock_llm_gen,
+            ),
         ):
             step = HypothesizeStep(llm_provider=mock_llm)
             ctx = StepContext(patterns=["p1"])
@@ -179,14 +182,18 @@ class TestHypothesizeStep:
         mock_template_gen = MagicMock()
         mock_template_gen.generate.return_value = ["fallback_hyp"]
 
-        with patch(
-            "labclaw.discovery.hypothesis.HypothesisGenerator",
-            return_value=mock_template_gen,
-        ), patch(
-            "labclaw.discovery.hypothesis.HypothesisInput",
-        ), patch(
-            "labclaw.discovery.hypothesis.LLMHypothesisGenerator",
-            side_effect=ImportError("no LLM"),
+        with (
+            patch(
+                "labclaw.discovery.hypothesis.HypothesisGenerator",
+                return_value=mock_template_gen,
+            ),
+            patch(
+                "labclaw.discovery.hypothesis.HypothesisInput",
+            ),
+            patch(
+                "labclaw.discovery.hypothesis.LLMHypothesisGenerator",
+                side_effect=ImportError("no LLM"),
+            ),
         ):
             step = HypothesizeStep(llm_provider=mock_llm)
             ctx = StepContext(patterns=["p1"])
@@ -229,10 +236,9 @@ class TestPredictStep:
         mock_train.n_samples = 20
         mock_train.feature_importances = []
 
-        with patch(
-            "labclaw.discovery.modeling.PredictiveModel"
-        ) as mock_model_cls, patch(
-            "labclaw.discovery.modeling.ModelConfig"
+        with (
+            patch("labclaw.discovery.modeling.PredictiveModel") as mock_model_cls,
+            patch("labclaw.discovery.modeling.ModelConfig"),
         ):
             mock_model_cls.return_value.train.return_value = mock_train
             rows = _numeric_rows(20)
@@ -268,12 +274,10 @@ class TestExperimentStep:
         mock_proposal.parameters = {"x": 5.0}
         mock_proposal.iteration = 1
 
-        with patch(
-            "labclaw.optimization.optimizer.BayesianOptimizer"
-        ) as mock_opt_cls, patch(
-            "labclaw.optimization.optimizer.ParameterDimension"
-        ), patch(
-            "labclaw.optimization.optimizer.ParameterSpace"
+        with (
+            patch("labclaw.optimization.optimizer.BayesianOptimizer") as mock_opt_cls,
+            patch("labclaw.optimization.optimizer.ParameterDimension"),
+            patch("labclaw.optimization.optimizer.ParameterSpace"),
         ):
             mock_opt_cls.return_value.suggest.return_value = [mock_proposal]
             rows = _numeric_rows(10)
@@ -295,12 +299,10 @@ class TestExperimentStep:
         mock_proposal.parameters = {"x": 5.5}
         mock_proposal.iteration = 1
 
-        with patch(
-            "labclaw.optimization.optimizer.BayesianOptimizer"
-        ) as mock_opt_cls, patch(
-            "labclaw.optimization.optimizer.ParameterDimension"
-        ) as mock_dim_cls, patch(
-            "labclaw.optimization.optimizer.ParameterSpace"
+        with (
+            patch("labclaw.optimization.optimizer.BayesianOptimizer") as mock_opt_cls,
+            patch("labclaw.optimization.optimizer.ParameterDimension") as mock_dim_cls,
+            patch("labclaw.optimization.optimizer.ParameterSpace"),
         ):
             mock_opt_cls.return_value.suggest.return_value = [mock_proposal]
             ctx = StepContext(
@@ -340,9 +342,7 @@ class TestAnalyzeStep:
         mock_test_result.p_value = 0.01
         mock_test_result.significant = True
 
-        with patch(
-            "labclaw.validation.statistics.StatisticalValidator"
-        ) as mock_validator_cls:
+        with patch("labclaw.validation.statistics.StatisticalValidator") as mock_validator_cls:
             mock_validator_cls.return_value.run_test.return_value = mock_test_result
             rows = [{"x": float(i), "y": float(i * 2)} for i in range(10)]
             ctx = StepContext(data_rows=rows, patterns=[pattern])
@@ -406,10 +406,9 @@ class TestConcludeStep:
 
     @pytest.mark.asyncio
     async def test_with_memory_root(self, tmp_path: Path):
-        with patch(
-            "labclaw.memory.markdown.TierABackend"
-        ) as mock_backend_cls, patch(
-            "labclaw.memory.markdown.MemoryEntry"
+        with (
+            patch("labclaw.memory.markdown.TierABackend") as mock_backend_cls,
+            patch("labclaw.memory.markdown.MemoryEntry"),
         ):
             ctx = StepContext(patterns=["p1"])
             step = ConcludeStep(memory_root=tmp_path, entity_id="lab")
@@ -419,10 +418,9 @@ class TestConcludeStep:
 
     @pytest.mark.asyncio
     async def test_memory_write_failure(self, tmp_path: Path):
-        with patch(
-            "labclaw.memory.markdown.TierABackend"
-        ) as mock_backend_cls, patch(
-            "labclaw.memory.markdown.MemoryEntry"
+        with (
+            patch("labclaw.memory.markdown.TierABackend") as mock_backend_cls,
+            patch("labclaw.memory.markdown.MemoryEntry"),
         ):
             mock_backend_cls.return_value.append_memory.side_effect = OSError("write fail")
             ctx = StepContext(patterns=["p1"])
@@ -446,6 +444,7 @@ class TestScientificLoop:
 
             async def make_result(ctx, n=name):
                 return StepResult(step=n, success=True, context=ctx)
+
             step.run = make_result
             mock_steps.append(step)
 
@@ -469,6 +468,7 @@ class TestScientificLoop:
 
         async def make_result(ctx):
             return StepResult(step=StepName.OBSERVE, success=True, context=ctx)
+
         step.run = make_result
 
         loop = ScientificLoop(steps=[step])
@@ -490,6 +490,7 @@ class TestScientificLoop:
 
             async def run_result(ctx):
                 return StepResult(step=StepName.OBSERVE, success=True, context=ctx)
+
             run_step.run = run_result
 
             skip_step = MagicMock()
@@ -497,9 +498,13 @@ class TestScientificLoop:
 
             async def skip_result(ctx):
                 return StepResult(
-                    step=StepName.ASK, success=True, skipped=True,
-                    skip_reason="test", context=ctx,
+                    step=StepName.ASK,
+                    success=True,
+                    skipped=True,
+                    skip_reason="test",
+                    context=ctx,
                 )
+
             skip_step.run = skip_result
 
             loop = ScientificLoop(steps=[run_step, skip_step])
@@ -521,6 +526,7 @@ class TestScientificLoop:
         async def result_fn(ctx):
             ctx2 = ctx.model_copy(update={"patterns": ["p1"], "hypotheses": ["h1"]})
             return StepResult(step=StepName.OBSERVE, success=True, context=ctx2)
+
         step.run = result_fn
 
         loop = ScientificLoop(steps=[step])

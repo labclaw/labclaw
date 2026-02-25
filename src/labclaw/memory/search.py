@@ -133,21 +133,21 @@ class HybridSearchEngine:
         """Search Tier A (markdown memory)."""
         assert self._tier_a is not None
         weight = self._config.tier_a_weight
-        tier_a_results: list[SearchResult] = self._tier_a.search(
-            query.text, limit=query.limit * 2
-        )
+        tier_a_results: list[SearchResult] = self._tier_a.search(query.text, limit=query.limit * 2)
 
         hybrid_results: list[HybridSearchResult] = []
         for r in tier_a_results:
             if query.entity_filter and r.entity_id != query.entity_filter:
                 continue
-            hybrid_results.append(HybridSearchResult(
-                entity_id=r.entity_id,
-                snippet=r.snippet,
-                score=r.score * weight,
-                source_tier="a",
-                source_detail=r.source,
-            ))
+            hybrid_results.append(
+                HybridSearchResult(
+                    entity_id=r.entity_id,
+                    snippet=r.snippet,
+                    score=r.score * weight,
+                    source_tier="a",
+                    source_detail=r.source,
+                )
+            )
         return hybrid_results
 
     def _search_tier_b(self, query: HybridSearchQuery) -> list[HybridSearchResult]:
@@ -171,12 +171,14 @@ class HybridSearchEngine:
                     snippet_parts.append(f"{key}: {data[key]}")
             snippet = "; ".join(snippet_parts) if snippet_parts else f"[{node_type}] {node_id}"
 
-            hybrid_results.append(HybridSearchResult(
-                entity_id=node_id,
-                snippet=snippet[:200],
-                score=r.score * weight,
-                source_tier="b",
-                source_detail=f"node:{node_type}",
-                matched_at=r.node.created_at,
-            ))
+            hybrid_results.append(
+                HybridSearchResult(
+                    entity_id=node_id,
+                    snippet=snippet[:200],
+                    score=r.score * weight,
+                    source_tier="b",
+                    source_detail=f"node:{node_type}",
+                    matched_at=r.node.created_at,
+                )
+            )
         return hybrid_results

@@ -49,20 +49,26 @@ def tier_a(tmp_path: Path) -> TierABackend:
 class TestGovernanceBlocksUnauthorized:
     def test_undergraduate_cannot_execute(self, governance: GovernanceEngine) -> None:
         decision = governance.check(
-            action="execute", actor="student", role="undergraduate",
+            action="execute",
+            actor="student",
+            role="undergraduate",
         )
         assert decision.allowed is False
         assert decision.safety_level == SafetyLevel.BLOCKED
 
     def test_digital_intern_cannot_write(self, governance: GovernanceEngine) -> None:
         decision = governance.check(
-            action="write", actor="bot", role="digital_intern",
+            action="write",
+            actor="bot",
+            role="digital_intern",
         )
         assert decision.allowed is False
 
     def test_unknown_role_blocked(self, governance: GovernanceEngine) -> None:
         decision = governance.check(
-            action="read", actor="unknown", role="random_role",
+            action="read",
+            actor="unknown",
+            role="random_role",
         )
         assert decision.allowed is False
 
@@ -75,7 +81,9 @@ class TestGovernanceBlocksUnauthorized:
         )
         governance.register_rule(rule)
         decision = governance.check(
-            action="execute", actor="pi_user", role="pi",
+            action="execute",
+            actor="pi_user",
+            role="pi",
             context={"device": "laser"},
         )
         assert decision.allowed is False
@@ -225,7 +233,9 @@ class TestPluginSafetyRules:
         )
         governance.register_rule(rule)
         decision = governance.check(
-            action="execute", actor="pi", role="pi",
+            action="execute",
+            actor="pi",
+            role="pi",
             context={"temperature_c": "above_80"},
         )
         assert decision.allowed is False
@@ -241,7 +251,9 @@ class TestPluginSafetyRules:
         )
         governance.register_rule(rule)
         decision = governance.check(
-            action="execute", actor="grad_student", role="graduate",
+            action="execute",
+            actor="grad_student",
+            role="graduate",
             context={"chemical": True},
         )
         assert decision.allowed is True
@@ -264,7 +276,9 @@ class TestPluginSafetyRules:
         governance.register_rule(deny_rule)
         governance.register_rule(approval_rule)
         decision = governance.check(
-            action="execute", actor="alice", role="pi",
+            action="execute",
+            actor="alice",
+            role="pi",
         )
         assert decision.allowed is False  # Deny rule fires first
 
@@ -277,6 +291,7 @@ class TestPluginSafetyRules:
 class TestAuditLogIntegrity:
     def test_audit_log_has_no_delete_method(self) -> None:
         from labclaw.core.governance import AuditLog
+
         log = AuditLog()
         assert not hasattr(log, "delete")
         assert not hasattr(log, "remove")
@@ -302,11 +317,15 @@ class TestAuditLogIntegrity:
         log = AuditLog(path=log_path)
 
         entry1 = AuditEntry(
-            actor="alice", action="read", target="device1",
+            actor="alice",
+            action="read",
+            target="device1",
             decision=GovernanceDecision(allowed=True),
         )
         entry2 = AuditEntry(
-            actor="bob", action="write", target="device2",
+            actor="bob",
+            action="write",
+            target="device2",
             decision=GovernanceDecision(allowed=False, reason="denied"),
         )
         log.append(entry1)
@@ -317,7 +336,9 @@ class TestAuditLogIntegrity:
 
         # Append more — file grows, doesn't reset
         entry3 = AuditEntry(
-            actor="carol", action="execute", target="device3",
+            actor="carol",
+            action="execute",
+            target="device3",
             decision=GovernanceDecision(allowed=True),
         )
         log.append(entry3)
@@ -332,7 +353,8 @@ class TestAuditLogIntegrity:
 
 class TestDeviceWriteApproval:
     def test_write_action_requires_approval_blocked_without_role(
-        self, governance: GovernanceEngine,
+        self,
+        governance: GovernanceEngine,
     ) -> None:
         rule = SafetyRule(
             name="high_voltage_approval",
@@ -342,23 +364,31 @@ class TestDeviceWriteApproval:
         )
         governance.register_rule(rule)
         decision = governance.check(
-            action="write", actor="student", role="graduate",
+            action="write",
+            actor="student",
+            role="graduate",
             context={"voltage": "high"},
         )
         assert decision.safety_level == SafetyLevel.REQUIRES_APPROVAL
 
     def test_calibrate_denied_for_undergraduate(
-        self, governance: GovernanceEngine,
+        self,
+        governance: GovernanceEngine,
     ) -> None:
         decision = governance.check(
-            action="calibrate", actor="student", role="undergraduate",
+            action="calibrate",
+            actor="student",
+            role="undergraduate",
         )
         assert decision.allowed is False
 
     def test_calibrate_allowed_for_technician(
-        self, governance: GovernanceEngine,
+        self,
+        governance: GovernanceEngine,
     ) -> None:
         decision = governance.check(
-            action="calibrate", actor="tech", role="technician",
+            action="calibrate",
+            actor="tech",
+            role="technician",
         )
         assert decision.allowed is True

@@ -69,9 +69,7 @@ class DeviceRegistry:
         device = self.get(device_id)
         old_status = device.status
         self._devices[device_id] = device.model_copy(update={"status": status})
-        logger.info(
-            "Device %s status: %s -> %s", device_id, old_status.value, status.value
-        )
+        logger.info("Device %s status: %s -> %s", device_id, old_status.value, status.value)
 
         event_registry.emit(
             "hardware.device.status_changed",

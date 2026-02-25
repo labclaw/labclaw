@@ -136,11 +136,13 @@ def test_evolution_rollback_boundaries(
     new_fitness = _make_fitness({"accuracy": current_val})
 
     import time
+
     time.sleep(0.01)  # Ensure soak time passes
 
     result = engine.advance_stage(cycle.cycle_id, new_fitness)
 
     from labclaw.core.schemas import EvolutionStage
+
     if should_rollback:
         assert result.stage == EvolutionStage.ROLLED_BACK
         assert result.rollback_reason is not None
@@ -154,8 +156,14 @@ def test_evolution_rollback_boundaries(
 # ---------------------------------------------------------------------------
 
 ALL_ROLES = [
-    "pi", "postdoc", "graduate", "undergraduate",
-    "technician", "digital_intern", "digital_analyst", "digital_specialist",
+    "pi",
+    "postdoc",
+    "graduate",
+    "undergraduate",
+    "technician",
+    "digital_intern",
+    "digital_analyst",
+    "digital_specialist",
 ]
 
 ALL_ACTIONS = ["read", "write", "execute", "approve", "calibrate"]
@@ -184,8 +192,7 @@ def test_governance_role_action_matrix(role: str, action: str) -> None:
     )
     expected_allowed = action in _EXPECTED.get(role, set())
     assert decision.allowed == expected_allowed, (
-        f"role={role}, action={action}: "
-        f"expected allowed={expected_allowed}, got {decision.allowed}"
+        f"role={role}, action={action}: expected allowed={expected_allowed}, got {decision.allowed}"
     )
 
 
@@ -269,6 +276,7 @@ async def test_orchestrator_steps_row_counts(
     step = step_cls()
 
     from labclaw.orchestrator.steps import StepContext
+
     ctx = StepContext(data_rows=_make_data_rows(row_count))
     result = await step.run(ctx)
 

@@ -24,6 +24,7 @@ from tests.features.conftest import EventCapture
 # Captured messages helper
 # ---------------------------------------------------------------------------
 
+
 class MessageCapture:
     """Captures gateway messages for assertion."""
 
@@ -37,6 +38,7 @@ class MessageCapture:
 # ---------------------------------------------------------------------------
 # Gateway fixtures / Given steps
 # ---------------------------------------------------------------------------
+
 
 @given("the gateway is initialized", target_fixture="gateway")
 def gateway_initialized(event_capture: EventCapture) -> Gateway:
@@ -81,6 +83,7 @@ def client_is_registered(
 # When steps — Gateway
 # ---------------------------------------------------------------------------
 
+
 @when(
     parsers.parse('I register a client "{client_id}" of type "{client_type}"'),
     target_fixture="registered_connection",
@@ -110,9 +113,7 @@ def unregister_client(
 
 
 @when(
-    parsers.parse(
-        'I send a message from "{source}" to "{target}" with type "{msg_type}"'
-    ),
+    parsers.parse('I send a message from "{source}" to "{target}" with type "{msg_type}"'),
     target_fixture="sent_message",
 )
 def send_message(
@@ -144,6 +145,7 @@ def broadcast_message(
 # Then steps — Gateway
 # ---------------------------------------------------------------------------
 
+
 @then(parsers.parse("the gateway has {count:d} connection"))
 def gateway_has_n_connections_singular(gateway: Gateway, count: int) -> None:
     conns = gateway.get_connections()
@@ -170,9 +172,7 @@ def message_routed(message_capture: MessageCapture) -> None:
 
 
 @then("the message reaches all connected clients")
-def message_reaches_all(
-    gateway: Gateway, message_capture: MessageCapture
-) -> None:
+def message_reaches_all(gateway: Gateway, message_capture: MessageCapture) -> None:
     conn_count = len(gateway.get_connections())
     assert len(message_capture.messages) >= conn_count, (
         f"Expected {conn_count} deliveries, got {len(message_capture.messages)}"
@@ -182,6 +182,7 @@ def message_reaches_all(
 # ---------------------------------------------------------------------------
 # Event Bus fixtures / Given steps
 # ---------------------------------------------------------------------------
+
 
 @given("the event bus is initialized", target_fixture="event_bus")
 def event_bus_initialized() -> EventBus:
@@ -221,10 +222,9 @@ def wildcard_subscriber(
 # When steps — Event Bus
 # ---------------------------------------------------------------------------
 
+
 @when(
-    parsers.parse(
-        'I publish an event "{event_name}" with payload key "{key}" value "{value}"'
-    ),
+    parsers.parse('I publish an event "{event_name}" with payload key "{key}" value "{value}"'),
     target_fixture="published_event",
 )
 def publish_event_with_payload(
@@ -254,6 +254,7 @@ def unsubscribe_from(
 # Then steps — Event Bus
 # ---------------------------------------------------------------------------
 
+
 @then("the subscriber receives the event")
 def subscriber_received(bus_capture: EventCapture) -> None:
     assert len(bus_capture.events) > 0, "Subscriber received no events"
@@ -274,6 +275,4 @@ def wildcard_received_n(wildcard_capture: EventCapture, count: int) -> None:
 
 @then(parsers.parse("the subscriber received {count:d} events"))
 def subscriber_received_n(bus_capture: EventCapture, count: int) -> None:
-    assert len(bus_capture.events) == count, (
-        f"Expected {count}, got {len(bus_capture.events)}"
-    )
+    assert len(bus_capture.events) == count, f"Expected {count}, got {len(bus_capture.events)}"

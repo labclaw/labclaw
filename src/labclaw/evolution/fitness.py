@@ -82,7 +82,5 @@ class FitnessTracker:
         tracker = cls()
         for target_str, scores_data in data.items():
             target = EvolutionTarget(target_str)
-            tracker._history[target] = [
-                FitnessScore.model_validate(s) for s in scores_data
-            ]
+            tracker._history[target] = [FitnessScore.model_validate(s) for s in scores_data]
         return tracker

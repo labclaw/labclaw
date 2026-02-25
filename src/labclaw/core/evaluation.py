@@ -2,6 +2,7 @@
 
 Used by evolution engine for BACKTEST and SHADOW stages.
 """
+
 from __future__ import annotations
 
 import logging
@@ -70,17 +71,13 @@ class EvaluationHarness:
 
         numeric_cols = []
         if historical_data:
-            numeric_cols = [
-                k for k, v in historical_data[0].items() if isinstance(v, (int, float))
-            ]
+            numeric_cols = [k for k, v in historical_data[0].items() if isinstance(v, (int, float))]
 
         metrics = {
             "pattern_count": float(len(result.patterns)),
             "data_rows": float(len(historical_data)),
             "coverage": (
-                float(len(result.patterns)) / max(len(numeric_cols), 1)
-                if numeric_cols
-                else 0.0
+                float(len(result.patterns)) / max(len(numeric_cols), 1) if numeric_cols else 0.0
             ),
             "replay_duration": duration,
         }

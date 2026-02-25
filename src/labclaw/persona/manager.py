@@ -73,9 +73,7 @@ class PersonaManager:
         self._benchmarks: dict[str, list[BenchmarkResult]] = {}
         self._corrections: dict[str, list[CorrectionEntry]] = {}
 
-    def create_member(
-        self, name: str, role: MemberRole, is_digital: bool
-    ) -> MemberProfile:
+    def create_member(self, name: str, role: MemberRole, is_digital: bool) -> MemberProfile:
         """Create a new lab member (human or digital)."""
         profile = MemberProfile(name=name, role=role, is_digital=is_digital)
         self._members[profile.member_id] = profile
@@ -203,9 +201,7 @@ class PersonaManager:
 
         gate = self.check_promotion(member_id)
         if gate is None:
-            raise ValueError(
-                f"Member {member_id!r} does not meet promotion requirements"
-            )
+            raise ValueError(f"Member {member_id!r} does not meet promotion requirements")
 
         from_role = member.role
         member.role = gate.to_role
@@ -235,14 +231,10 @@ class PersonaManager:
         try:
             idx = _DIGITAL_ROLES.index(member.role)
         except ValueError:
-            raise ValueError(
-                f"Member role {member.role!r} is not on the digital ladder"
-            ) from None
+            raise ValueError(f"Member role {member.role!r} is not on the digital ladder") from None
 
         if idx == 0:
-            raise ValueError(
-                f"Member {member_id!r} is already at the lowest digital role"
-            )
+            raise ValueError(f"Member {member_id!r} is already at the lowest digital role")
 
         from_role = member.role
         member.role = _DIGITAL_ROLES[idx - 1]

@@ -85,6 +85,8 @@ select = ["E", "F", "I", "N", "W", "UP"]
 "src/labclaw/discovery/modeling.py" = ["N802", "N803", "N806"]
 # sklearn import alias naming
 "src/labclaw/discovery/unsupervised.py" = ["N811"]
+# Standard math notation (X, A) in modeling tests
+"tests/unit/test_discovery_modeling_full.py" = ["N803", "N806"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

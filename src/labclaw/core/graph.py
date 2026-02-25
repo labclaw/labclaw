@@ -26,6 +26,7 @@ from labclaw.core.schemas import (
 # Helpers
 # ---------------------------------------------------------------------------
 
+
 def _uuid() -> str:
     return str(uuid.uuid4())
 
@@ -37,6 +38,7 @@ def _now() -> datetime:
 # ---------------------------------------------------------------------------
 # Base
 # ---------------------------------------------------------------------------
+
 
 class GraphNode(BaseModel):
     """Base for all knowledge graph entities."""
@@ -61,6 +63,7 @@ class GraphNode(BaseModel):
 # ---------------------------------------------------------------------------
 # 14 Entity Types
 # ---------------------------------------------------------------------------
+
 
 class PersonNode(GraphNode):
     """People — who, role, expertise, affiliation."""

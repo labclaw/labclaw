@@ -62,18 +62,14 @@ class SoftwareBridgeDriver:
         try:
             self._open_connection()
             self._connected = True
-            logger.info(
-                "SoftwareBridgeDriver %s connected to %s", self._device_id, self._endpoint
-            )
+            logger.info("SoftwareBridgeDriver %s connected to %s", self._device_id, self._endpoint)
             event_registry.emit(
                 "hardware.driver.connected",
                 payload={"device_id": self._device_id, "endpoint": self._endpoint},
             )
             return True
         except Exception as exc:
-            logger.error(
-                "SoftwareBridgeDriver %s failed to connect: %s", self._device_id, exc
-            )
+            logger.error("SoftwareBridgeDriver %s failed to connect: %s", self._device_id, exc)
             event_registry.emit(
                 "hardware.driver.error",
                 payload={"device_id": self._device_id, "error": str(exc)},
@@ -115,9 +111,7 @@ class SoftwareBridgeDriver:
             )
             return True
         except Exception as exc:
-            logger.error(
-                "SoftwareBridgeDriver %s send error: %s", self._device_id, exc
-            )
+            logger.error("SoftwareBridgeDriver %s send error: %s", self._device_id, exc)
             event_registry.emit(
                 "hardware.driver.error",
                 payload={"device_id": self._device_id, "error": str(exc)},

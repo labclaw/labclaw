@@ -59,8 +59,7 @@ class LocalProvider:
         """Generate a structured response by embedding the JSON schema in the prompt."""
         schema = json.dumps(response_model.model_json_schema(), indent=2)
         structured_prompt = (
-            f"{prompt}\n\n"
-            f"Respond with ONLY valid JSON matching this schema:\n{schema}"
+            f"{prompt}\n\nRespond with ONLY valid JSON matching this schema:\n{schema}"
         )
         sys = system or "You are a helpful assistant that outputs valid JSON only."
         raw = await self.complete(structured_prompt, system=sys, temperature=temperature)

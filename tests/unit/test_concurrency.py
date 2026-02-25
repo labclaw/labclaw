@@ -77,16 +77,14 @@ def test_event_registry_concurrent_subscribers() -> None:
         def handler(event):
             with lock:
                 received.append(idx)
+
         return handler
 
     # Subscribe from multiple threads
     def subscribe_worker(idx: int) -> None:
         registry.subscribe("test.concurrency.event", make_handler(idx))
 
-    threads = [
-        threading.Thread(target=subscribe_worker, args=(i,))
-        for i in range(num_subscribers)
-    ]
+    threads = [threading.Thread(target=subscribe_worker, args=(i,)) for i in range(num_subscribers)]
     for t in threads:
         t.start()
     for t in threads:
@@ -102,9 +100,7 @@ def test_event_registry_concurrent_subscribers() -> None:
         except Exception as e:
             emit_errors.append(e)
 
-    emit_threads = [
-        threading.Thread(target=emit_worker) for _ in range(num_emitters)
-    ]
+    emit_threads = [threading.Thread(target=emit_worker) for _ in range(num_emitters)]
     for t in emit_threads:
         t.start()
     for t in emit_threads:

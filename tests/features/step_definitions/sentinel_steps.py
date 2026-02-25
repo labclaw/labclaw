@@ -38,9 +38,7 @@ def sentinel_initialized(event_capture: EventCapture) -> Sentinel:
 
 
 @given(
-    parsers.parse(
-        'a rule "{rule_name}" for metric "{metric_name}" below threshold {threshold:g}'
-    ),
+    parsers.parse('a rule "{rule_name}" for metric "{metric_name}" below threshold {threshold:g}'),
     target_fixture="current_rule",
 )
 def add_rule_below(
@@ -62,9 +60,7 @@ def add_rule_below(
     parsers.parse('I check session "{session_id}" with a passing metric'),
     target_fixture="passing_summary",
 )
-def check_session_passing(
-    sentinel: Sentinel, session_id: str
-) -> SessionQualitySummary:
+def check_session_passing(sentinel: Sentinel, session_id: str) -> SessionQualitySummary:
     """Check a session with a metric that passes all rules."""
     metric = QualityMetric(name="snr", value=10.0, level=QualityLevel.GOOD)
     return sentinel.check_session(session_id, [metric])
@@ -74,9 +70,7 @@ def check_session_passing(
     parsers.parse('I check session "{session_id}" with a failing metric'),
     target_fixture="failing_summary",
 )
-def check_session_failing(
-    sentinel: Sentinel, session_id: str
-) -> SessionQualitySummary:
+def check_session_failing(sentinel: Sentinel, session_id: str) -> SessionQualitySummary:
     """Check a session with a metric that fails a rule."""
     metric = QualityMetric(name="snr", value=1.0, level=QualityLevel.GOOD)
     return sentinel.check_session(session_id, [metric])
@@ -91,9 +85,7 @@ def check_session_failing(
     parsers.parse('I check a metric "{metric_name}" with value {value:g}'),
     target_fixture="check_alerts",
 )
-def check_single_metric(
-    sentinel: Sentinel, metric_name: str, value: float
-) -> list[QualityAlert]:
+def check_single_metric(sentinel: Sentinel, metric_name: str, value: float) -> list[QualityAlert]:
     """Check a single metric and capture the resulting alerts."""
     metric = QualityMetric(name=metric_name, value=value, level=QualityLevel.GOOD)
     # Use check_session with a dummy session to also emit check.completed
@@ -126,9 +118,7 @@ def check_session_with_table(
     parsers.parse('I get alerts for session "{session_id}"'),
     target_fixture="filtered_alerts",
 )
-def get_alerts_for_session(
-    sentinel: Sentinel, session_id: str
-) -> list[QualityAlert]:
+def get_alerts_for_session(sentinel: Sentinel, session_id: str) -> list[QualityAlert]:
     """Get alerts filtered by session ID."""
     return sentinel.get_alerts(session_id=session_id)
 
@@ -144,16 +134,10 @@ def no_alerts(check_alerts: list[QualityAlert]) -> None:
 
 
 @then(parsers.parse('{count:d} alert is raised with level "{level}"'))
-def n_alerts_with_level(
-    check_alerts: list[QualityAlert], count: int, level: str
-) -> None:
-    assert len(check_alerts) == count, (
-        f"Expected {count} alerts, got {len(check_alerts)}"
-    )
+def n_alerts_with_level(check_alerts: list[QualityAlert], count: int, level: str) -> None:
+    assert len(check_alerts) == count, f"Expected {count} alerts, got {len(check_alerts)}"
     for alert in check_alerts:
-        assert alert.level.value == level, (
-            f"Expected level {level!r}, got {alert.level.value!r}"
-        )
+        assert alert.level.value == level, f"Expected level {level!r}, got {alert.level.value!r}"
 
 
 @then(parsers.parse('the session summary overall level is "{level}"'))
@@ -171,9 +155,7 @@ def session_alert_count(session_summary: SessionQualitySummary, count: int) -> N
 
 
 @then(parsers.parse("the session has {count:d} alert"))
-def session_alert_count_singular(
-    session_summary: SessionQualitySummary, count: int
-) -> None:
+def session_alert_count_singular(session_summary: SessionQualitySummary, count: int) -> None:
     assert len(session_summary.alerts) == count, (
         f"Expected {count} alerts, got {len(session_summary.alerts)}"
     )
@@ -181,6 +163,4 @@ def session_alert_count_singular(
 
 @then(parsers.parse("I get {count:d} alert"))
 def got_n_alerts(filtered_alerts: list[QualityAlert], count: int) -> None:
-    assert len(filtered_alerts) == count, (
-        f"Expected {count} alerts, got {len(filtered_alerts)}"
-    )
+    assert len(filtered_alerts) == count, f"Expected {count} alerts, got {len(filtered_alerts)}"

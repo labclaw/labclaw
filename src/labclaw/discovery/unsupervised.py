@@ -166,16 +166,10 @@ def _kmeans_pure(
         for ki in range(k):
             members = [data[i] for i in range(n) if labels[i] == ki]
             if members:
-                centroids[ki] = [
-                    sum(m[d] for m in members) / len(members)
-                    for d in range(dim)
-                ]
+                centroids[ki] = [sum(m[d] for m in members) / len(members) for d in range(dim)]
 
     # Compute inertia
-    inertia = sum(
-        _euclidean_dist(data[i], centroids[labels[i]]) ** 2
-        for i in range(n)
-    )
+    inertia = sum(_euclidean_dist(data[i], centroids[labels[i]]) ** 2 for i in range(n))
     return labels, centroids, inertia
 
 
@@ -301,7 +295,10 @@ class ClusterDiscovery:
             inertia = float(km.inertia_)
         else:
             labels, centroids, inertia = _kmeans_pure(
-                matrix, k, cfg.max_iterations, cfg.random_seed,
+                matrix,
+                k,
+                cfg.max_iterations,
+                cfg.random_seed,
             )
 
         return ClusterResult(
@@ -346,10 +343,7 @@ class ClusterDiscovery:
                 "method": cfg.method,
             },
             confidence=self._cluster_confidence(result),
-            session_ids=[
-                str(row.get("session_id", idx))
-                for idx, row in enumerate(data)
-            ],
+            session_ids=[str(row.get("session_id", idx)) for idx, row in enumerate(data)],
         )
         patterns.append(pattern)
 
@@ -439,7 +433,8 @@ class DimensionalityReducer:
 
         # Extract numeric matrix
         matrix, _ = ClusterDiscovery._extract_features(
-            data, feature_columns or [],
+            data,
+            feature_columns or [],
         )
         if len(matrix) < 2:
             return ReductionResult(

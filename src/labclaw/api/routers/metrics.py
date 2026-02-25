@@ -45,10 +45,7 @@ def _collect() -> str:
         history = engine.get_history()
         promoted = sum(1 for c in history if c.promoted)
         rolled_back = sum(1 for c in history if c.rollback_reason is not None)
-        active = sum(
-            1 for c in history
-            if not c.promoted and c.rollback_reason is None
-        )
+        active = sum(1 for c in history if not c.promoted and c.rollback_reason is None)
     except Exception:
         promoted = rolled_back = active = 0
     lines.append("# HELP labclaw_evolution_cycles_total Evolution cycles by status")
@@ -69,9 +66,7 @@ def _collect() -> str:
     lines.append(f"labclaw_uptime_seconds {uptime}")
 
     # -- discovery cycle duration (placeholder) ------------------------------
-    lines.append(
-        "# HELP labclaw_discovery_cycle_duration_seconds Discovery cycle duration"
-    )
+    lines.append("# HELP labclaw_discovery_cycle_duration_seconds Discovery cycle duration")
     lines.append("# TYPE labclaw_discovery_cycle_duration_seconds summary")
     lines.append("labclaw_discovery_cycle_duration_seconds_count 0")
     lines.append("labclaw_discovery_cycle_duration_seconds_sum 0")

@@ -90,13 +90,15 @@ def _generate_csv_files(
                 fieldnames=["session_id", "group", "latency", "accuracy", "temperature"],
             )
             writer.writeheader()
-            writer.writerow({
-                "session_id": f"s{i:03d}",
-                "group": group,
-                "latency": round(latency, 4),
-                "accuracy": round(accuracy, 4),
-                "temperature": round(temperature, 4),
-            })
+            writer.writerow(
+                {
+                    "session_id": f"s{i:03d}",
+                    "group": group,
+                    "latency": round(latency, 4),
+                    "accuracy": round(accuracy, 4),
+                    "temperature": round(temperature, 4),
+                }
+            )
         files.append(path)
 
     return files
@@ -109,13 +111,15 @@ def _parse_csv_to_dicts(files: list[Path]) -> list[dict]:
         with open(path) as f:
             reader = csv.DictReader(f)
             for row in reader:
-                rows.append({
-                    "session_id": row["session_id"],
-                    "group": row["group"],
-                    "latency": float(row["latency"]),
-                    "accuracy": float(row["accuracy"]),
-                    "temperature": float(row["temperature"]),
-                })
+                rows.append(
+                    {
+                        "session_id": row["session_id"],
+                        "group": row["group"],
+                        "latency": float(row["latency"]),
+                        "accuracy": float(row["accuracy"]),
+                        "temperature": float(row["temperature"]),
+                    }
+                )
     return rows
 
 
@@ -174,22 +178,24 @@ class TestMVPPipeline:
         memory = TierABackend(root=memory_root)
         chronicle = SessionChronicle(memory=memory)
         quality_checker = QualityChecker()
-        sentinel = Sentinel(rules=[
-            AlertRule(
-                name="empty_file",
-                metric_name="file_non_empty",
-                threshold=1.0,
-                comparison="below",
-                level=QualityLevel.WARNING,
-            ),
-            AlertRule(
-                name="missing_file",
-                metric_name="file_exists",
-                threshold=1.0,
-                comparison="below",
-                level=QualityLevel.CRITICAL,
-            ),
-        ])
+        sentinel = Sentinel(
+            rules=[
+                AlertRule(
+                    name="empty_file",
+                    metric_name="file_non_empty",
+                    threshold=1.0,
+                    comparison="below",
+                    level=QualityLevel.WARNING,
+                ),
+                AlertRule(
+                    name="missing_file",
+                    metric_name="file_exists",
+                    threshold=1.0,
+                    comparison="below",
+                    level=QualityLevel.CRITICAL,
+                ),
+            ]
+        )
         miner = PatternMiner()
         validator = StatisticalValidator()
         hypothesis_gen = HypothesisGenerator()
@@ -305,11 +311,13 @@ class TestMVPPipeline:
 
         # Check that latency-accuracy correlation was found
         latency_accuracy = [
-            p for p in correlation_patterns
+            p
+            for p in correlation_patterns
             if (
                 "latency" in p.evidence.get("col_a", "")
                 and "accuracy" in p.evidence.get("col_b", "")
-            ) or (
+            )
+            or (
                 "accuracy" in p.evidence.get("col_a", "")
                 and "latency" in p.evidence.get("col_b", "")
             )
@@ -427,9 +435,7 @@ class TestMVPPipeline:
 
         # Total event count should be substantial
         # (files + quality + session + memory + discovery + validation)
-        assert len(capture.events) > 50, (
-            f"Expected >50 total events, got {len(capture.events)}"
-        )
+        assert len(capture.events) > 50, f"Expected >50 total events, got {len(capture.events)}"
 
     def test_mvp_pipeline_insufficient_data(self, tmp_path: Path) -> None:
         """Pipeline with too few data points returns empty mining result."""
@@ -462,22 +468,24 @@ class TestMVPPipeline:
         data_dir.mkdir()
 
         quality_checker = QualityChecker()
-        sentinel = Sentinel(rules=[
-            AlertRule(
-                name="empty_file",
-                metric_name="file_non_empty",
-                threshold=1.0,
-                comparison="below",
-                level=QualityLevel.WARNING,
-            ),
-            AlertRule(
-                name="missing_file",
-                metric_name="file_exists",
-                threshold=1.0,
-                comparison="below",
-                level=QualityLevel.CRITICAL,
-            ),
-        ])
+        sentinel = Sentinel(
+            rules=[
+                AlertRule(
+                    name="empty_file",
+                    metric_name="file_non_empty",
+                    threshold=1.0,
+                    comparison="below",
+                    level=QualityLevel.WARNING,
+                ),
+                AlertRule(
+                    name="missing_file",
+                    metric_name="file_exists",
+                    threshold=1.0,
+                    comparison="below",
+                    level=QualityLevel.CRITICAL,
+                ),
+            ]
+        )
 
         # Create an empty file
         empty_path = data_dir / "empty.csv"

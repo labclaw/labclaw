@@ -61,9 +61,7 @@ def digital_member_exists(
     parsers.parse('I create a digital member "{name}" with role "{role}"'),
     target_fixture="member_map",
 )
-def create_digital_member(
-    persona_mgr: PersonaManager, name: str, role: str
-) -> dict[str, str]:
+def create_digital_member(persona_mgr: PersonaManager, name: str, role: str) -> dict[str, str]:
     """Create a digital member and return name->id mapping."""
     mr = MemberRole(role)
     profile = persona_mgr.create_member(name=name, role=mr, is_digital=True)
@@ -76,9 +74,7 @@ def check_member_exists_with_role(
 ) -> None:
     mid = member_map[name]
     profile = persona_mgr.get_member(mid)
-    assert profile.role == MemberRole(role), (
-        f"Expected role {role!r}, got {profile.role.value!r}"
-    )
+    assert profile.role == MemberRole(role), f"Expected role {role!r}, got {profile.role.value!r}"
 
 
 @then(parsers.parse('member "{name}" is digital'))
@@ -96,9 +92,7 @@ def check_member_is_digital(
 
 
 @when(
-    parsers.parse(
-        'I record a benchmark for "{name}" with task "{task_type}" and score {score:g}'
-    ),
+    parsers.parse('I record a benchmark for "{name}" with task "{task_type}" and score {score:g}'),
 )
 def record_benchmark(
     persona_mgr: PersonaManager,
@@ -136,9 +130,7 @@ def check_benchmark_count(
 ) -> None:
     mid = member_map[name]
     benchmarks = persona_mgr.get_benchmarks(mid)
-    assert len(benchmarks) == count, (
-        f"Expected {count} benchmarks, got {len(benchmarks)}"
-    )
+    assert len(benchmarks) == count, f"Expected {count} benchmarks, got {len(benchmarks)}"
 
 
 # ---------------------------------------------------------------------------
@@ -171,9 +163,7 @@ def check_correction_count(
 ) -> None:
     mid = member_map[name]
     corrections = persona_mgr.get_corrections(mid)
-    assert len(corrections) == count, (
-        f"Expected {count} corrections, got {len(corrections)}"
-    )
+    assert len(corrections) == count, f"Expected {count} corrections, got {len(corrections)}"
 
 
 # ---------------------------------------------------------------------------
@@ -211,17 +201,13 @@ def check_not_eligible(promo_gate: dict, name: str) -> None:
 
 
 @when(parsers.parse('I promote "{name}"'))
-def promote_member(
-    persona_mgr: PersonaManager, member_map: dict[str, str], name: str
-) -> None:
+def promote_member(persona_mgr: PersonaManager, member_map: dict[str, str], name: str) -> None:
     mid = member_map[name]
     persona_mgr.promote(mid)
 
 
 @when(parsers.parse('I demote "{name}"'))
-def demote_member(
-    persona_mgr: PersonaManager, member_map: dict[str, str], name: str
-) -> None:
+def demote_member(persona_mgr: PersonaManager, member_map: dict[str, str], name: str) -> None:
     mid = member_map[name]
     persona_mgr.demote(mid)
 
@@ -235,6 +221,4 @@ def check_member_role(
 ) -> None:
     mid = member_map[name]
     profile = persona_mgr.get_member(mid)
-    assert profile.role == MemberRole(role), (
-        f"Expected role {role!r}, got {profile.role.value!r}"
-    )
+    assert profile.role == MemberRole(role), f"Expected role {role!r}, got {profile.role.value!r}"

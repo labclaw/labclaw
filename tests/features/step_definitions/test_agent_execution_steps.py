@@ -131,7 +131,8 @@ def user_asks(agent_runtime: AgentRuntime, question: str) -> str:
     target_fixture="tool_call_result",
 )
 def llm_returns_tool_call(
-    agent_runtime_no_tools: AgentRuntime, tool_name: str,
+    agent_runtime_no_tools: AgentRuntime,
+    tool_name: str,
 ) -> dict[str, Any]:
     loop = asyncio.new_event_loop()
     try:
@@ -170,13 +171,10 @@ def check_tool_error(tool_call_result: dict[str, Any]) -> None:
     assert tool_call_result.get("success") is False, (
         f"Expected success=False, got {tool_call_result}"
     )
-    has_error = (
-        "error" in tool_call_result
-        or "Unknown tool" in str(tool_call_result.get("error", ""))
+    has_error = "error" in tool_call_result or "Unknown tool" in str(
+        tool_call_result.get("error", "")
     )
-    assert has_error, (
-        f"Expected error message, got {tool_call_result}"
-    )
+    assert has_error, f"Expected error message, got {tool_call_result}"
 
 
 @then("available tools should be listed")

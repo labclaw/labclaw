@@ -29,6 +29,7 @@ def _validate_entity_id_or_400(entity_id: str) -> None:
 # Request models
 # ---------------------------------------------------------------------------
 
+
 class MemoryAppendRequest(BaseModel):
     category: str
     detail: str
@@ -37,6 +38,7 @@ class MemoryAppendRequest(BaseModel):
 # ---------------------------------------------------------------------------
 # Response models
 # ---------------------------------------------------------------------------
+
 
 class MarkdownDocResponse(BaseModel):
     path: str
@@ -47,6 +49,7 @@ class MarkdownDocResponse(BaseModel):
 # ---------------------------------------------------------------------------
 # Endpoints
 # ---------------------------------------------------------------------------
+
 
 @router.get("/search/query")
 def search_memory(

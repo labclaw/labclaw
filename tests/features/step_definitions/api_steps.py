@@ -13,6 +13,7 @@ from labclaw.api.deps import reset_all
 # Fixtures
 # ---------------------------------------------------------------------------
 
+
 @pytest.fixture()
 def api_client() -> TestClient:
     """Fresh test client with reset singletons per scenario."""
@@ -30,6 +31,7 @@ def api_context() -> dict:
 # Background
 # ---------------------------------------------------------------------------
 
+
 @given("the API test client is initialized", target_fixture="client")
 def _given_api_client(api_client: TestClient, api_context: dict) -> TestClient:
     api_context.clear()
@@ -39,6 +41,7 @@ def _given_api_client(api_client: TestClient, api_context: dict) -> TestClient:
 # ---------------------------------------------------------------------------
 # When: HTTP verbs
 # ---------------------------------------------------------------------------
+
 
 @when(parsers.parse('I GET "{url}"'), target_fixture="response")
 def _when_get(client: TestClient, url: str, api_context: dict):
@@ -109,10 +112,7 @@ def _when_end_session(client: TestClient, api_context: dict):
 
 @when('I POST "/api/discovery/mine" with sample data', target_fixture="response")
 def _when_mine(client: TestClient, api_context: dict):
-    data = [
-        {"x": float(i), "y": float(i * 2), "timestamp": i}
-        for i in range(15)
-    ]
+    data = [{"x": float(i), "y": float(i * 2), "timestamp": i} for i in range(15)]
     resp = client.post("/api/discovery/mine", json={"data": data})
     api_context["response"] = resp
     return resp
@@ -134,6 +134,7 @@ def _when_measure_fitness(client: TestClient, target: str, api_context: dict):
 # ---------------------------------------------------------------------------
 # Then: assertions
 # ---------------------------------------------------------------------------
+
 
 @then(parsers.parse("the response status is {code:d}"))
 def _then_status(response, code: int):

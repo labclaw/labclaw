@@ -311,7 +311,8 @@ class EvolutionEngine:
     def get_active_cycles(self) -> list[EvolutionCycle]:
         """Return cycles that haven't been promoted or rolled back."""
         return [
-            c for c in self._cycles.values()
+            c
+            for c in self._cycles.values()
             if c.stage not in (EvolutionStage.PROMOTED, EvolutionStage.ROLLED_BACK)
         ]
 
@@ -355,7 +356,7 @@ class EvolutionEngine:
             f"Context: {context}\n"
             f"Recent fitness history:\n{history_summary}\n\n"
             f"Propose {n} configuration changes as JSON array. "
-            f"Each element: {{\"description\": str, \"config_diff\": dict}}.\n"
+            f'Each element: {{"description": str, "config_diff": dict}}.\n'
             f"Only output valid JSON, no markdown."
         )
 

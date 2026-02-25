@@ -59,6 +59,7 @@ def set_data_dir(path: Path) -> None:
 # Singleton factories
 # ---------------------------------------------------------------------------
 
+
 @lru_cache
 def get_device_registry() -> DeviceRegistry:
     return DeviceRegistry()

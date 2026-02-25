@@ -66,7 +66,9 @@ def governance_with_file(tmp_path: Path) -> tuple[GovernanceEngine, Path]:
 )
 def pi_requests(gov_engine: GovernanceEngine, action: str) -> GovernanceDecision:
     return gov_engine.check(
-        action=action, actor="dr_smith", role="pi",
+        action=action,
+        actor="dr_smith",
+        role="pi",
     )
 
 
@@ -76,7 +78,9 @@ def pi_requests(gov_engine: GovernanceEngine, action: str) -> GovernanceDecision
 )
 def undergrad_requests(gov_engine: GovernanceEngine, action: str) -> GovernanceDecision:
     return gov_engine.check(
-        action=action, actor="student_a", role="undergraduate",
+        action=action,
+        actor="student_a",
+        role="undergraduate",
     )
 
 
@@ -86,7 +90,9 @@ def undergrad_requests(gov_engine: GovernanceEngine, action: str) -> GovernanceD
 )
 def any_user_requests(gov_engine: GovernanceEngine, action: str) -> GovernanceDecision:
     return gov_engine.check(
-        action=action, actor="some_user", role="pi",
+        action=action,
+        actor="some_user",
+        role="pi",
     )
 
 
@@ -101,7 +107,9 @@ def three_actions_checked(
     decisions: list[GovernanceDecision] = []
     for i in range(3):
         d = engine.check(
-            action=f"action_{i}", actor=f"actor_{i}", role="pi",
+            action=f"action_{i}",
+            actor=f"actor_{i}",
+            role="pi",
         )
         decisions.append(d)
     return decisions
@@ -129,13 +137,8 @@ def check_denied(gov_decision: GovernanceDecision) -> None:
 @then("the reason should mention lacking permission")
 def check_reason_lacking(gov_decision: GovernanceDecision) -> None:
     reason_lower = gov_decision.reason.lower()
-    has_permission = (
-        "lacks permission" in reason_lower
-        or "permission" in reason_lower
-    )
-    assert has_permission, (
-        f"Expected reason to mention permission, got {gov_decision.reason!r}"
-    )
+    has_permission = "lacks permission" in reason_lower or "permission" in reason_lower
+    assert has_permission, f"Expected reason to mention permission, got {gov_decision.reason!r}"
 
 
 @then("the audit log should record the denial")
@@ -148,13 +151,12 @@ def check_audit_denial(gov_engine: GovernanceEngine) -> None:
 
 @then(parsers.parse("the audit log should contain {count:d} entries"))
 def check_audit_count(
-    gov_engine_with_file: tuple[GovernanceEngine, Path], count: int,
+    gov_engine_with_file: tuple[GovernanceEngine, Path],
+    count: int,
 ) -> None:
     engine, _ = gov_engine_with_file
     entries = engine.audit_log.query()
-    assert len(entries) == count, (
-        f"Expected {count} audit entries, got {len(entries)}"
-    )
+    assert len(entries) == count, f"Expected {count} audit entries, got {len(entries)}"
 
 
 @then("the file should be readable after reload")

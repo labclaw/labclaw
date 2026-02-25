@@ -26,6 +26,7 @@ logger = logging.getLogger(__name__)
 # Helpers
 # ---------------------------------------------------------------------------
 
+
 def _now() -> datetime:
     return datetime.now(UTC)
 
@@ -33,6 +34,7 @@ def _now() -> datetime:
 # ---------------------------------------------------------------------------
 # Pydantic Schemas
 # ---------------------------------------------------------------------------
+
 
 class SafetyConstraint(BaseModel):
     """A scientific safety constraint on a parameter."""
@@ -78,6 +80,7 @@ for _evt in _SAFETY_EVENTS:
 # ScientificSafetyValidator
 # ---------------------------------------------------------------------------
 
+
 class ScientificSafetyValidator:
     """Validates experimental proposals against scientific safety constraints."""
 
@@ -100,38 +103,40 @@ class ScientificSafetyValidator:
 
             if value is None:
                 all_passed = False
-                checks.append(SafetyCheckDetail(
-                    name=param_name,
-                    passed=False,
-                    message=f"Parameter {param_name!r} is constrained but absent from proposal",
-                ))
+                checks.append(
+                    SafetyCheckDetail(
+                        name=param_name,
+                        passed=False,
+                        message=f"Parameter {param_name!r} is constrained but absent from proposal",
+                    )
+                )
                 continue
 
             violations: list[str] = []
 
             if constraint.min_value is not None and value < constraint.min_value:
-                violations.append(
-                    f"{param_name}={value} below minimum {constraint.min_value}"
-                )
+                violations.append(f"{param_name}={value} below minimum {constraint.min_value}")
 
             if constraint.max_value is not None and value > constraint.max_value:
-                violations.append(
-                    f"{param_name}={value} above maximum {constraint.max_value}"
-                )
+                violations.append(f"{param_name}={value} above maximum {constraint.max_value}")
 
             if violations:
                 all_passed = False
-                checks.append(SafetyCheckDetail(
-                    name=param_name,
-                    passed=False,
-                    message="; ".join(violations),
-                ))
+                checks.append(
+                    SafetyCheckDetail(
+                        name=param_name,
+                        passed=False,
+                        message="; ".join(violations),
+                    )
+                )
             else:
-                checks.append(SafetyCheckDetail(
-                    name=param_name,
-                    passed=True,
-                    message=f"{param_name}={value} within bounds",
-                ))
+                checks.append(
+                    SafetyCheckDetail(
+                        name=param_name,
+                        passed=True,
+                        message=f"{param_name}={value} within bounds",
+                    )
+                )
 
         level = SafetyLevel.SAFE if all_passed else SafetyLevel.BLOCKED
 

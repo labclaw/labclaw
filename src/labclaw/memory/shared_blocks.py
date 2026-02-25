@@ -3,6 +3,7 @@
 SQLite-backed persistent key-value store for agent working memory.
 Interface designed for future Letta swap-in.
 """
+
 from __future__ import annotations
 
 import json
@@ -84,6 +85,7 @@ class TierCBackend:
             if entry is None:
                 return None
             import copy
+
             return copy.deepcopy(dict(entry))
 
         async with self._db.execute(
@@ -95,11 +97,13 @@ class TierCBackend:
         if row is None:
             return None
         value: dict[str, Any] = json.loads(row["value_json"])
-        value.setdefault("_meta", {}).update({
-            "agent_id": row["agent_id"],
-            "created_at": row["created_at"],
-            "updated_at": row["updated_at"],
-        })
+        value.setdefault("_meta", {}).update(
+            {
+                "agent_id": row["agent_id"],
+                "created_at": row["created_at"],
+                "updated_at": row["updated_at"],
+            }
+        )
         return value
 
     async def set_block(self, key: str, value: dict[str, Any], agent_id: str | None = None) -> None:
@@ -157,8 +161,7 @@ class TierCBackend:
             if agent_id is None:
                 return list(self._memory.keys())
             return [
-                k for k, v in self._memory.items()
-                if v.get("_meta", {}).get("agent_id") == agent_id
+                k for k, v in self._memory.items() if v.get("_meta", {}).get("agent_id") == agent_id
             ]
 
         if agent_id is None:

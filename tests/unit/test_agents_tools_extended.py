@@ -116,9 +116,7 @@ class TestProposeExperimentException:
             patch("labclaw.optimization.optimizer.ParameterDimension"),
             patch("labclaw.optimization.optimizer.ParameterSpace"),
         ):
-            result = await _propose_experiment(
-                "hyp-1", numeric_ranges={"temp": (20.0, 40.0)}
-            )
+            result = await _propose_experiment("hyp-1", numeric_ranges={"temp": (20.0, 40.0)})
 
         assert result.success is False
         assert "optimizer broke" in result.error

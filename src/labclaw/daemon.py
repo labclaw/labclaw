@@ -220,10 +220,14 @@ class LabClawDaemon:
 
         # Start background loops
         discovery_thread = threading.Thread(
-            target=self._discovery_loop, daemon=True, name="discovery-loop",
+            target=self._discovery_loop,
+            daemon=True,
+            name="discovery-loop",
         )
         evolution_thread = threading.Thread(
-            target=self._evolution_loop, daemon=True, name="evolution-loop",
+            target=self._evolution_loop,
+            daemon=True,
+            name="evolution-loop",
         )
         discovery_thread.start()
         evolution_thread.start()
@@ -276,7 +280,8 @@ class LabClawDaemon:
             self._dashboard_log = None
 
         self._log_to_memory(
-            "system", "daemon_stop",
+            "system",
+            "daemon_stop",
             f"LabClaw stopped. Discoveries: {self._discovery_count}, "
             f"Evolutions: {self._evolution_count}, "
             f"Files: {self._accumulator.files_processed}, "
@@ -338,7 +343,8 @@ class LabClawDaemon:
         if len(rows) < MIN_ROWS_FOR_MINING:
             logger.info(
                 "Discovery: %d rows (< %d minimum), skipping",
-                len(rows), MIN_ROWS_FOR_MINING,
+                len(rows),
+                MIN_ROWS_FOR_MINING,
             )
             return
 
@@ -359,27 +365,32 @@ class LabClawDaemon:
             )
 
             llm = get_llm_provider()
-            loop = ScientificLoop(steps=[
-                ObserveStep(),
-                AskStep(),
-                HypothesizeStep(llm_provider=llm),
-                PredictStep(),
-                ExperimentStep(),
-                AnalyzeStep(),
-                ConcludeStep(),
-            ])
+            loop = ScientificLoop(
+                steps=[
+                    ObserveStep(),
+                    AskStep(),
+                    HypothesizeStep(llm_provider=llm),
+                    PredictStep(),
+                    ExperimentStep(),
+                    AnalyzeStep(),
+                    ConcludeStep(),
+                ]
+            )
             result = asyncio.run(loop.run_cycle(rows))
 
             self._discovery_count += 1
             logger.info(
                 "Discovery #%d: %d patterns, %d hypotheses (%.1fs)",
-                self._discovery_count, result.patterns_found,
-                result.hypotheses_generated, result.total_duration,
+                self._discovery_count,
+                result.patterns_found,
+                result.hypotheses_generated,
+                result.total_duration,
             )
 
             # Log summary to memory
             self._log_to_memory(
-                "labclaw", "discovery",
+                "labclaw",
+                "discovery",
                 f"Cycle {result.cycle_id[:8]}: {result.patterns_found} patterns, "
                 f"{result.hypotheses_generated} hypotheses",
             )
@@ -412,9 +423,9 @@ class LabClawDaemon:
             miner = get_pattern_miner()
             config = MiningConfig(min_sessions=3)
             result = miner.mine(rows, config)
-            numeric_cols = [
-                k for k, v in rows[0].items() if isinstance(v, (int, float))
-            ] if rows else []
+            numeric_cols = (
+                [k for k, v in rows[0].items() if isinstance(v, (int, float))] if rows else []
+            )
 
             metrics = {
                 "pattern_count": float(len(result.patterns)),
@@ -422,7 +433,9 @@ class LabClawDaemon:
                 "coverage": float(len(result.patterns)) / max(len(numeric_cols), 1),
             }
             current_fitness = engine.measure_fitness(
-                target=target, metrics=metrics, data_points=len(rows),
+                target=target,
+                metrics=metrics,
+                data_points=len(rows),
             )
 
             # Try to advance existing active cycles
@@ -430,10 +443,7 @@ class LabClawDaemon:
             for cycle in active_cycles:
                 if engine.should_advance(cycle.cycle_id):
                     candidate_diff = cycle.candidate.config_diff or {}
-                    base_dict = {
-                        k: v for k, v in config.__dict__.items()
-                        if not k.startswith("_")
-                    }
+                    base_dict = {k: v for k, v in config.__dict__.items() if not k.startswith("_")}
                     base_dict.update(candidate_diff)
                     try:
                         candidate_config = MiningConfig(**base_dict)
@@ -445,18 +455,21 @@ class LabClawDaemon:
                         "data_rows": float(len(rows)),
                         "coverage": (
                             float(len(new_result.patterns)) / max(len(numeric_cols), 1)
-                            if numeric_cols else 0.0
+                            if numeric_cols
+                            else 0.0
                         ),
                     }
                     improved_fitness = engine.measure_fitness(
-                        target=target, metrics=improved_metrics, data_points=len(rows),
+                        target=target,
+                        metrics=improved_metrics,
+                        data_points=len(rows),
                     )
                     updated = engine.advance_stage(cycle.cycle_id, improved_fitness)
                     self._evolution_count += 1
                     self._log_to_memory(
-                        "labclaw", "evolution",
-                        f"Cycle {cycle.cycle_id[:8]} advanced to "
-                        f"{updated.stage.value}",
+                        "labclaw",
+                        "evolution",
+                        f"Cycle {cycle.cycle_id[:8]} advanced to {updated.stage.value}",
                     )
 
             # If no active cycles, start a new one
@@ -466,7 +479,8 @@ class LabClawDaemon:
                     cycle = engine.start_cycle(candidates[0], current_fitness)
                     self._evolution_count += 1
                     self._log_to_memory(
-                        "labclaw", "evolution",
+                        "labclaw",
+                        "evolution",
                         f"New cycle {cycle.cycle_id[:8]} started",
                     )
 
@@ -506,12 +520,19 @@ class LabClawDaemon:
             self._dashboard_log = dashboard_log
             self._dashboard_proc = subprocess.Popen(
                 [
-                    sys.executable, "-m", "streamlit", "run",
+                    sys.executable,
+                    "-m",
+                    "streamlit",
+                    "run",
                     str(dashboard_path),
-                    "--server.port", str(self.dashboard_port),
-                    "--server.address", "127.0.0.1",
-                    "--server.headless", "true",
-                    "--browser.gatherUsageStats", "false",
+                    "--server.port",
+                    str(self.dashboard_port),
+                    "--server.address",
+                    "127.0.0.1",
+                    "--server.headless",
+                    "true",
+                    "--browser.gatherUsageStats",
+                    "false",
                 ],
                 stdout=subprocess.DEVNULL,
                 stderr=dashboard_log,
@@ -529,31 +550,45 @@ class LabClawDaemon:
 def main() -> None:
     parser = argparse.ArgumentParser(description="LabClaw — 24/7 lab intelligence daemon")
     parser.add_argument(
-        "--data-dir", type=Path, default=Path("/opt/labclaw/data"),
+        "--data-dir",
+        type=Path,
+        default=Path("/opt/labclaw/data"),
         help="Directory to watch for new data files (default: /opt/labclaw/data)",
     )
     parser.add_argument(
-        "--memory-root", type=Path, default=Path("/opt/labclaw/memory"),
+        "--memory-root",
+        type=Path,
+        default=Path("/opt/labclaw/memory"),
         help="Root directory for Tier A memory (default: /opt/labclaw/memory)",
     )
     parser.add_argument(
-        "--host", type=str, default="127.0.0.1",
+        "--host",
+        type=str,
+        default="127.0.0.1",
         help="API server bind address (default: 127.0.0.1)",
     )
     parser.add_argument(
-        "--port", type=int, default=DEFAULT_PORT,
+        "--port",
+        type=int,
+        default=DEFAULT_PORT,
         help=f"API server port (default: {DEFAULT_PORT})",
     )
     parser.add_argument(
-        "--dashboard-port", type=int, default=DASHBOARD_PORT,
+        "--dashboard-port",
+        type=int,
+        default=DASHBOARD_PORT,
         help=f"Streamlit dashboard port (default: {DASHBOARD_PORT})",
     )
     parser.add_argument(
-        "--discovery-interval", type=int, default=DISCOVERY_INTERVAL_SECONDS,
+        "--discovery-interval",
+        type=int,
+        default=DISCOVERY_INTERVAL_SECONDS,
         help=f"Seconds between discovery runs (default: {DISCOVERY_INTERVAL_SECONDS})",
     )
     parser.add_argument(
-        "--evolution-interval", type=int, default=EVOLUTION_INTERVAL_SECONDS,
+        "--evolution-interval",
+        type=int,
+        default=EVOLUTION_INTERVAL_SECONDS,
         help=f"Seconds between evolution runs (default: {EVOLUTION_INTERVAL_SECONDS})",
     )
     args = parser.parse_args()

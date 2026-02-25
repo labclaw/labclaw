@@ -75,15 +75,26 @@ class HardwareSafetyGuard:
     """
 
     # Actions that modify device state
-    WRITE_ACTIONS = frozenset({
-        "write", "execute", "calibrate", "set", "configure", "reset", "start", "stop",
-    })
+    WRITE_ACTIONS = frozenset(
+        {
+            "write",
+            "execute",
+            "calibrate",
+            "set",
+            "configure",
+            "reset",
+            "start",
+            "stop",
+        }
+    )
 
     # Device states that allow commands
-    COMMANDABLE_STATES = frozenset({
-        DeviceStatus.ONLINE,
-        DeviceStatus.IN_USE,
-    })
+    COMMANDABLE_STATES = frozenset(
+        {
+            DeviceStatus.ONLINE,
+            DeviceStatus.IN_USE,
+        }
+    )
 
     def __init__(
         self,

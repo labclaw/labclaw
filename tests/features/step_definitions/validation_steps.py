@@ -170,9 +170,7 @@ def check_corrected_pvalues(corrected_results: list[StatTestResult], expected: s
     expected_vals = [float(v.strip()) for v in expected.split(",")]
     actual_vals = [r.p_value for r in corrected_results]
     for actual, exp in zip(actual_vals, expected_vals):
-        assert abs(actual - exp) < 1e-9, (
-            f"Expected p-values {expected_vals}, got {actual_vals}"
-        )
+        assert abs(actual - exp) < 1e-9, f"Expected p-values {expected_vals}, got {actual_vals}"
 
 
 @then(parsers.parse("only {count:d} result remains significant at alpha 0.05"))
@@ -210,9 +208,7 @@ def build_chain(tracker: ProvenanceTracker, finding_id: str, datatable: list) ->
 
 @then(parsers.parse("the chain has {count:d} steps"))
 def check_chain_step_count(built_chain: ProvenanceChain, count: int) -> None:
-    assert len(built_chain.steps) == count, (
-        f"Expected {count} steps, got {len(built_chain.steps)}"
-    )
+    assert len(built_chain.steps) == count, f"Expected {count} steps, got {len(built_chain.steps)}"
 
 
 @then("the chain is verified as valid")
@@ -238,9 +234,7 @@ def completed_test_result(validator: StatisticalValidator) -> StatTestResult:
     parsers.parse('a provenance chain for finding "{finding_id}"'),
     target_fixture="report_chain",
 )
-def provenance_chain_for_finding(
-    tracker: ProvenanceTracker, finding_id: str
-) -> ProvenanceChain:
+def provenance_chain_for_finding(tracker: ProvenanceTracker, finding_id: str) -> ProvenanceChain:
     steps = [
         ProvenanceStep(
             node_id=str(uuid.uuid4()),
@@ -287,6 +281,4 @@ def check_report_has_provenance(report: ValidationReport) -> None:
 def check_report_conclusion(report: ValidationReport) -> None:
     from labclaw.core.schemas import HypothesisStatus
 
-    assert report.conclusion in list(HypothesisStatus), (
-        f"Invalid conclusion: {report.conclusion}"
-    )
+    assert report.conclusion in list(HypothesisStatus), f"Invalid conclusion: {report.conclusion}"

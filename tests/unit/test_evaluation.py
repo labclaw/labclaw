@@ -14,10 +14,7 @@ from labclaw.core.events import event_registry
 
 
 def _sample_data(n: int = 20) -> list[dict[str, Any]]:
-    return [
-        {"x": float(i), "y": float(i * 2), "label": f"s{i}"}
-        for i in range(n)
-    ]
+    return [{"x": float(i), "y": float(i * 2), "label": f"s{i}"} for i in range(n)]
 
 
 def _mock_mining_result(n_patterns: int = 2):
@@ -34,10 +31,9 @@ def _mock_mining_result(n_patterns: int = 2):
 class TestOfflineReplay:
     def test_valid_data(self):
         mock_result = _mock_mining_result(3)
-        with patch(
-            "labclaw.discovery.mining.PatternMiner"
-        ) as mock_miner_cls, patch(
-            "labclaw.discovery.mining.MiningConfig"
+        with (
+            patch("labclaw.discovery.mining.PatternMiner") as mock_miner_cls,
+            patch("labclaw.discovery.mining.MiningConfig"),
         ):
             mock_miner_cls.return_value.mine.return_value = mock_result
             harness = EvaluationHarness()
@@ -49,10 +45,9 @@ class TestOfflineReplay:
 
     def test_empty_data(self):
         mock_result = _mock_mining_result(0)
-        with patch(
-            "labclaw.discovery.mining.PatternMiner"
-        ) as mock_miner_cls, patch(
-            "labclaw.discovery.mining.MiningConfig"
+        with (
+            patch("labclaw.discovery.mining.PatternMiner") as mock_miner_cls,
+            patch("labclaw.discovery.mining.MiningConfig"),
         ):
             mock_miner_cls.return_value.mine.return_value = mock_result
             harness = EvaluationHarness()
@@ -65,11 +60,10 @@ class TestOfflineReplay:
         """Invalid config kwargs should cause MiningConfig(**config) to fail,
         falling back to default MiningConfig()."""
         mock_result = _mock_mining_result(1)
-        with patch(
-            "labclaw.discovery.mining.PatternMiner"
-        ) as mock_miner_cls, patch(
-            "labclaw.discovery.mining.MiningConfig"
-        ) as mock_config_cls:
+        with (
+            patch("labclaw.discovery.mining.PatternMiner") as mock_miner_cls,
+            patch("labclaw.discovery.mining.MiningConfig") as mock_config_cls,
+        ):
             # First call (with bad config) raises, second call (defaults) works
             mock_config_cls.side_effect = [TypeError("bad"), MagicMock()]
             mock_miner_cls.return_value.mine.return_value = mock_result
@@ -86,10 +80,9 @@ class TestOfflineReplay:
 class TestShadowRun:
     def test_compares_two_configs(self):
         mock_result = _mock_mining_result(2)
-        with patch(
-            "labclaw.discovery.mining.PatternMiner"
-        ) as mock_miner_cls, patch(
-            "labclaw.discovery.mining.MiningConfig"
+        with (
+            patch("labclaw.discovery.mining.PatternMiner") as mock_miner_cls,
+            patch("labclaw.discovery.mining.MiningConfig"),
         ):
             mock_miner_cls.return_value.mine.return_value = mock_result
             harness = EvaluationHarness()
@@ -114,10 +107,9 @@ class TestShadowRun:
 class TestBenchmark:
     def test_returns_benchmark_result(self):
         mock_result = _mock_mining_result(1)
-        with patch(
-            "labclaw.discovery.mining.PatternMiner"
-        ) as mock_miner_cls, patch(
-            "labclaw.discovery.mining.MiningConfig"
+        with (
+            patch("labclaw.discovery.mining.PatternMiner") as mock_miner_cls,
+            patch("labclaw.discovery.mining.MiningConfig"),
         ):
             mock_miner_cls.return_value.mine.return_value = mock_result
             harness = EvaluationHarness()
@@ -135,10 +127,9 @@ class TestBenchmark:
 
     def test_benchmark_no_config(self):
         mock_result = _mock_mining_result(0)
-        with patch(
-            "labclaw.discovery.mining.PatternMiner"
-        ) as mock_miner_cls, patch(
-            "labclaw.discovery.mining.MiningConfig"
+        with (
+            patch("labclaw.discovery.mining.PatternMiner") as mock_miner_cls,
+            patch("labclaw.discovery.mining.MiningConfig"),
         ):
             mock_miner_cls.return_value.mine.return_value = mock_result
             harness = EvaluationHarness()
@@ -163,10 +154,9 @@ class TestEvaluationEvents:
         event_registry.subscribe("evolution.eval.replay_completed", handler)
         try:
             mock_result = _mock_mining_result(0)
-            with patch(
-                "labclaw.discovery.mining.PatternMiner"
-            ) as mock_miner_cls, patch(
-                "labclaw.discovery.mining.MiningConfig"
+            with (
+                patch("labclaw.discovery.mining.PatternMiner") as mock_miner_cls,
+                patch("labclaw.discovery.mining.MiningConfig"),
             ):
                 mock_miner_cls.return_value.mine.return_value = mock_result
                 harness = EvaluationHarness()
@@ -187,10 +177,9 @@ class TestEvaluationEvents:
         event_registry.subscribe("evolution.eval.shadow_completed", handler)
         try:
             mock_result = _mock_mining_result(0)
-            with patch(
-                "labclaw.discovery.mining.PatternMiner"
-            ) as mock_miner_cls, patch(
-                "labclaw.discovery.mining.MiningConfig"
+            with (
+                patch("labclaw.discovery.mining.PatternMiner") as mock_miner_cls,
+                patch("labclaw.discovery.mining.MiningConfig"),
             ):
                 mock_miner_cls.return_value.mine.return_value = mock_result
                 harness = EvaluationHarness()

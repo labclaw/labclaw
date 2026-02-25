@@ -18,6 +18,7 @@ router = APIRouter()
 # Request models
 # ---------------------------------------------------------------------------
 
+
 class MineRequest(BaseModel):
     data: list[dict[str, Any]]
     config: MiningConfig | None = None
@@ -32,6 +33,7 @@ class HypothesizeRequest(BaseModel):
 # ---------------------------------------------------------------------------
 # Endpoints
 # ---------------------------------------------------------------------------
+
 
 @router.post("/mine")
 def mine_patterns(

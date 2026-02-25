@@ -21,6 +21,7 @@ from labclaw.plugins.base import DomainPlugin, PluginMetadata
 # Domain-specific sample node
 # ---------------------------------------------------------------------------
 
+
 class AnimalSampleNode(SampleNode):
     """Animal subject node — extends SampleNode with neuro-specific fields.
 
@@ -43,6 +44,7 @@ class AnimalSampleNode(SampleNode):
 # ---------------------------------------------------------------------------
 # Plugin implementation
 # ---------------------------------------------------------------------------
+
 
 class NeuroscienceDomainPlugin:
     """Domain plugin for neuroscience labs."""

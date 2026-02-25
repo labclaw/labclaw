@@ -134,9 +134,7 @@ class TestQueryMemory:
 
     @pytest.mark.asyncio
     async def test_with_mock_backend(self, tmp_path: Any) -> None:
-        mock_result = SimpleNamespace(
-            entity_id="e1", snippet="found it", score=0.9, source="soul"
-        )
+        mock_result = SimpleNamespace(entity_id="e1", snippet="found it", score=0.9, source="soul")
         mock_backend = MagicMock()
         mock_backend.search.return_value = [mock_result]
 
@@ -156,9 +154,7 @@ class TestQueryMemory:
 class TestRunMining:
     @pytest.mark.asyncio
     async def test_with_empty_data(self) -> None:
-        mock_result = SimpleNamespace(
-            patterns=[], data_summary={"row_count": 0}
-        )
+        mock_result = SimpleNamespace(patterns=[], data_summary={"row_count": 0})
         mock_miner = MagicMock()
         mock_miner.mine.return_value = mock_result
 
@@ -282,9 +278,7 @@ class TestProposeExperiment:
 
     @pytest.mark.asyncio
     async def test_with_valid_ranges(self) -> None:
-        proposal = SimpleNamespace(
-            proposal_id="prop-1", parameters={"temp": 37.0}
-        )
+        proposal = SimpleNamespace(proposal_id="prop-1", parameters={"temp": 37.0})
         mock_opt = MagicMock()
         mock_opt.suggest.return_value = [proposal]
 
@@ -293,9 +287,7 @@ class TestProposeExperiment:
             patch("labclaw.optimization.optimizer.ParameterDimension"),
             patch("labclaw.optimization.optimizer.ParameterSpace"),
         ):
-            result = await _propose_experiment(
-                "hyp-1", numeric_ranges={"temp": (20.0, 40.0)}
-            )
+            result = await _propose_experiment("hyp-1", numeric_ranges={"temp": (20.0, 40.0)})
 
         assert result.success is True
         assert len(result.data["proposals"]) == 1

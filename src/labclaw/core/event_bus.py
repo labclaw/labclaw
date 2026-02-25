@@ -48,9 +48,7 @@ class EventBus:
             except Exception:
                 logger.exception("Wildcard handler error for event %s", event_name)
 
-    def subscribe(
-        self, event_name: str, handler: Callable[[LabEvent], None]
-    ) -> None:
+    def subscribe(self, event_name: str, handler: Callable[[LabEvent], None]) -> None:
         """Subscribe a handler to events by name.
 
         Args:
@@ -59,9 +57,7 @@ class EventBus:
         """
         self._handlers.setdefault(event_name, []).append(handler)
 
-    def unsubscribe(
-        self, event_name: str, handler: Callable[[LabEvent], None]
-    ) -> None:
+    def unsubscribe(self, event_name: str, handler: Callable[[LabEvent], None]) -> None:
         """Remove a handler from an event name.
 
         Args:
@@ -75,9 +71,7 @@ class EventBus:
         try:
             handlers.remove(handler)
         except ValueError:
-            raise ValueError(
-                f"Handler not found for event {event_name!r}"
-            ) from None
+            raise ValueError(f"Handler not found for event {event_name!r}") from None
 
     def create_event(
         self,

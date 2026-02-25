@@ -74,8 +74,7 @@ class SessionChronicle:
                     evict_id = sid
                     break
             if evict_id is None:
-                evict_id = min(self._sessions,
-                               key=lambda s: self._sessions[s].session_date)
+                evict_id = min(self._sessions, key=lambda s: self._sessions[s].session_date)
             del self._sessions[evict_id]
             self._recordings.pop(evict_id, None)
 

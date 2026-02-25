@@ -156,9 +156,7 @@ def measure_fitness_with_table(
     parsers.parse('I propose {n:d} candidates for target "{target}"'),
     target_fixture="proposed_candidates",
 )
-def propose_candidates(
-    engine: EvolutionEngine, n: int, target: str
-) -> list[EvolutionCandidate]:
+def propose_candidates(engine: EvolutionEngine, n: int, target: str) -> list[EvolutionCandidate]:
     return engine.propose_candidates(EvolutionTarget(target), n=n)
 
 
@@ -190,9 +188,7 @@ def advance_with_fitness(
     parsers.parse('I get history for target "{target}"'),
     target_fixture="history",
 )
-def get_history_for_target(
-    engine: EvolutionEngine, target: str
-) -> list[EvolutionCycle]:
+def get_history_for_target(engine: EvolutionEngine, target: str) -> list[EvolutionCycle]:
     return engine.get_history(EvolutionTarget(target))
 
 
@@ -210,9 +206,7 @@ def check_fitness_score_metrics(measured_fitness: FitnessScore, n: int) -> None:
 
 @then(parsers.parse("{n:d} EvolutionCandidates are returned"))
 def check_candidate_count(proposed_candidates: list[EvolutionCandidate], n: int) -> None:
-    assert len(proposed_candidates) == n, (
-        f"Expected {n} candidates, got {len(proposed_candidates)}"
-    )
+    assert len(proposed_candidates) == n, f"Expected {n} candidates, got {len(proposed_candidates)}"
 
 
 @then("each candidate has a description and config_diff")
@@ -252,6 +246,4 @@ def check_stage_value(cycle: EvolutionCycle, stage: str) -> None:
 
 @then(parsers.parse("I receive {n:d} cycles"))
 def check_history_count(history: list[EvolutionCycle], n: int) -> None:
-    assert len(history) == n, (
-        f"Expected {n} cycles, got {len(history)}"
-    )
+    assert len(history) == n, f"Expected {n} cycles, got {len(history)}"

@@ -124,19 +124,19 @@ class QPCRExportDriver(FileBasedDriver):
                 try:
                     undetermined = {"UNDETERMINED", "N/A", ""}
                     ct_value = (
-                        float(ct_raw)
-                        if ct_raw and ct_raw.upper() not in undetermined
-                        else ct_raw
+                        float(ct_raw) if ct_raw and ct_raw.upper() not in undetermined else ct_raw
                     )
                 except ValueError:
                     ct_value = ct_raw
 
-                samples_list.append({
-                    "well": well,
-                    "name": _get(col_sample),
-                    "detector": _get(col_detector),
-                    "ct": ct_value,
-                })
+                samples_list.append(
+                    {
+                        "well": well,
+                        "name": _get(col_sample),
+                        "detector": _get(col_detector),
+                        "ct": ct_value,
+                    }
+                )
 
         logger.debug(
             "QPCRExportDriver parsed %d samples, %d metadata fields from %s",

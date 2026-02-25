@@ -33,6 +33,7 @@ logger = logging.getLogger(__name__)
 # Helpers
 # ---------------------------------------------------------------------------
 
+
 def _uuid() -> str:
     return str(uuid.uuid4())
 
@@ -44,6 +45,7 @@ def _now() -> datetime:
 # ---------------------------------------------------------------------------
 # Pydantic Schemas
 # ---------------------------------------------------------------------------
+
 
 class HypothesisInput(BaseModel):
     """Input to the hypothesis generator."""
@@ -82,6 +84,7 @@ for _evt in _HYPOTHESIS_EVENTS:
 # ---------------------------------------------------------------------------
 # HypothesisGenerator
 # ---------------------------------------------------------------------------
+
 
 class HypothesisGenerator:
     """Template-based hypothesis generation from discovered patterns.
@@ -228,6 +231,7 @@ class HypothesisGenerator:
 # LLM-powered Hypothesis Response Model
 # ---------------------------------------------------------------------------
 
+
 class _LLMHypothesisItem(BaseModel):
     """Schema for a single LLM-generated hypothesis (used for structured output)."""
 
@@ -247,6 +251,7 @@ class _LLMHypothesisResponse(BaseModel):
 # ---------------------------------------------------------------------------
 # LLMHypothesisGenerator
 # ---------------------------------------------------------------------------
+
 
 class LLMHypothesisGenerator:
     """LLM-powered hypothesis generation from discovered patterns.
@@ -270,17 +275,14 @@ class LLMHypothesisGenerator:
         if loop and loop.is_running():
             # Already inside an async context — use a new thread to avoid deadlock
             import concurrent.futures
+
             with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
-                result = pool.submit(
-                    asyncio.run, self._generate_llm(hypothesis_input)
-                ).result()
+                result = pool.submit(asyncio.run, self._generate_llm(hypothesis_input)).result()
             return result
 
         return asyncio.run(self._generate_llm(hypothesis_input))
 
-    async def _generate_llm(
-        self, hypothesis_input: HypothesisInput
-    ) -> list[HypothesisOutput]:
+    async def _generate_llm(self, hypothesis_input: HypothesisInput) -> list[HypothesisOutput]:
         """Call the LLM to generate hypotheses; fall back to templates on error."""
         if not hypothesis_input.patterns:
             return []

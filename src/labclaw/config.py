@@ -59,6 +59,7 @@ def _get_llm_config_class() -> type[BaseModel]:
     """Return LLMConfig from llm.provider if available, else fallback."""
     try:
         from labclaw.llm.provider import LLMConfig
+
         return LLMConfig
     except ImportError:
         return LLMConfigFallback

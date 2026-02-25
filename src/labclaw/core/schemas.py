@@ -18,6 +18,7 @@ from pydantic import BaseModel, Field, field_validator
 # Enums
 # ---------------------------------------------------------------------------
 
+
 class Layer(StrEnum):
     HARDWARE = "hardware"
     INFRA = "infra"
@@ -99,6 +100,7 @@ class MemberRole(StrEnum):
 # Event naming
 # ---------------------------------------------------------------------------
 
+
 class EventName(BaseModel):
     """Validated event name: {layer}.{module}.{action}."""
 
@@ -124,15 +126,14 @@ class EventName(BaseModel):
     def parse(cls, name: str) -> EventName:
         parts = name.split(".")
         if len(parts) != 3:
-            raise ValueError(
-                f"Event name must be '{{layer}}.{{module}}.{{action}}', got {name!r}"
-            )
+            raise ValueError(f"Event name must be '{{layer}}.{{module}}.{{action}}', got {name!r}")
         return cls(layer=parts[0], module=parts[1], action=parts[2])
 
 
 # ---------------------------------------------------------------------------
 # Base event
 # ---------------------------------------------------------------------------
+
 
 def _uuid() -> str:
     return str(uuid.uuid4())
@@ -157,6 +158,7 @@ class LabEvent(BaseModel):
 # ---------------------------------------------------------------------------
 # Common value objects
 # ---------------------------------------------------------------------------
+
 
 class FileReference(BaseModel):
     """Reference to a file with integrity check."""

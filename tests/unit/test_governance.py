@@ -74,7 +74,9 @@ class TestSafetyRules:
         )
         engine.register_rule(rule)
         decision = engine.check(
-            action="execute", actor="alice", role="pi",
+            action="execute",
+            actor="alice",
+            role="pi",
             context={"device": "laser"},
         )
         assert decision.allowed is False
@@ -90,7 +92,9 @@ class TestSafetyRules:
         )
         engine.register_rule(rule)
         decision = engine.check(
-            action="execute", actor="carol", role="graduate",
+            action="execute",
+            actor="carol",
+            role="graduate",
             context={"voltage": "high"},
         )
         assert decision.allowed is True
@@ -108,7 +112,9 @@ class TestSafetyRules:
         engine.register_rule(rule)
         # Different device, rule should not match
         decision = engine.check(
-            action="execute", actor="alice", role="pi",
+            action="execute",
+            actor="alice",
+            role="pi",
             context={"device": "microscope"},
         )
         assert decision.allowed is True
@@ -119,7 +125,8 @@ class TestRuleMatches:
     def test_matching_action_and_context(self):
         engine = GovernanceEngine()
         rule = SafetyRule(
-            name="test", description="test",
+            name="test",
+            description="test",
             check="deny_if",
             condition={"action": "write", "target": "config"},
         )
@@ -128,7 +135,8 @@ class TestRuleMatches:
     def test_non_matching_action(self):
         engine = GovernanceEngine()
         rule = SafetyRule(
-            name="test", description="test",
+            name="test",
+            description="test",
             check="deny_if",
             condition={"action": "write"},
         )
@@ -137,7 +145,8 @@ class TestRuleMatches:
     def test_non_matching_context(self):
         engine = GovernanceEngine()
         rule = SafetyRule(
-            name="test", description="test",
+            name="test",
+            description="test",
             check="deny_if",
             condition={"action": "write", "target": "config"},
         )
@@ -146,7 +155,8 @@ class TestRuleMatches:
     def test_empty_condition_matches_all(self):
         engine = GovernanceEngine()
         rule = SafetyRule(
-            name="test", description="test",
+            name="test",
+            description="test",
             check="deny_if",
             condition={},
         )

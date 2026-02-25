@@ -17,6 +17,7 @@ router = APIRouter()
 # Request models
 # ---------------------------------------------------------------------------
 
+
 class FitnessRequest(BaseModel):
     target: EvolutionTarget
     metrics: dict[str, float]
@@ -31,6 +32,7 @@ class CycleStartRequest(BaseModel):
 # ---------------------------------------------------------------------------
 # Endpoints
 # ---------------------------------------------------------------------------
+
 
 @router.get("/history")
 def evolution_history(

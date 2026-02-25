@@ -12,6 +12,7 @@ def main() -> None:
 
     if cmd == "serve":
         from labclaw.daemon import main as daemon_main
+
         sys.argv = sys.argv[1:]  # shift so argparse sees daemon args
         daemon_main()
     elif cmd == "--dashboard":
@@ -21,6 +22,7 @@ def main() -> None:
         import uvicorn
 
         from labclaw.api.app import app
+
         if len(sys.argv) > 2:
             try:
                 port = int(sys.argv[2])
@@ -36,6 +38,7 @@ def main() -> None:
         _init_cmd(sys.argv[2:])
     elif cmd == "mcp":
         from labclaw.mcp.server import main as mcp_main
+
         mcp_main()
     elif cmd == "plugin":
         _plugin_cmd(sys.argv[2:])
@@ -150,8 +153,7 @@ def _init_cmd(args: list[str]) -> None:
         "<!-- List standard operating procedures -->\n"
     )
     (project_dir / "lab" / "MEMORY.md").write_text(
-        f"# {name} — Memory Log\n\n"
-        "<!-- LabClaw will append observations and discoveries here -->\n"
+        f"# {name} — Memory Log\n\n<!-- LabClaw will append observations and discoveries here -->\n"
     )
 
     print(f"Project scaffolded: {project_dir}")
@@ -189,8 +191,10 @@ def _plugin_cmd(args: list[str]) -> None:
 
     elif sub == "create":
         if len(args) < 2:
-            print("Usage: labclaw plugin create <name> [--type device|domain|analysis] [--out DIR]",
-                  file=sys.stderr)
+            print(
+                "Usage: labclaw plugin create <name> [--type device|domain|analysis] [--out DIR]",
+                file=sys.stderr,
+            )
             sys.exit(1)
 
         name = args[1]

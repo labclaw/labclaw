@@ -21,27 +21,32 @@ logger = logging.getLogger(__name__)
 
 def _get_pattern_miner():  # noqa: ANN202
     from labclaw.api.deps import get_pattern_miner
+
     return get_pattern_miner()
 
 
 def _get_hypothesis_generator():  # noqa: ANN202
     from labclaw.api.deps import get_hypothesis_generator
+
     return get_hypothesis_generator()
 
 
 def _get_evolution_engine():  # noqa: ANN202
     from labclaw.api.deps import get_evolution_engine
+
     return get_evolution_engine()
 
 
 def _get_device_registry():  # noqa: ANN202
     from labclaw.api.deps import get_device_registry
+
     return get_device_registry()
 
 
 def _get_search_engine():  # noqa: ANN202
     from labclaw.api.deps import get_tier_a_backend
     from labclaw.memory.search import HybridSearchEngine
+
     return HybridSearchEngine(tier_a=get_tier_a_backend())
 
 
@@ -73,13 +78,17 @@ def create_server() -> FastMCP:
         # Load experiment rows from session chronicle via memory/API
         try:
             from labclaw.api.deps import get_session_chronicle
+
             rows = get_session_chronicle()
         except (ImportError, Exception):
             rows = []
         if not rows:
             return json.dumps(
-                {"patterns": [], "data_summary": {"row_count": 0},
-                 "message": "No experiment data available. Ingest data first."},
+                {
+                    "patterns": [],
+                    "data_summary": {"row_count": 0},
+                    "message": "No experiment data available. Ingest data first.",
+                },
                 indent=2,
             )
         result = miner.mine(rows, config=config)
@@ -100,6 +109,7 @@ def create_server() -> FastMCP:
         # Load latest mined patterns from session chronicle
         try:
             from labclaw.api.deps import get_latest_patterns
+
             patterns = get_latest_patterns()
         except (ImportError, Exception):
             patterns = []
@@ -123,13 +133,15 @@ def create_server() -> FastMCP:
             "cycles": [],
         }
         for cycle in active:
-            summary["cycles"].append({
-                "cycle_id": cycle.cycle_id,
-                "target": cycle.target.value,
-                "stage": cycle.stage.value,
-                "started_at": cycle.started_at.isoformat(),
-                "candidate": cycle.candidate.description,
-            })
+            summary["cycles"].append(
+                {
+                    "cycle_id": cycle.cycle_id,
+                    "target": cycle.target.value,
+                    "stage": cycle.stage.value,
+                    "started_at": cycle.started_at.isoformat(),
+                    "candidate": cycle.candidate.description,
+                }
+            )
         return json.dumps(summary, indent=2, default=str)
 
     @mcp.tool()
@@ -139,14 +151,16 @@ def create_server() -> FastMCP:
         devices = registry.list_devices()
         result = []
         for d in devices:
-            result.append({
-                "device_id": d.device_id,
-                "name": d.name,
-                "type": d.device_type,
-                "status": d.status.value,
-                "location": d.location,
-                "model": d.model,
-            })
+            result.append(
+                {
+                    "device_id": d.device_id,
+                    "name": d.name,
+                    "type": d.device_type,
+                    "status": d.status.value,
+                    "location": d.location,
+                    "model": d.model,
+                }
+            )
         return json.dumps(result, indent=2, default=str)
 
     @mcp.tool()
@@ -162,12 +176,14 @@ def create_server() -> FastMCP:
         results = engine.search(HybridSearchQuery(text=query, limit=10))
         output = []
         for r in results:
-            output.append({
-                "entity_id": r.entity_id,
-                "snippet": r.snippet,
-                "score": r.score,
-                "source": f"tier-{r.source_tier}:{r.source_detail}",
-            })
+            output.append(
+                {
+                    "entity_id": r.entity_id,
+                    "snippet": r.snippet,
+                    "score": r.score,
+                    "source": f"tier-{r.source_tier}:{r.source_detail}",
+                }
+            )
         return json.dumps(output, indent=2, default=str)
 
     @mcp.tool()
@@ -185,12 +201,14 @@ def create_server() -> FastMCP:
         )
         output = []
         for r in results:
-            output.append({
-                "entity_id": r.entity_id,
-                "snippet": r.snippet,
-                "score": r.score,
-                "source": f"tier-{r.source_tier}:{r.source_detail}",
-            })
+            output.append(
+                {
+                    "entity_id": r.entity_id,
+                    "snippet": r.snippet,
+                    "score": r.score,
+                    "source": f"tier-{r.source_tier}:{r.source_detail}",
+                }
+            )
         return json.dumps(output, indent=2, default=str)
 
     return mcp

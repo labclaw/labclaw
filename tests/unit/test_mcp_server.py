@@ -18,6 +18,7 @@ try:
         _get_search_engine,
         create_server,
     )
+
     _HAS_MCP = True
 except ImportError:
     _HAS_MCP = False
@@ -105,13 +106,9 @@ class TestMCPToolFunctions:
         mock_gen = MagicMock()
         mock_gen.generate.return_value = [hyp]
 
-        with patch(
-            "labclaw.mcp.server._get_hypothesis_generator", return_value=mock_gen
-        ):
+        with patch("labclaw.mcp.server._get_hypothesis_generator", return_value=mock_gen):
             server = create_server()
-            result = self._call_tool(
-                server, "hypothesize", context="neuro", constraints=""
-            )
+            result = self._call_tool(server, "hypothesize", context="neuro", constraints="")
             parsed = json.loads(result)
             assert isinstance(parsed, list)
             assert len(parsed) == 1
@@ -130,9 +127,7 @@ class TestMCPToolFunctions:
         mock_engine.get_active_cycles.return_value = [cycle]
         mock_engine.get_history.return_value = [cycle]
 
-        with patch(
-            "labclaw.mcp.server._get_evolution_engine", return_value=mock_engine
-        ):
+        with patch("labclaw.mcp.server._get_evolution_engine", return_value=mock_engine):
             server = create_server()
             result = self._call_tool(server, "evolution_status")
             parsed = json.loads(result)
@@ -153,9 +148,7 @@ class TestMCPToolFunctions:
         mock_reg = MagicMock()
         mock_reg.list_devices.return_value = [device]
 
-        with patch(
-            "labclaw.mcp.server._get_device_registry", return_value=mock_reg
-        ):
+        with patch("labclaw.mcp.server._get_device_registry", return_value=mock_reg):
             server = create_server()
             result = self._call_tool(server, "device_status")
             parsed = json.loads(result)

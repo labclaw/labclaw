@@ -37,6 +37,7 @@ logger = logging.getLogger(__name__)
 # Helpers
 # ---------------------------------------------------------------------------
 
+
 def _uuid() -> str:
     return str(uuid.uuid4())
 
@@ -48,6 +49,7 @@ def _now() -> datetime:
 # ---------------------------------------------------------------------------
 # Pydantic Schemas
 # ---------------------------------------------------------------------------
+
 
 class MiningConfig(BaseModel):
     """Configuration for the pattern mining pipeline."""
@@ -97,6 +99,7 @@ for _evt in _DISCOVERY_EVENTS:
 # Pure-Python math fallbacks
 # ---------------------------------------------------------------------------
 
+
 def _mean(values: list[float]) -> float:
     if not values:
         return 0.0
@@ -144,6 +147,7 @@ def _pearson_r(x: list[float], y: list[float]) -> tuple[float, float]:
 # PatternMiner
 # ---------------------------------------------------------------------------
 
+
 class PatternMiner:
     """Exhaustive pattern mining across experimental data.
 
@@ -172,12 +176,8 @@ class PatternMiner:
         patterns: list[PatternRecord] = []
 
         if len(data) >= cfg.min_sessions:
-            patterns.extend(
-                self.find_correlations(data, threshold=cfg.correlation_threshold)
-            )
-            patterns.extend(
-                self.find_anomalies(data, z_threshold=cfg.anomaly_z_threshold)
-            )
+            patterns.extend(self.find_correlations(data, threshold=cfg.correlation_threshold))
+            patterns.extend(self.find_anomalies(data, z_threshold=cfg.anomaly_z_threshold))
             patterns.extend(self.find_temporal_patterns(data))
 
         result = MiningResult(
@@ -237,15 +237,11 @@ class PatternMiner:
                     r, p = _pearson_r(vals_a, vals_b)
 
                 if abs(r) > threshold:
-                    session_ids = [
-                        str(row.get("session_id", idx))
-                        for idx, row in enumerate(data)
-                    ]
+                    session_ids = [str(row.get("session_id", idx)) for idx, row in enumerate(data)]
                     pattern = PatternRecord(
                         pattern_type="correlation",
                         description=(
-                            f"Correlation between {col_a} and {col_b}: "
-                            f"r={r:.3f}, p={p:.4f}"
+                            f"Correlation between {col_a} and {col_b}: r={r:.3f}, p={p:.4f}"
                         ),
                         evidence={
                             "r": float(r),
@@ -310,10 +306,7 @@ class PatternMiner:
                     z_scores.append(float(z))
 
             if anomalous_original:
-                session_ids = [
-                    str(data[idx].get("session_id", idx))
-                    for idx in anomalous_original
-                ]
+                session_ids = [str(data[idx].get("session_id", idx)) for idx in anomalous_original]
                 pattern = PatternRecord(
                     pattern_type="anomaly",
                     description=(
@@ -390,8 +383,7 @@ class PatternMiner:
             if abs(diff) > overall_std:
                 direction = "increasing" if diff > 0 else "decreasing"
                 session_ids = [
-                    str(row.get("session_id", idx))
-                    for idx, row in enumerate(sorted_data)
+                    str(row.get("session_id", idx)) for idx, row in enumerate(sorted_data)
                 ]
                 confidence = min(abs(diff) / (overall_std * 3.0), 1.0)
 
@@ -447,7 +439,8 @@ class PatternMiner:
         numeric_cols: list[str] = []
         for col in sorted(all_cols):
             numeric_count = sum(
-                1 for row in sample
+                1
+                for row in sample
                 if col in row
                 and isinstance(row[col], (int, float))
                 and not isinstance(row[col], bool)

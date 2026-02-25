@@ -95,8 +95,7 @@ def check_proposals_within_bounds(
         for name, value in proposal.parameters.items():
             low, high = bounds[name]
             assert low <= value <= high, (
-                f"Proposal {proposal.proposal_id}: {name}={value} "
-                f"outside [{low}, {high}]"
+                f"Proposal {proposal.proposal_id}: {name}={value} outside [{low}, {high}]"
             )
 
 

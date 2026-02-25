@@ -129,7 +129,9 @@ class ScientificLoop:
                 )
                 logger.info(
                     "Cycle %s: step %s skipped — %s",
-                    cycle_id, step_name, result.skip_reason,
+                    cycle_id,
+                    step_name,
+                    result.skip_reason,
                 )
             elif result.success:
                 steps_completed.append(step_name)
@@ -184,7 +186,10 @@ class ScientificLoop:
 
         logger.info(
             "Cycle %s completed: %d steps, %d skipped, %.2fs",
-            cycle_id, len(steps_completed), len(steps_skipped), total_duration,
+            cycle_id,
+            len(steps_completed),
+            len(steps_skipped),
+            total_duration,
         )
 
         return cycle_result

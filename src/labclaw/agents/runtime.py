@@ -148,9 +148,7 @@ class AgentRuntime:
 
             if not tool_calls:
                 # Plain text response — done
-                self._message_history.append(
-                    {"role": "assistant", "content": llm_response}
-                )
+                self._message_history.append({"role": "assistant", "content": llm_response})
                 event_registry.emit(
                     "persona.agent.response_generated",
                     payload={"response_length": len(llm_response)},
@@ -158,9 +156,7 @@ class AgentRuntime:
                 return llm_response
 
             # Execute tool calls and feed results back
-            self._message_history.append(
-                {"role": "assistant", "content": llm_response}
-            )
+            self._message_history.append({"role": "assistant", "content": llm_response})
             for tc_name, tc_args in tool_calls:
                 result = await self._execute_tool(tc_name, tc_args)
                 self._message_history.append(
@@ -190,8 +186,7 @@ class AgentRuntime:
             tool_block = "Available tools:\n"
             for tool in self._tools.values():
                 params_str = ", ".join(
-                    f"{k}: {v.get('type', 'any')}"
-                    for k, v in tool.parameters_schema.items()
+                    f"{k}: {v.get('type', 'any')}" for k, v in tool.parameters_schema.items()
                 )
                 tool_block += f"- {tool.name}({params_str}): {tool.description}\n"
             tool_block += (
@@ -238,9 +233,7 @@ class AgentRuntime:
 
         return calls
 
-    async def _execute_tool(
-        self, tool_name: str, arguments: dict[str, Any]
-    ) -> dict[str, Any]:
+    async def _execute_tool(self, tool_name: str, arguments: dict[str, Any]) -> dict[str, Any]:
         """Execute a tool call, returning the result as a dict."""
         event_registry.emit(
             "persona.agent.tool_called",

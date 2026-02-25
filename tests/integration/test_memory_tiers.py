@@ -50,16 +50,22 @@ class TestTierA:
     def test_search_across_entities(self, tmp_path: Path) -> None:
         backend = TierABackend(root=tmp_path)
 
-        backend.append_memory("lab1", MemoryEntry(
-            timestamp=datetime.now(UTC),
-            category="protocol",
-            detail="Updated calcium imaging protocol",
-        ))
-        backend.append_memory("lab2", MemoryEntry(
-            timestamp=datetime.now(UTC),
-            category="experiment",
-            detail="Calcium imaging session completed",
-        ))
+        backend.append_memory(
+            "lab1",
+            MemoryEntry(
+                timestamp=datetime.now(UTC),
+                category="protocol",
+                detail="Updated calcium imaging protocol",
+            ),
+        )
+        backend.append_memory(
+            "lab2",
+            MemoryEntry(
+                timestamp=datetime.now(UTC),
+                category="experiment",
+                detail="Calcium imaging session completed",
+            ),
+        )
 
         results = backend.search("calcium imaging")
         assert len(results) == 2
@@ -234,11 +240,14 @@ class TestCrossTier:
     async def test_search_across_tiers(self, tmp_path: Path) -> None:
         # Tier A: Write markdown memory about calcium imaging
         tier_a = TierABackend(root=tmp_path / "memory")
-        tier_a.append_memory("lab", MemoryEntry(
-            timestamp=datetime.now(UTC),
-            category="protocol",
-            detail="Calcium imaging protocol v2 established for hippocampal neurons",
-        ))
+        tier_a.append_memory(
+            "lab",
+            MemoryEntry(
+                timestamp=datetime.now(UTC),
+                category="protocol",
+                detail="Calcium imaging protocol v2 established for hippocampal neurons",
+            ),
+        )
 
         # Tier B: Add knowledge graph node about calcium imaging
         tier_b = TierBBackend()

@@ -3,6 +3,7 @@
 Spec: docs/specs/cross-foundations.md
 Design doc: section 8.2 (Two-Layer Safety)
 """
+
 from __future__ import annotations
 
 import logging
@@ -161,9 +162,7 @@ class GovernanceEngine:
 
         return decision
 
-    def _evaluate_rules(
-        self, action: str, context: dict[str, Any]
-    ) -> GovernanceDecision:
+    def _evaluate_rules(self, action: str, context: dict[str, Any]) -> GovernanceDecision:
         """Evaluate registered safety rules."""
         for rule in self._rules:
             if self._rule_matches(rule, action, context):
@@ -182,9 +181,7 @@ class GovernanceEngine:
                     )
         return GovernanceDecision(allowed=True, safety_level=SafetyLevel.SAFE)
 
-    def _rule_matches(
-        self, rule: SafetyRule, action: str, context: dict[str, Any]
-    ) -> bool:
+    def _rule_matches(self, rule: SafetyRule, action: str, context: dict[str, Any]) -> bool:
         """Check if a rule's conditions match the current action/context."""
         cond = rule.condition
         if "action" in cond and cond["action"] != action:

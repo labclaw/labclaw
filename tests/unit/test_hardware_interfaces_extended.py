@@ -56,9 +56,7 @@ class TestSerialWriteWithParameters:
         mock_serial.is_open = True
         driver._serial = mock_serial
 
-        cmd = HardwareCommand(
-            device_id="wp1", action="SET_TEMP", parameters={"value": 37.5}
-        )
+        cmd = HardwareCommand(device_id="wp1", action="SET_TEMP", parameters={"value": 37.5})
         result = await driver.write(cmd)
 
         assert result is True
@@ -66,7 +64,7 @@ class TestSerialWriteWithParameters:
         written_bytes = mock_serial.write.call_args[0][0]
         written_str = written_bytes.decode("utf-8")
         assert written_str.startswith("SET_TEMP ")
-        payload = json.loads(written_str[len("SET_TEMP "):].strip())
+        payload = json.loads(written_str[len("SET_TEMP ") :].strip())
         assert payload["value"] == 37.5
 
 
@@ -99,9 +97,7 @@ class TestSerialWriteException:
         mock_serial.write.side_effect = RuntimeError("port disconnected")
         driver._serial = mock_serial
 
-        cmd = HardwareCommand(
-            device_id="we2", action="CMD", parameters={"speed": 100}
-        )
+        cmd = HardwareCommand(device_id="we2", action="CMD", parameters={"speed": 100})
         result = await driver.write(cmd)
 
         assert result is False
@@ -138,6 +134,7 @@ class TestDeviceDriverProtocol:
 
     def test_device_driver_is_runtime_checkable(self) -> None:
         """DeviceDriver is decorated with @runtime_checkable."""
+
         # A plain object without the required methods must NOT satisfy the protocol
         class NotADriver:
             pass

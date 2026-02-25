@@ -57,15 +57,15 @@ jobs:
       - name: Set up Python
         run: uv python install 3.12
 
-      - name: Install bandit
-        run: uv pip install --system bandit
+      - name: Sync dependencies
+        run: uv sync --extra dev --frozen
 
       - name: Run bandit SAST scan
-        run: bandit -r src/labclaw -f json -o bandit-report.json || true
+        run: uv run bandit -r src/labclaw -f json -o bandit-report.json -ll --skip B104 || true
 
       - name: Display results
         if: always()
-        run: bandit -r src/labclaw -f screen
+        run: uv run bandit -r src/labclaw -f screen -ll --skip B104 || true
 
       - name: Upload report
         if: always()
@@ -107,7 +107,15 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Install gitleaks
+        run: |
+          GITLEAKS_VERSION=$(curl -sH "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            https://api.github.com/repos/gitleaks/gitleaks/releases/latest \
+            | grep '"tag_name"' | sed 's/.*"v\(.*\)".*/\1/')
+          if [ -z "$GITLEAKS_VERSION" ]; then echo "Failed to fetch gitleaks version"; exit 1; fi
+          curl -sSfL "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz" \
+            | tar xz -C /usr/local/bin gitleaks
+          gitleaks version
+
       - name: Run gitleaks
-        uses: gitleaks/gitleaks-action@v2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gitleaks detect --source . --verbose

@@ -68,9 +68,7 @@ def request_soul(tier_a: TierABackend, entity_id: str) -> MarkdownDoc | Exceptio
 @then(parsers.parse('I receive a MarkdownDoc with frontmatter containing "{key}"'))
 def check_frontmatter_has_key(read_doc: MarkdownDoc | Exception, key: str) -> None:
     assert isinstance(read_doc, MarkdownDoc), f"Expected MarkdownDoc, got {type(read_doc)}"
-    assert key in read_doc.frontmatter, (
-        f"Frontmatter missing key {key!r}: {read_doc.frontmatter}"
-    )
+    assert key in read_doc.frontmatter, f"Frontmatter missing key {key!r}: {read_doc.frontmatter}"
 
 
 @then(parsers.parse('the frontmatter "{key}" is "{value}"'))
@@ -110,7 +108,10 @@ def entity_has_soul(tier_a: TierABackend, entity_id: str, name: str) -> str:
     parsers.parse('I append a memory entry with category "{category}" and detail "{detail}"'),
 )
 def append_memory_entry(
-    tier_a: TierABackend, setup_entity: str, category: str, detail: str,
+    tier_a: TierABackend,
+    setup_entity: str,
+    category: str,
+    detail: str,
 ) -> None:
     """Append a memory entry to the current entity's MEMORY.md."""
     entry = MemoryEntry(
@@ -127,9 +128,7 @@ def check_memory_entry_count(tier_a: TierABackend, entity_id: str, count: int) -
     doc = tier_a.read_memory(entity_id)
     # Count ## headers (each entry starts with ## timestamp)
     sections = [line for line in doc.content.split("\n") if line.startswith("## ")]
-    assert len(sections) == count, (
-        f"Expected {count} entries, found {len(sections)}: {sections}"
-    )
+    assert len(sections) == count, f"Expected {count} entries, found {len(sections)}: {sections}"
 
 
 # ---------------------------------------------------------------------------
@@ -174,9 +173,7 @@ def search_memory(tier_a: TierABackend, query: str) -> list:
 @then(parsers.parse('results contain entity "{entity_id}"'))
 def check_results_contain_entity(search_results: list, entity_id: str) -> None:
     entity_ids = [r.entity_id for r in search_results]
-    assert entity_id in entity_ids, (
-        f"Expected entity {entity_id!r} in results, got {entity_ids}"
-    )
+    assert entity_id in entity_ids, f"Expected entity {entity_id!r} in results, got {entity_ids}"
 
 
 @then("results are ranked by relevance score")
@@ -219,9 +216,7 @@ def add_person_node(tier_b: TierBBackend, name: str) -> PersonNode:
 @then(parsers.parse("the knowledge graph contains {count:d} node"))
 @then(parsers.parse("the knowledge graph contains {count:d} nodes"))
 def check_kg_node_count(tier_b: TierBBackend, count: int) -> None:
-    assert tier_b.node_count == count, (
-        f"Expected {count} nodes, got {tier_b.node_count}"
-    )
+    assert tier_b.node_count == count, f"Expected {count} nodes, got {tier_b.node_count}"
 
 
 @then("I can retrieve the node by its ID")
@@ -266,14 +261,13 @@ def create_edge(tier_b: TierBBackend, src: str, tgt: str, rel: str) -> None:
 @then(parsers.parse("the knowledge graph contains {count:d} edge"))
 @then(parsers.parse("the knowledge graph contains {count:d} edges"))
 def check_kg_edge_count(tier_b: TierBBackend, count: int) -> None:
-    assert tier_b.edge_count == count, (
-        f"Expected {count} edges, got {tier_b.edge_count}"
-    )
+    assert tier_b.edge_count == count, f"Expected {count} edges, got {tier_b.edge_count}"
 
 
 @then(parsers.parse('the edge has relation "{rel}"'))
 def check_edge_relation(kg_added_edge: object, rel: str) -> None:
     from labclaw.memory.knowledge_graph import KGEdge
+
     assert isinstance(kg_added_edge, KGEdge)
     assert kg_added_edge.relation == rel
 
@@ -298,14 +292,13 @@ def create_n_projects(tier_b: TierBBackend, count: int) -> None:
 )
 def query_nodes_by_type(tier_b: TierBBackend, node_type: str) -> list:
     from labclaw.memory.knowledge_graph import KGQueryFilter
+
     return tier_b.query_nodes(KGQueryFilter(node_type=node_type))
 
 
 @then(parsers.parse("I receive {count:d} nodes"))
 def check_query_result_count(kg_query_results: list, count: int) -> None:
-    assert len(kg_query_results) == count, (
-        f"Expected {count} results, got {len(kg_query_results)}"
-    )
+    assert len(kg_query_results) == count, f"Expected {count} results, got {len(kg_query_results)}"
 
 
 @when(
@@ -319,9 +312,7 @@ def get_neighbors(tier_b: TierBBackend, label: str) -> list:
 @then(parsers.parse("I receive {count:d} neighbor"))
 @then(parsers.parse("I receive {count:d} neighbors"))
 def check_neighbor_count(kg_neighbors: list, count: int) -> None:
-    assert len(kg_neighbors) == count, (
-        f"Expected {count} neighbors, got {len(kg_neighbors)}"
-    )
+    assert len(kg_neighbors) == count, f"Expected {count} neighbors, got {len(kg_neighbors)}"
 
 
 @then(parsers.parse('the neighbor is "{label}"'))
@@ -379,5 +370,6 @@ def sb_implemented() -> str:
 @then("accessing shared blocks succeeds")
 def check_sb_implemented(sb_status: str) -> None:
     from labclaw.memory.shared_blocks import TierCBackend
+
     backend = TierCBackend()
     assert backend is not None

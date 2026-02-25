@@ -74,9 +74,7 @@ class StubAnalysisPlugin:
 
 class TestPluginMetadata:
     def test_create_basic(self) -> None:
-        meta = PluginMetadata(
-            name="foo", version="1.0", description="bar", plugin_type="device"
-        )
+        meta = PluginMetadata(name="foo", version="1.0", description="bar", plugin_type="device")
         assert meta.name == "foo"
         assert meta.version == "1.0"
         assert meta.author == ""

@@ -46,6 +46,7 @@ class _FileEventHandler(FileSystemEventHandler):
 
     def _matches(self, path: Path) -> bool:
         import fnmatch
+
         return any(fnmatch.fnmatch(path.name, pat) for pat in self._file_patterns)
 
     def _handle(self, event: FileSystemEvent) -> None:

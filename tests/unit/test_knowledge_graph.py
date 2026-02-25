@@ -298,7 +298,7 @@ def test_get_neighbors_both() -> None:
     backend.add_node(_node("b"))
     backend.add_node(_node("c"))
     backend.add_edge("a", "b", "out")  # a→b
-    backend.add_edge("c", "a", "in")   # c→a
+    backend.add_edge("c", "a", "in")  # c→a
     neighbors = backend.get_neighbors("a", direction="both")
     ids = {n.node_id for n, _ in neighbors}
     assert "b" in ids  # outgoing

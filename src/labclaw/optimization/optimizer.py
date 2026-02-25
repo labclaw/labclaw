@@ -25,6 +25,7 @@ logger = logging.getLogger(__name__)
 # Helpers
 # ---------------------------------------------------------------------------
 
+
 def _uuid() -> str:
     return str(uuid.uuid4())
 
@@ -36,6 +37,7 @@ def _now() -> datetime:
 # ---------------------------------------------------------------------------
 # Pydantic Schemas
 # ---------------------------------------------------------------------------
+
 
 class ParameterDimension(BaseModel):
     """A single dimension in the parameter search space."""
@@ -90,6 +92,7 @@ for _evt in _OPTIMIZATION_EVENTS:
 # BayesianOptimizer
 # ---------------------------------------------------------------------------
 
+
 class BayesianOptimizer:
     """Bayesian optimization engine for experimental parameters.
 
@@ -114,8 +117,7 @@ class BayesianOptimizer:
         for _ in range(n):
             self._iteration += 1
             params = {
-                dim.name: self._rng.uniform(dim.low, dim.high)
-                for dim in self._space.dimensions
+                dim.name: self._rng.uniform(dim.low, dim.high) for dim in self._space.dimensions
             }
             proposal = ExperimentProposal(
                 parameters=params,

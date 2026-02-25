@@ -92,9 +92,7 @@ async def experiment_designer_chat(
     """Send a message to the Experiment Designer agent."""
     provider = _require_llm(llm)
     runtime = _build_runtime(provider)
-    response = await runtime.chat(
-        body.message, system_prompt=EXPERIMENT_DESIGNER_SYSTEM
-    )
+    response = await runtime.chat(body.message, system_prompt=EXPERIMENT_DESIGNER_SYSTEM)
     return ChatResponse(response=response, agent="experiment-designer")
 
 

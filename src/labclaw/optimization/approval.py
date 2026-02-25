@@ -27,6 +27,7 @@ logger = logging.getLogger(__name__)
 # Helpers
 # ---------------------------------------------------------------------------
 
+
 def _uuid() -> str:
     return str(uuid.uuid4())
 
@@ -38,6 +39,7 @@ def _now() -> datetime:
 # ---------------------------------------------------------------------------
 # Pydantic Schemas
 # ---------------------------------------------------------------------------
+
 
 class ApprovalRequest(BaseModel):
     """Human approval request for experiment execution."""
@@ -70,6 +72,7 @@ for _evt in _APPROVAL_EVENTS:
 # ---------------------------------------------------------------------------
 # ApprovalGate
 # ---------------------------------------------------------------------------
+
 
 class ApprovalGate:
     """Human-in-the-loop approval workflow for experiment execution."""
@@ -113,11 +116,13 @@ class ApprovalGate:
     def approve(self, request_id: str, approver: str) -> ApprovalRequest:
         """Approve a pending request."""
         request = self._get_pending(request_id)
-        request = request.model_copy(update={
-            "status": "approved",
-            "decided_at": _now(),
-            "decided_by": approver,
-        })
+        request = request.model_copy(
+            update={
+                "status": "approved",
+                "decided_at": _now(),
+                "decided_by": approver,
+            }
+        )
         self._requests[request_id] = request
 
         event_registry.emit(
@@ -134,12 +139,14 @@ class ApprovalGate:
     def reject(self, request_id: str, approver: str, reason: str) -> ApprovalRequest:
         """Reject a pending request with reason."""
         request = self._get_pending(request_id)
-        request = request.model_copy(update={
-            "status": "rejected",
-            "decided_at": _now(),
-            "decided_by": approver,
-            "rejection_reason": reason,
-        })
+        request = request.model_copy(
+            update={
+                "status": "rejected",
+                "decided_at": _now(),
+                "decided_by": approver,
+                "rejection_reason": reason,
+            }
+        )
         self._requests[request_id] = request
 
         event_registry.emit(
@@ -163,7 +170,5 @@ class ApprovalGate:
             raise KeyError(f"Approval request {request_id!r} not found")
         request = self._requests[request_id]
         if request.status != "pending":
-            raise ValueError(
-                f"Request {request_id!r} is {request.status!r}, not 'pending'"
-            )
+            raise ValueError(f"Request {request_id!r} is {request.status!r}, not 'pending'")
         return request

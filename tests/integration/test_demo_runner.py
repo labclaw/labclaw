@@ -56,6 +56,7 @@ class TestDemoRunner:
         assert root.exists()
         # Clean up manually
         import shutil
+
         shutil.rmtree(root, ignore_errors=True)
 
     def test_invalid_domain_raises(self) -> None:

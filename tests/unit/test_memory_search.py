@@ -86,11 +86,13 @@ def test_search_entity_filter() -> None:
 
 def test_search_sorts_by_score_descending() -> None:
     """Results are sorted by score descending regardless of input order."""
-    tier_a = _make_tier_a_mock([
-        _sr("low", 0.2),
-        _sr("high", 0.95),
-        _sr("mid", 0.6),
-    ])
+    tier_a = _make_tier_a_mock(
+        [
+            _sr("low", 0.2),
+            _sr("high", 0.95),
+            _sr("mid", 0.6),
+        ]
+    )
     engine = HybridSearchEngine(tier_a=tier_a)
     query = HybridSearchQuery(text="sort", tiers=["a"])
 
@@ -194,10 +196,12 @@ def test_search_tier_b_only() -> None:
 
 def test_search_tier_b_entity_filter() -> None:
     """entity_filter restricts tier B results to the matching node_id."""
-    tier_b = _make_tier_b_mock([
-        _kg_result("n1", score=0.9),
-        _kg_result("n2", score=0.7),
-    ])
+    tier_b = _make_tier_b_mock(
+        [
+            _kg_result("n1", score=0.9),
+            _kg_result("n2", score=0.7),
+        ]
+    )
     engine = HybridSearchEngine(tier_b=tier_b)
     query = HybridSearchQuery(text="exp", tiers=["b"], entity_filter="n1")
 

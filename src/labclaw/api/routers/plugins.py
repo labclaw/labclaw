@@ -13,6 +13,7 @@ router = APIRouter()
 def list_plugins() -> list[PluginMetadata]:
     """List all registered plugins."""
     from labclaw.plugins.registry import plugin_registry
+
     return plugin_registry.list_plugins()
 
 
@@ -20,5 +21,6 @@ def list_plugins() -> list[PluginMetadata]:
 def list_plugins_by_type(plugin_type: str) -> list[PluginMetadata]:
     """List plugins filtered by type (device, domain, analysis)."""
     from labclaw.plugins.registry import plugin_registry
+
     plugins = plugin_registry.get_by_type(plugin_type)
     return [p.metadata for p in plugins]

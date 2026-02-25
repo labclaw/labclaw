@@ -14,10 +14,7 @@ from labclaw.discovery.mining import MiningConfig, PatternMiner, PatternRecord
 def _correlated_data(n: int = 20, noise: float = 0.1) -> list[dict]:
     """Return rows where y ≈ 2*x + noise."""
     rng = random.Random(42)
-    return [
-        {"x": float(i), "y": 2.0 * i + rng.gauss(0, noise)}
-        for i in range(n)
-    ]
+    return [{"x": float(i), "y": 2.0 * i + rng.gauss(0, noise)} for i in range(n)]
 
 
 def _data_with_outliers(n: int = 20) -> list[dict]:
@@ -29,10 +26,7 @@ def _data_with_outliers(n: int = 20) -> list[dict]:
 
 def _trending_data(n: int = 20) -> list[dict]:
     """Return rows with a temporal trend: metric rises over time."""
-    return [
-        {"timestamp": float(i), "metric": float(i) * 3.0}
-        for i in range(n)
-    ]
+    return [{"timestamp": float(i), "metric": float(i) * 3.0} for i in range(n)]
 
 
 # ---------------------------------------------------------------------------

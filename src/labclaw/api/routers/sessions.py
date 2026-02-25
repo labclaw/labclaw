@@ -19,6 +19,7 @@ router = APIRouter()
 # Request models
 # ---------------------------------------------------------------------------
 
+
 class SessionStartRequest(BaseModel):
     operator: str | None = None
     experiment_id: str | None = None
@@ -33,6 +34,7 @@ class RecordingAddRequest(BaseModel):
 # ---------------------------------------------------------------------------
 # Endpoints
 # ---------------------------------------------------------------------------
+
 
 @router.get("/")
 def list_sessions(

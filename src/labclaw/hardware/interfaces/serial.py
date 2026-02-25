@@ -127,6 +127,7 @@ class SerialDriver:
         payload_str = command.action
         if command.parameters:
             import json
+
             payload_str = f"{command.action} {json.dumps(command.parameters)}"
 
         try:

@@ -197,11 +197,14 @@ class DemoRunner:
                 "data_rows": float(len(rows)),
                 "coverage": (
                     float(len(new_result.patterns)) / max(len(numeric_cols), 1)
-                    if numeric_cols else 0.0
+                    if numeric_cols
+                    else 0.0
                 ),
             }
             new_fitness = engine.measure_fitness(
-                target=target, metrics=new_metrics, data_points=len(rows),
+                target=target,
+                metrics=new_metrics,
+                data_points=len(rows),
             )
 
             # Advance through stages: BACKTEST -> SHADOW -> CANARY -> PROMOTED

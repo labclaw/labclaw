@@ -178,7 +178,8 @@ class TestRateLimiting:
 
 class TestWriteCommandApproval:
     def test_write_needs_approval_blocked_without_it(
-        self, guard: HardwareSafetyGuard,
+        self,
+        guard: HardwareSafetyGuard,
     ) -> None:
         result = guard.check_command(
             device_id="dev1",
@@ -191,7 +192,8 @@ class TestWriteCommandApproval:
         assert "requires approval" in result.reason
 
     def test_write_with_approval_allowed(
-        self, guard: HardwareSafetyGuard,
+        self,
+        guard: HardwareSafetyGuard,
     ) -> None:
         result = guard.check_command(
             device_id="dev1",
@@ -203,7 +205,8 @@ class TestWriteCommandApproval:
         assert result.allowed is True
 
     def test_execute_needs_approval_blocked(
-        self, guard: HardwareSafetyGuard,
+        self,
+        guard: HardwareSafetyGuard,
     ) -> None:
         result = guard.check_command(
             device_id="dev1",
@@ -215,7 +218,8 @@ class TestWriteCommandApproval:
         assert result.allowed is False
 
     def test_read_does_not_need_approval(
-        self, guard: HardwareSafetyGuard,
+        self,
+        guard: HardwareSafetyGuard,
     ) -> None:
         result = guard.check_command(
             device_id="dev1",
@@ -228,7 +232,8 @@ class TestWriteCommandApproval:
         assert result.allowed is True
 
     def test_safe_level_write_allowed_without_approval(
-        self, guard: HardwareSafetyGuard,
+        self,
+        guard: HardwareSafetyGuard,
     ) -> None:
         result = guard.check_command(
             device_id="dev1",
@@ -240,7 +245,8 @@ class TestWriteCommandApproval:
         assert result.allowed is True
 
     def test_calibrate_is_write_action(
-        self, guard: HardwareSafetyGuard,
+        self,
+        guard: HardwareSafetyGuard,
     ) -> None:
         result = guard.check_command(
             device_id="dev1",
@@ -280,7 +286,8 @@ class TestSafetyCheckResult:
 
 class TestCombinedScenarios:
     def test_emergency_stop_overrides_everything(
-        self, guard: HardwareSafetyGuard,
+        self,
+        guard: HardwareSafetyGuard,
     ) -> None:
         """Emergency stop blocks even approved commands on online devices."""
         guard.activate_emergency_stop("critical")
@@ -295,7 +302,8 @@ class TestCombinedScenarios:
         assert "Emergency stop" in result.reason
 
     def test_offline_checked_before_rate_limit(
-        self, guard: HardwareSafetyGuard,
+        self,
+        guard: HardwareSafetyGuard,
     ) -> None:
         """Device status is checked before rate limit to avoid wasting rate limit slots."""
         result = guard.check_command(

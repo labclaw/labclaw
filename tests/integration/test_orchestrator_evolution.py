@@ -23,13 +23,15 @@ def sample_data(tmp_path: Path) -> tuple[Path, list[dict]]:
     csv_path.parent.mkdir()
     rows = []
     for i in range(30):
-        rows.append({
-            "session_id": f"s{i:03d}",
-            "trial": i,
-            "reaction_time": 0.3 + (i % 5) * 0.05,
-            "accuracy": 0.8 + (i % 3) * 0.05,
-            "score": 10.0 + i * 0.5,
-        })
+        rows.append(
+            {
+                "session_id": f"s{i:03d}",
+                "trial": i,
+                "reaction_time": 0.3 + (i % 5) * 0.05,
+                "accuracy": 0.8 + (i % 3) * 0.05,
+                "score": 10.0 + i * 0.5,
+            }
+        )
     with csv_path.open("w", newline="") as f:
         writer = csv.DictWriter(f, fieldnames=rows[0].keys())
         writer.writeheader()
@@ -107,8 +109,7 @@ class TestOrchestratorEvolutionFlow:
             target=target,
             metrics={
                 "pattern_count": metrics["pattern_count"] + 1,
-                **{k: v for k, v in metrics.items()
-                   if k != "pattern_count"},
+                **{k: v for k, v in metrics.items() if k != "pattern_count"},
             },
             data_points=len(ingested),
         )

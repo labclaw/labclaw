@@ -39,6 +39,7 @@ class HardwareSafetyChecker:
     def __init__(self, registry: DeviceRegistry) -> None:
         self._registry = registry
         from collections import deque
+
         self._history: deque[SafetyCheckResult] = deque(maxlen=10_000)
 
     def check(self, command: HardwareCommand) -> SafetyCheckResult:

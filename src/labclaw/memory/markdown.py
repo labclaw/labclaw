@@ -95,7 +95,7 @@ def _parse_frontmatter(text: str) -> tuple[dict[str, Any], str]:
     end_idx = 3 + match.start() + 1  # +1 to skip the \n before ---
 
     yaml_text = text[3:end_idx].strip()
-    body = text[end_idx + 3:].strip()
+    body = text[end_idx + 3 :].strip()
 
     if not yaml_text:
         return {}, body
@@ -152,9 +152,7 @@ class TierABackend:
         if not entity_id:
             raise ValueError("entity_id must be non-empty")
         if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]{0,127}", entity_id):
-            raise ValueError(
-                "entity_id must match [A-Za-z0-9][A-Za-z0-9._-]{0,127}"
-            )
+            raise ValueError("entity_id must match [A-Za-z0-9][A-Za-z0-9._-]{0,127}")
         return self._root / entity_id
 
     def _soul_path(self, entity_id: str) -> Path:
@@ -180,9 +178,7 @@ class TierABackend:
         """
         path = self._soul_path(entity_id)
         if not path.exists():
-            raise FileNotFoundError(
-                f"SOUL.md not found for entity {entity_id!r}: {path}"
-            )
+            raise FileNotFoundError(f"SOUL.md not found for entity {entity_id!r}: {path}")
         text = path.read_text(encoding="utf-8")
         frontmatter, content = _parse_frontmatter(text)
         return MarkdownDoc(path=path, frontmatter=frontmatter, content=content)
@@ -194,9 +190,7 @@ class TierABackend:
         """
         path = self._memory_path(entity_id)
         if not path.exists():
-            raise FileNotFoundError(
-                f"MEMORY.md not found for entity {entity_id!r}: {path}"
-            )
+            raise FileNotFoundError(f"MEMORY.md not found for entity {entity_id!r}: {path}")
         text = path.read_text(encoding="utf-8")
         frontmatter, content = _parse_frontmatter(text)
         return MarkdownDoc(path=path, frontmatter=frontmatter, content=content)
@@ -283,12 +277,14 @@ class TierABackend:
                 score = self._score_text(text, query_terms)
                 if score > 0:
                     snippet = self._extract_snippet(text, query_lower)
-                    results.append(SearchResult(
-                        entity_id=entity_id,
-                        snippet=snippet,
-                        score=score,
-                        source="soul",
-                    ))
+                    results.append(
+                        SearchResult(
+                            entity_id=entity_id,
+                            snippet=snippet,
+                            score=score,
+                            source="soul",
+                        )
+                    )
 
             # Search MEMORY.md
             mem_path = entity_dir / "MEMORY.md"
@@ -297,12 +293,14 @@ class TierABackend:
                 score = self._score_text(text, query_terms)
                 if score > 0:
                     snippet = self._extract_snippet(text, query_lower)
-                    results.append(SearchResult(
-                        entity_id=entity_id,
-                        snippet=snippet,
-                        score=score,
-                        source="memory",
-                    ))
+                    results.append(
+                        SearchResult(
+                            entity_id=entity_id,
+                            snippet=snippet,
+                            score=score,
+                            source="memory",
+                        )
+                    )
 
         # Sort by score descending
         results.sort(key=lambda r: r.score, reverse=True)

@@ -20,6 +20,7 @@ from tests.features.conftest import EventCapture
 # Fixtures exposed as step targets
 # ---------------------------------------------------------------------------
 
+
 @given("the device registry is initialized", target_fixture="device_registry")
 def device_registry_initialized(event_capture: EventCapture) -> DeviceRegistry:
     """Provide a fresh DeviceRegistry and wire event capture."""
@@ -39,6 +40,7 @@ def safety_checker_initialized(device_registry: DeviceRegistry) -> HardwareSafet
 # Device ID mapping — maps human-readable names to UUIDs
 # ---------------------------------------------------------------------------
 
+
 @pytest.fixture()
 def device_ids() -> dict[str, str]:
     """Map of human-friendly device names to their actual device_id UUIDs."""
@@ -48,6 +50,7 @@ def device_ids() -> dict[str, str]:
 # ---------------------------------------------------------------------------
 # Given steps
 # ---------------------------------------------------------------------------
+
 
 @given(
     parsers.parse('device "{name}" is registered with status "{status}"'),
@@ -74,6 +77,7 @@ def device_is_registered(
 # ---------------------------------------------------------------------------
 # When steps — Registry
 # ---------------------------------------------------------------------------
+
 
 @when(
     parsers.parse('I register a device "{name}" of type "{device_type}" with status "{status}"'),
@@ -137,6 +141,7 @@ def unregister_device(
 # When steps — Safety
 # ---------------------------------------------------------------------------
 
+
 @when(
     parsers.parse('I check safety for command "{action}" on device "{name}"'),
     target_fixture="safety_result",
@@ -155,6 +160,7 @@ def check_safety(
 # ---------------------------------------------------------------------------
 # Then steps — Registry
 # ---------------------------------------------------------------------------
+
 
 @then(parsers.parse('the registry contains device "{name}"'))
 def registry_contains(
@@ -176,9 +182,7 @@ def device_has_status(
 ) -> None:
     device_id = device_ids[name]
     device = device_registry.get(device_id)
-    assert device.status == DeviceStatus(status), (
-        f"Expected {status}, got {device.status.value}"
-    )
+    assert device.status == DeviceStatus(status), f"Expected {status}, got {device.status.value}"
 
 
 @then(parsers.parse("I get {count:d} devices"))
@@ -207,6 +211,7 @@ def registry_does_not_contain(
 # ---------------------------------------------------------------------------
 # Then steps — Safety
 # ---------------------------------------------------------------------------
+
 
 @then("the safety check passes")
 def safety_passes(safety_result: SafetyCheckResult) -> None:

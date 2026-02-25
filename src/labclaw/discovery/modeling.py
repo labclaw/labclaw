@@ -140,7 +140,8 @@ class PredictionResult(BaseModel):
 
 
 def _linreg_pure(
-    X: list[list[float]], y: list[float],
+    X: list[list[float]],
+    y: list[float],
 ) -> tuple[list[float], float]:
     """Pure-Python OLS linear regression.
 
@@ -174,7 +175,8 @@ def _linreg_pure(
 
 
 def _solve_linear_system(
-    A: list[list[float]], b: list[float],
+    A: list[list[float]],
+    b: list[float],
 ) -> list[float] | None:
     """Solve Ax = b via Gaussian elimination with partial pivoting."""
     n = len(A)
@@ -208,10 +210,7 @@ def _predict_pure(
     intercept: float,
 ) -> list[float]:
     """Predict using linear model coefficients."""
-    return [
-        intercept + sum(c * x for c, x in zip(coefficients, row))
-        for row in X
-    ]
+    return [intercept + sum(c * x for c, x in zip(coefficients, row)) for row in X]
 
 
 def _r_squared(y_true: list[float], y_pred: list[float]) -> float:
@@ -288,7 +287,8 @@ class PredictiveModel:
 
             if config.method == "random_forest" and RandomForestRegressor is not None:
                 model = RandomForestRegressor(
-                    n_estimators=50, random_state=config.random_seed,
+                    n_estimators=50,
+                    random_state=config.random_seed,
                 )
                 model.fit(X_arr, y_arr)
                 self._model = model
@@ -297,11 +297,13 @@ class PredictiveModel:
                 # Feature importances from RF
                 fi = model.feature_importances_
                 for rank, idx in enumerate(fi.argsort()[::-1], 1):
-                    importances.append(FeatureImportance(
-                        feature=feature_cols[idx],
-                        importance=float(fi[idx]),
-                        rank=rank,
-                    ))
+                    importances.append(
+                        FeatureImportance(
+                            feature=feature_cols[idx],
+                            importance=float(fi[idx]),
+                            rank=rank,
+                        )
+                    )
 
                 if cross_val_score is not None and len(X) >= 5:
                     cv = cross_val_score(model, X_arr, y_arr, cv=min(5, len(X)))
@@ -362,7 +364,9 @@ class PredictiveModel:
             raise RuntimeError("Model must be trained before prediction")
 
         X_new, _, _ = self._extract_Xy(
-            data, self._config, extract_target=False,
+            data,
+            self._config,
+            extract_target=False,
         )
 
         predictions: list[UncertaintyEstimate] = []
@@ -370,12 +374,14 @@ class PredictiveModel:
         for row in X_new:
             point_pred = self._predict_single(row)
             lower, upper = self._bootstrap_ci(row)
-            predictions.append(UncertaintyEstimate(
-                predicted=point_pred,
-                lower_bound=lower,
-                upper_bound=upper,
-                confidence_level=self._config.confidence_level,
-            ))
+            predictions.append(
+                UncertaintyEstimate(
+                    predicted=point_pred,
+                    lower_bound=lower,
+                    upper_bound=upper,
+                    confidence_level=self._config.confidence_level,
+                )
+            )
 
         model_id = _uuid()
         event_registry.emit(
@@ -392,9 +398,7 @@ class PredictiveModel:
         """Predict a single point."""
         if self._model is not None and np is not None:
             return float(self._model.predict(np.array([x]))[0])
-        return self._intercept + sum(
-            c * xi for c, xi in zip(self._coefficients, x)
-        )
+        return self._intercept + sum(c * xi for c, xi in zip(self._coefficients, x))
 
     def _bootstrap_ci(self, x: list[float]) -> tuple[float, float]:
         """Bootstrap confidence interval for a single prediction."""
@@ -407,6 +411,7 @@ class PredictiveModel:
         alpha = 1.0 - self._config.confidence_level
 
         import random
+
         rng = random.Random(self._config.random_seed)
 
         boot_preds: list[float] = []
@@ -415,9 +420,10 @@ class PredictiveModel:
             X_boot = [self._train_X[i] for i in indices]
             y_boot = [self._train_y[i] for i in indices]
 
-            if self._model is not None and hasattr(self._model, 'get_params'):
+            if self._model is not None and hasattr(self._model, "get_params"):
                 try:
                     import numpy as np_boot
+
                     boot_model = type(self._model)(**self._model.get_params())
                     boot_model.fit(np_boot.array(X_boot), np_boot.array(y_boot))
                     pred = float(boot_model.predict(np_boot.array([x]))[0])
@@ -436,7 +442,9 @@ class PredictiveModel:
         return boot_preds[lower_idx], boot_preds[upper_idx]
 
     def _linear_importances(
-        self, X: list[list[float]], feature_cols: list[str],
+        self,
+        X: list[list[float]],
+        feature_cols: list[str],
     ) -> list[FeatureImportance]:
         """Compute feature importances from linear coefficients * feature std."""
         if not X or not self._coefficients:

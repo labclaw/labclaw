@@ -81,9 +81,7 @@ class TestAgentsChat:
             async with AsyncClient(
                 transport=ASGITransport(app=app), base_url="http://test"
             ) as client:
-                resp = await client.post(
-                    "/api/agents/designer/chat", json={"message": "hello"}
-                )
+                resp = await client.post("/api/agents/designer/chat", json={"message": "hello"})
         finally:
             app.dependency_overrides.pop(_real_dep, None)
         assert resp.status_code == 503
@@ -168,9 +166,7 @@ class TestOrchestratorRoutes:
         orch_module._cycle_history.clear()
 
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
-            post_resp = await client.post(
-                "/api/orchestrator/cycle", json={"data_rows": []}
-            )
+            post_resp = await client.post("/api/orchestrator/cycle", json={"data_rows": []})
             assert post_resp.status_code == 201
             cycle_id = post_resp.json()["cycle_id"]
 
@@ -187,9 +183,7 @@ class TestOrchestratorRoutes:
         orch_module._cycle_history.clear()
 
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
-            post_resp = await client.post(
-                "/api/orchestrator/cycle", json={"data_rows": []}
-            )
+            post_resp = await client.post("/api/orchestrator/cycle", json={"data_rows": []})
             cycle_id = post_resp.json()["cycle_id"]
             get_resp = await client.get(f"/api/orchestrator/history/{cycle_id}")
 

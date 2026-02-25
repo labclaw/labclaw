@@ -111,19 +111,23 @@ class QualityChecker:
         # Extension check
         ext = file_ref.path.suffix.lower()
         if ext in _VIDEO_EXTENSIONS:
-            metrics.append(QualityMetric(
-                name="video_extension",
-                value=1.0,
-                level=QualityLevel.GOOD,
-                timestamp=now,
-            ))
+            metrics.append(
+                QualityMetric(
+                    name="video_extension",
+                    value=1.0,
+                    level=QualityLevel.GOOD,
+                    timestamp=now,
+                )
+            )
         else:
-            metrics.append(QualityMetric(
-                name="video_extension",
-                value=0.0,
-                level=QualityLevel.WARNING,
-                timestamp=now,
-            ))
+            metrics.append(
+                QualityMetric(
+                    name="video_extension",
+                    value=0.0,
+                    level=QualityLevel.WARNING,
+                    timestamp=now,
+                )
+            )
 
         return metrics
 
@@ -138,12 +142,14 @@ class QualityChecker:
 
         # Existence
         exists = path.exists()
-        metrics.append(QualityMetric(
-            name="file_exists",
-            value=1.0 if exists else 0.0,
-            level=QualityLevel.GOOD if exists else QualityLevel.CRITICAL,
-            timestamp=now,
-        ))
+        metrics.append(
+            QualityMetric(
+                name="file_exists",
+                value=1.0 if exists else 0.0,
+                level=QualityLevel.GOOD if exists else QualityLevel.CRITICAL,
+                timestamp=now,
+            )
+        )
 
         if not exists:
             return metrics
@@ -151,39 +157,47 @@ class QualityChecker:
         # Size
         size = path.stat().st_size
         if size == 0:
-            metrics.append(QualityMetric(
-                name="file_size",
-                value=0.0,
-                unit="bytes",
-                level=QualityLevel.WARNING,
-                timestamp=now,
-            ))
+            metrics.append(
+                QualityMetric(
+                    name="file_size",
+                    value=0.0,
+                    unit="bytes",
+                    level=QualityLevel.WARNING,
+                    timestamp=now,
+                )
+            )
         else:
-            metrics.append(QualityMetric(
-                name="file_size",
-                value=float(size),
-                unit="bytes",
-                level=QualityLevel.GOOD,
-                timestamp=now,
-            ))
+            metrics.append(
+                QualityMetric(
+                    name="file_size",
+                    value=float(size),
+                    unit="bytes",
+                    level=QualityLevel.GOOD,
+                    timestamp=now,
+                )
+            )
 
         # Readability
         try:
             with open(path, "rb") as f:
                 f.read(1024)
-            metrics.append(QualityMetric(
-                name="file_readable",
-                value=1.0,
-                level=QualityLevel.GOOD,
-                timestamp=now,
-            ))
+            metrics.append(
+                QualityMetric(
+                    name="file_readable",
+                    value=1.0,
+                    level=QualityLevel.GOOD,
+                    timestamp=now,
+                )
+            )
         except OSError:
-            metrics.append(QualityMetric(
-                name="file_readable",
-                value=0.0,
-                level=QualityLevel.CRITICAL,
-                timestamp=now,
-            ))
+            metrics.append(
+                QualityMetric(
+                    name="file_readable",
+                    value=0.0,
+                    level=QualityLevel.CRITICAL,
+                    timestamp=now,
+                )
+            )
 
         return metrics
 

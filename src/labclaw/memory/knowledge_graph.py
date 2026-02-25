@@ -130,9 +130,12 @@ class TierBBackend:
             raise ValueError(f"Node {node.node_id!r} already exists")
 
         if len(self._nodes) + 1 >= int(self._max_nodes * 0.8):
-            logger.warning("Knowledge graph at %d%% capacity (%d/%d nodes)",
-                           int(100 * len(self._nodes) / self._max_nodes),
-                           len(self._nodes), self._max_nodes)
+            logger.warning(
+                "Knowledge graph at %d%% capacity (%d/%d nodes)",
+                int(100 * len(self._nodes) / self._max_nodes),
+                len(self._nodes),
+                self._max_nodes,
+            )
 
         if len(self._nodes) >= self._max_nodes:
             oldest_id = min(self._nodes, key=lambda nid: self._nodes[nid].created_at)
@@ -310,10 +313,7 @@ class TierBBackend:
 
             # Metadata filter: all key-value pairs must match
             if filter.metadata_filter:
-                match = all(
-                    node.metadata.get(k) == v
-                    for k, v in filter.metadata_filter.items()
-                )
+                match = all(node.metadata.get(k) == v for k, v in filter.metadata_filter.items())
                 if not match:
                     continue
 
@@ -409,11 +409,13 @@ class TierBBackend:
                     best_field = field_name
 
             if best_score > 0:
-                results.append(KGSearchResult(
-                    node=node,
-                    score=best_score,
-                    matched_field=best_field,
-                ))
+                results.append(
+                    KGSearchResult(
+                        node=node,
+                        score=best_score,
+                        matched_field=best_field,
+                    )
+                )
 
         results.sort(key=lambda r: r.score, reverse=True)
         results = results[:limit]

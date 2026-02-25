@@ -29,6 +29,7 @@ logger = logging.getLogger(__name__)
 # Helpers
 # ---------------------------------------------------------------------------
 
+
 def _uuid() -> str:
     return str(uuid.uuid4())
 
@@ -40,6 +41,7 @@ def _now() -> datetime:
 # ---------------------------------------------------------------------------
 # Pydantic Schemas
 # ---------------------------------------------------------------------------
+
 
 class StatTestResult(BaseModel):
     """Result of a single statistical test."""
@@ -113,6 +115,7 @@ for _evt in _VALIDATION_EVENTS:
 # ---------------------------------------------------------------------------
 # StatisticalValidator
 # ---------------------------------------------------------------------------
+
 
 class StatisticalValidator:
     """Statistical testing engine with multiple comparison correction."""
@@ -302,21 +305,29 @@ class StatisticalValidator:
     # ----- Correction implementations -----
 
     def _bonferroni(
-        self, results: list[StatTestResult], alpha: float = 0.05,
+        self,
+        results: list[StatTestResult],
+        alpha: float = 0.05,
     ) -> list[StatTestResult]:
         n = len(results)
         corrected = []
         for r in results:
             new_p = min(r.p_value * n, 1.0)
-            corrected.append(r.model_copy(update={
-                "p_value": new_p,
-                "significant": new_p < alpha,
-                "correction_method": "bonferroni",
-            }))
+            corrected.append(
+                r.model_copy(
+                    update={
+                        "p_value": new_p,
+                        "significant": new_p < alpha,
+                        "correction_method": "bonferroni",
+                    }
+                )
+            )
         return corrected
 
     def _holm(
-        self, results: list[StatTestResult], alpha: float = 0.05,
+        self,
+        results: list[StatTestResult],
+        alpha: float = 0.05,
     ) -> list[StatTestResult]:
         n = len(results)
         indexed = sorted(enumerate(results), key=lambda x: x[1].p_value)
@@ -327,11 +338,13 @@ class StatisticalValidator:
             multiplier = n - rank
             unadjusted = min(r.p_value * multiplier, 1.0)
             running_max = max(running_max, unadjusted)
-            corrected[orig_idx] = r.model_copy(update={
-                "p_value": running_max,
-                "significant": running_max < alpha,
-                "correction_method": "holm",
-            })
+            corrected[orig_idx] = r.model_copy(
+                update={
+                    "p_value": running_max,
+                    "significant": running_max < alpha,
+                    "correction_method": "holm",
+                }
+            )
 
         if any(c is None for c in corrected):  # pragma: no cover
             raise RuntimeError("Holm correction failed to fill all result slots")
@@ -359,6 +372,7 @@ class StatisticalValidator:
 # ---------------------------------------------------------------------------
 # Utility functions
 # ---------------------------------------------------------------------------
+
 
 def _mean(values: list[float]) -> float:
     if not values:

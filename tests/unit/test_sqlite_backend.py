@@ -103,9 +103,7 @@ class TestNodeCRUD:
             await backend.get_node(node.node_id)
 
     @pytest.mark.asyncio
-    async def test_remove_node_removes_connected_edges(
-        self, backend: SQLiteTierBBackend
-    ) -> None:
+    async def test_remove_node_removes_connected_edges(self, backend: SQLiteTierBBackend) -> None:
         n1 = _make_person("Alice")
         n2 = _make_person("Bob")
         await backend.add_node(n1)
@@ -217,9 +215,7 @@ class TestQueryNodes:
         await backend.add_node(_make_person("Alice", metadata={"lab": "neuro"}))
         await backend.add_node(_make_person("Bob", metadata={"lab": "chem"}))
 
-        results = await backend.query_nodes(
-            KGQueryFilter(metadata_filter={"lab": "neuro"})
-        )
+        results = await backend.query_nodes(KGQueryFilter(metadata_filter={"lab": "neuro"}))
         assert len(results) == 1
 
     @pytest.mark.asyncio
@@ -235,9 +231,7 @@ class TestQueryNodes:
         n2.updated_at = n2.created_at
         await backend.add_node(n2)
 
-        results = await backend.query_nodes(
-            KGQueryFilter(created_after=now - timedelta(days=1))
-        )
+        results = await backend.query_nodes(KGQueryFilter(created_after=now - timedelta(days=1)))
         assert len(results) == 1
 
     @pytest.mark.asyncio

@@ -41,9 +41,7 @@ def cluster_engine_initialized(event_capture: object) -> ClusterDiscovery:
 
 
 @given(
-    parsers.parse(
-        "experimental data with {k:d} distinct clusters of {n:d} points each"
-    ),
+    parsers.parse("experimental data with {k:d} distinct clusters of {n:d} points each"),
     target_fixture="cluster_data",
 )
 def data_with_clusters(k: int, n: int) -> list[dict[str, Any]]:
@@ -54,11 +52,13 @@ def data_with_clusters(k: int, n: int) -> list[dict[str, Any]]:
         center_x = cluster_idx * 20.0  # well separated
         center_y = cluster_idx * 20.0
         for i in range(n):
-            data.append({
-                "x": center_x + rng.gauss(0, 1.0),
-                "y": center_y + rng.gauss(0, 1.0),
-                "session_id": f"s{cluster_idx}_{i}",
-            })
+            data.append(
+                {
+                    "x": center_x + rng.gauss(0, 1.0),
+                    "y": center_y + rng.gauss(0, 1.0),
+                    "session_id": f"s{cluster_idx}_{i}",
+                }
+            )
     return data
 
 
@@ -67,10 +67,7 @@ def data_with_clusters(k: int, n: int) -> list[dict[str, Any]]:
     target_fixture="cluster_data",
 )
 def data_few_rows_clustering(n: int) -> list[dict[str, Any]]:
-    return [
-        {"x": float(i), "y": float(i * 2), "session_id": f"s{i}"}
-        for i in range(n)
-    ]
+    return [{"x": float(i), "y": float(i * 2), "session_id": f"s{i}"} for i in range(n)]
 
 
 @given(
@@ -140,9 +137,7 @@ def reduce_dims(
 
 @then(parsers.parse("{k:d} clusters are found"))
 def check_cluster_count(cluster_result: ClusterResult, k: int) -> None:
-    assert cluster_result.n_clusters == k, (
-        f"Expected {k} clusters, got {cluster_result.n_clusters}"
-    )
+    assert cluster_result.n_clusters == k, f"Expected {k} clusters, got {cluster_result.n_clusters}"
 
 
 @then(parsers.parse("each cluster has at least {min_size:d} members"))
@@ -190,6 +185,4 @@ def check_reduction_count(reduction_result: ReductionResult, n: int) -> None:
 @then(parsers.parse("each projected point has {dims:d} dimensions"))
 def check_reduction_dims(reduction_result: ReductionResult, dims: int) -> None:
     for i, point in enumerate(reduction_result.components):
-        assert len(point) == dims, (
-            f"Point {i} has {len(point)} dims, expected {dims}"
-        )
+        assert len(point) == dims, f"Point {i} has {len(point)} dims, expected {dims}"
