@@ -21,4 +21,4 @@ EXPOSE 18800 18801
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
     CMD python -c "import json,urllib.request; r=urllib.request.urlopen('http://localhost:18800/api/health'); d=json.load(r); raise SystemExit(0 if d.get('status')=='healthy' else 1)" || exit 1
 
-ENTRYPOINT ["labclaw", "serve", "--host", "127.0.0.1"]
+ENTRYPOINT ["labclaw", "serve", "--host", "0.0.0.0"]
