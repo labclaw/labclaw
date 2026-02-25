@@ -25,14 +25,14 @@ class TestTierA:
         entry = MemoryEntry(
             timestamp=datetime.now(UTC),
             category="experiment",
-            detail="Ran behavioral tracking with SAM-Behavior model",
+            detail="Ran behavioral tracking with DeepLabCut model",
         )
         backend.append_memory("lab", entry)
 
-        results = backend.search("SAM-Behavior")
+        results = backend.search("DeepLabCut")
         assert len(results) >= 1
         assert results[0].entity_id == "lab"
-        assert "SAM-Behavior" in results[0].snippet
+        assert "DeepLabCut" in results[0].snippet
 
     def test_write_soul_and_read(self, tmp_path: Path) -> None:
         backend = TierABackend(root=tmp_path)

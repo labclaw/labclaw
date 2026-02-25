@@ -134,7 +134,7 @@ Before submitting a pull request, verify:
 | Memory system: markdown, knowledge graph, search, shared blocks | memory-engineer | Building/modifying memory/*, lab/*, members/* |
 | Agent runtime, orchestrator, tool calling, LLM integration | agent-engineer | Building/modifying agents/runtime, orchestrator, prompts |
 | Edge nodes, file watchers, quality checks, device adapters, gateway | edge-engineer | Building/modifying edge/*, gateway, adapters/ |
-| Neuroscience domain: NWB, analysis pipelines, data schemas, SAM-Behavior | neuro-specialist | NWB export, analysis pipeline design, schema definitions |
+| Neuroscience domain: NWB, analysis pipelines, data schemas | neuro-specialist | NWB export, analysis pipeline design, schema definitions |
 | Discovery pipeline: mining, hypothesis, modeling, optimization, validation | discovery-engineer | Building/modifying discovery/, optimization/, validation/ |
 | Dashboard pages, Streamlit UI, visualization | platform-engineer | Building/modifying dashboard/ components |
 | Code review, PR review, security audit | code-reviewer | All code changes before merge |
@@ -172,7 +172,6 @@ Before submitting a pull request, verify:
 - **Graphiti**: `graphiti-core` — temporal knowledge graph for lab memory
 - **NWB**: `pynwb` + `hdmf` — Neurodata Without Borders export
 - **NeuroConv**: Format conversion from 47+ neuroscience formats
-- **SAM-Behavior**: Zero-shot multi-animal pose estimation ()
 - **watchdog**: File system monitoring for edge nodes
 - **scikit-optimize**: Bayesian optimization engine
 - **sentence-transformers**: Embedding model for memory search
