@@ -185,7 +185,7 @@ curl http://127.0.0.1:18800/api/health
 
 ## Proven Capabilities
 
-LabClaw v0.1.0 demonstrates five core capabilities with reproducible benchmarks:
+LabClaw demonstrates five core capabilities with reproducible benchmarks:
 
 | Capability | What it proves | Metric |
 |:-----------|:---------------|:-------|
