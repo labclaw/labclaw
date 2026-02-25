@@ -57,6 +57,46 @@ def add_rule_below(
 
 
 @given(
+    parsers.parse('a rule "{rule_name}" for metric "{metric_name}" above threshold {threshold:g}'),
+    target_fixture="current_rule",
+)
+def add_rule_above(
+    sentinel: Sentinel, rule_name: str, metric_name: str, threshold: float
+) -> AlertRule:
+    """Add a rule that triggers when a metric goes above the threshold."""
+    rule = AlertRule(
+        name=rule_name,
+        metric_name=metric_name,
+        threshold=threshold,
+        comparison="above",
+        level=QualityLevel.WARNING,
+    )
+    sentinel.add_rule(rule)
+    return rule
+
+
+@given(
+    parsers.parse(
+        'a critical rule "{rule_name}" for metric "{metric_name}" below threshold {threshold:g}'
+    ),
+    target_fixture="current_rule",
+)
+def add_critical_rule_below(
+    sentinel: Sentinel, rule_name: str, metric_name: str, threshold: float
+) -> AlertRule:
+    """Add a CRITICAL-level rule that triggers when metric falls below threshold."""
+    rule = AlertRule(
+        name=rule_name,
+        metric_name=metric_name,
+        threshold=threshold,
+        comparison="below",
+        level=QualityLevel.CRITICAL,
+    )
+    sentinel.add_rule(rule)
+    return rule
+
+
+@given(
     parsers.parse('I check session "{session_id}" with a passing metric'),
     target_fixture="passing_summary",
 )
@@ -123,6 +163,12 @@ def get_alerts_for_session(sentinel: Sentinel, session_id: str) -> list[QualityA
     return sentinel.get_alerts(session_id=session_id)
 
 
+@when("I get all alerts", target_fixture="all_alerts")
+def get_all_alerts(sentinel: Sentinel) -> list[QualityAlert]:
+    """Get all alerts regardless of session."""
+    return sentinel.get_alerts()
+
+
 # ---------------------------------------------------------------------------
 # Then steps
 # ---------------------------------------------------------------------------
@@ -164,3 +210,8 @@ def session_alert_count_singular(session_summary: SessionQualitySummary, count: 
 @then(parsers.parse("I get {count:d} alert"))
 def got_n_alerts(filtered_alerts: list[QualityAlert], count: int) -> None:
     assert len(filtered_alerts) == count, f"Expected {count} alerts, got {len(filtered_alerts)}"
+
+
+@then(parsers.parse("I get at least {count:d} alerts total"))
+def got_at_least_n_alerts(all_alerts: list[QualityAlert], count: int) -> None:
+    assert len(all_alerts) >= count, f"Expected >= {count} alerts total, got {len(all_alerts)}"

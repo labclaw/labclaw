@@ -6,6 +6,7 @@ Uses conftest fixtures: event_capture
 
 from __future__ import annotations
 
+import pytest
 from pytest_bdd import given, parsers, then, when
 
 from labclaw.core.events import event_registry
@@ -126,6 +127,57 @@ def completed_evolution_cycles(
     return cycles
 
 
+@given("a promoted evolution cycle", target_fixture="cycle")
+def a_promoted_evolution_cycle(
+    engine: EvolutionEngine,
+    candidate: EvolutionCandidate,
+    baseline_fitness: FitnessScore,
+) -> EvolutionCycle:
+    """Create a fully promoted cycle."""
+    cycle = engine.start_cycle(candidate, baseline_fitness)
+    for acc in [0.85, 0.87, 0.88]:
+        fitness = FitnessScore(
+            target=cycle.target,
+            metrics={"accuracy": acc},
+            data_points=50,
+        )
+        cycle = engine.advance_stage(cycle.cycle_id, fitness)
+    assert cycle.stage == EvolutionStage.PROMOTED
+    return cycle
+
+
+@given("a rolled-back evolution cycle", target_fixture="cycle")
+def a_rolled_back_evolution_cycle(
+    engine: EvolutionEngine,
+    candidate: EvolutionCandidate,
+    baseline_fitness: FitnessScore,
+) -> EvolutionCycle:
+    """Create a cycle that has been rolled back."""
+    cycle = engine.start_cycle(candidate, baseline_fitness)
+    cycle = engine.rollback(cycle.cycle_id, "test rollback")
+    assert cycle.stage == EvolutionStage.ROLLED_BACK
+    return cycle
+
+
+@given("a started prompts evolution cycle", target_fixture="prompts_cycle")
+def started_prompts_evolution_cycle(
+    engine: EvolutionEngine,
+) -> EvolutionCycle:
+    """Start a second cycle for the prompts target."""
+    baseline = engine.measure_fitness(
+        EvolutionTarget.PROMPTS,
+        metrics={"accuracy": 0.75},
+        data_points=50,
+    )
+    candidate = EvolutionCandidate(
+        target=EvolutionTarget.PROMPTS,
+        description="Prompts candidate",
+        config_diff={"temperature": 0.5},
+        proposed_by="test",
+    )
+    return engine.start_cycle(candidate, baseline)
+
+
 # ---------------------------------------------------------------------------
 # When steps
 # ---------------------------------------------------------------------------
@@ -192,6 +244,59 @@ def get_history_for_target(engine: EvolutionEngine, target: str) -> list[Evoluti
     return engine.get_history(EvolutionTarget(target))
 
 
+@when(
+    parsers.parse('I get fitness history for "{target}"'),
+    target_fixture="fitness_history",
+)
+def get_fitness_history(engine: EvolutionEngine, target: str) -> list[FitnessScore]:
+    return engine.fitness_tracker.get_history(EvolutionTarget(target))
+
+
+@when(
+    parsers.parse('I manually rollback the cycle with reason "{reason}"'),
+    target_fixture="cycle",
+)
+def manually_rollback_cycle(
+    engine: EvolutionEngine, cycle: EvolutionCycle, reason: str
+) -> EvolutionCycle:
+    return engine.rollback(cycle.cycle_id, reason)
+
+
+@when("I try to advance the promoted cycle", target_fixture="advance_error")
+def try_advance_promoted_cycle(engine: EvolutionEngine, cycle: EvolutionCycle) -> Exception | None:
+    fitness = FitnessScore(
+        target=cycle.target,
+        metrics={"accuracy": 0.90},
+        data_points=50,
+    )
+    try:
+        engine.advance_stage(cycle.cycle_id, fitness)
+        return None
+    except ValueError as exc:
+        return exc
+
+
+@when("I try to advance the rolled-back cycle", target_fixture="advance_error")
+def try_advance_rolled_back_cycle(
+    engine: EvolutionEngine, cycle: EvolutionCycle
+) -> Exception | None:
+    fitness = FitnessScore(
+        target=cycle.target,
+        metrics={"accuracy": 0.90},
+        data_points=50,
+    )
+    try:
+        engine.advance_stage(cycle.cycle_id, fitness)
+        return None
+    except ValueError as exc:
+        return exc
+
+
+@when("I get active cycles", target_fixture="active_cycles")
+def get_active_cycles(engine: EvolutionEngine) -> list[EvolutionCycle]:
+    return engine.get_active_cycles()
+
+
 # ---------------------------------------------------------------------------
 # Then steps
 # ---------------------------------------------------------------------------
@@ -247,3 +352,61 @@ def check_stage_value(cycle: EvolutionCycle, stage: str) -> None:
 @then(parsers.parse("I receive {n:d} cycles"))
 def check_history_count(history: list[EvolutionCycle], n: int) -> None:
     assert len(history) == n, f"Expected {n} cycles, got {len(history)}"
+
+
+@then(parsers.parse('the latest fitness for "{target}" has accuracy {accuracy:f}'))
+def check_latest_fitness_accuracy(engine: EvolutionEngine, target: str, accuracy: float) -> None:
+    latest = engine.fitness_tracker.get_latest(EvolutionTarget(target))
+    assert latest is not None, f"No fitness recorded for {target!r}"
+    assert latest.metrics.get("accuracy") == pytest.approx(accuracy), (
+        f"Expected accuracy {accuracy}, got {latest.metrics.get('accuracy')}"
+    )
+
+
+@then(parsers.parse("the fitness history has {n:d} entries"))
+def check_fitness_history_count(fitness_history: list[FitnessScore], n: int) -> None:
+    assert len(fitness_history) == n, f"Expected {n} fitness entries, got {len(fitness_history)}"
+
+
+@then("the history is ordered by start time")
+def check_history_ordered(history: list[EvolutionCycle]) -> None:
+    for i in range(len(history) - 1):
+        assert history[i].started_at <= history[i + 1].started_at, (
+            f"History not ordered: {history[i].started_at} > {history[i + 1].started_at}"
+        )
+
+
+@then("a ValueError is raised")
+def check_value_error_raised(advance_error: Exception | None) -> None:
+    assert isinstance(advance_error, ValueError), (
+        f"Expected ValueError, got {type(advance_error)}"
+    )
+
+
+@then(parsers.parse('the rollback reason is "{reason}"'))
+def check_rollback_reason(cycle: EvolutionCycle, reason: str) -> None:
+    assert cycle.rollback_reason == reason, (
+        f"Expected reason {reason!r}, got {cycle.rollback_reason!r}"
+    )
+
+
+@then("I can retrieve the cycle by its ID")
+def check_cycle_retrievable_by_id(engine: EvolutionEngine, cycle: EvolutionCycle) -> None:
+    retrieved = engine.get_cycle(cycle.cycle_id)
+    assert retrieved.cycle_id == cycle.cycle_id
+
+
+@then(parsers.parse("{n:d} active cycle is returned"))
+def check_active_cycles_count_singular(active_cycles: list[EvolutionCycle], n: int) -> None:
+    assert len(active_cycles) == n, f"Expected {n} active cycles, got {len(active_cycles)}"
+
+
+@then("the new fitness is better than baseline")
+def check_new_fitness_better(
+    engine: EvolutionEngine, baseline_fitness: FitnessScore, measured_fitness: FitnessScore
+) -> None:
+    baseline_acc = baseline_fitness.metrics.get("accuracy", 0.0)
+    new_acc = measured_fitness.metrics.get("accuracy", 0.0)
+    assert new_acc > baseline_acc, (
+        f"New fitness {new_acc} is not better than baseline {baseline_acc}"
+    )

@@ -49,3 +49,48 @@ Feature: Experiment Conductor (EXPERIMENT)
     When I request approval
     And the PI rejects the request with reason "Too risky"
     Then the approval status is "rejected"
+
+  Scenario: Optimizer with 1 dimension only
+    Given a parameter space with 1 dimension "voltage" from 1.0 to 5.0
+    When I request 2 proposals from single dimension optimizer
+    Then 2 proposals are returned from single dimension optimizer
+    And each proposal has a "voltage" parameter within 1.0 to 5.0
+
+  Scenario: Record result updates history
+    Given I record an experiment result with objective value 0.75
+    When I query the optimizer history
+    Then the history has 1 result
+    And the recorded objective value is 0.75
+
+  Scenario: Safety check with multiple constraints - all pass
+    Given safety constraints:
+      | parameter   | min_value | max_value |
+      | temperature | 20        | 40        |
+      | duration    | 10        | 120       |
+    When I validate a proposal with temperature 30 and duration 60
+    Then the scientific safety check passes
+    And all safety check details passed
+
+  Scenario: Safety check with multiple constraints - one fails
+    Given safety constraints:
+      | parameter   | min_value | max_value |
+      | temperature | 20        | 35        |
+      | duration    | 10        | 120       |
+    When I validate a proposal with temperature 40 and duration 60
+    Then the scientific safety check fails
+    And at least one safety check detail failed
+
+  Scenario: Approval blocked when safety check failed
+    Given a proposal that failed scientific safety
+    When I attempt to request approval for failed proposal
+    Then a ValueError is raised for failed approval
+
+  Scenario: Full pipeline suggest validate approve
+    Given the experiment pipeline is initialized with safe constraints
+    When I run the full proposal pipeline
+    Then an approval request with status "pending" is produced by pipeline
+
+  Scenario: Multiple proposals in sequence increment iteration counter
+    When I request 1 experiment proposals
+    And I request 1 experiment proposals
+    Then the second proposal has a higher iteration number

@@ -8,11 +8,14 @@ from __future__ import annotations
 
 import uuid
 from datetime import UTC, datetime
+from typing import Any
 
 from pytest_bdd import given, parsers, then, when
 
 from labclaw.core.events import event_registry
-from labclaw.validation.provenance import ProvenanceTracker
+from labclaw.validation.cross_validation import holdout_validate, kfold_validate, permutation_test
+from labclaw.validation.provenance import ProvenanceTracker, from_dict, to_dict
+from labclaw.validation.report import to_markdown
 from labclaw.validation.statistics import (
     ProvenanceChain,
     ProvenanceStep,
@@ -20,6 +23,7 @@ from labclaw.validation.statistics import (
     StatTestResult,
     ValidationConfig,
     ValidationReport,
+    _cohens_d,
 )
 
 # ---------------------------------------------------------------------------
@@ -54,7 +58,15 @@ def provenance_tracker_initialized() -> ProvenanceTracker:
     target_fixture="group_a",
 )
 def group_a_values(values: str) -> list[float]:
-    return [float(v.strip()) for v in values.split(",")]
+    stripped = values.strip()
+    if not stripped:
+        return []
+    return [float(v.strip()) for v in stripped.split(",")]
+
+
+@given("group A is empty", target_fixture="group_a")
+def group_a_empty() -> list[float]:
+    return []
 
 
 @given(
@@ -62,7 +74,10 @@ def group_a_values(values: str) -> list[float]:
     target_fixture="group_b",
 )
 def group_b_values(values: str) -> list[float]:
-    return [float(v.strip()) for v in values.split(",")]
+    stripped = values.strip()
+    if not stripped:
+        return []
+    return [float(v.strip()) for v in stripped.split(",")]
 
 
 # ---------------------------------------------------------------------------
@@ -98,6 +113,36 @@ def run_test_with_min_sample(
     return validator.run_test(test_name, group_a, group_b, config=config)
 
 
+@when(
+    parsers.parse('I run an unknown test "{test_name}"'),
+    target_fixture="unknown_test_error",
+)
+def run_unknown_test(
+    validator: StatisticalValidator,
+    test_name: str,
+    group_a: list[float],
+    group_b: list[float],
+) -> Exception | None:
+    try:
+        validator.run_test(test_name, group_a, group_b)
+        return None
+    except ValueError as exc:
+        return exc
+
+
+@when("I run a t-test with empty group", target_fixture="empty_group_error")
+def run_empty_group_test(
+    validator: StatisticalValidator,
+    group_a: list[float],
+    group_b: list[float],
+) -> Exception | None:
+    try:
+        validator.run_test("t_test", group_a, group_b)
+        return None
+    except ValueError as exc:
+        return exc
+
+
 # ---------------------------------------------------------------------------
 # Test result assertions
 # ---------------------------------------------------------------------------
@@ -113,6 +158,13 @@ def check_significant(test_result: StatTestResult) -> None:
     assert test_result.significant, "Test result is not significant"
 
 
+@then("the test is not significant")
+def check_not_significant(test_result: StatTestResult) -> None:
+    assert not test_result.significant, (
+        f"Expected non-significant result, but p={test_result.p_value}"
+    )
+
+
 @then("the effect size is calculated")
 def check_effect_size(test_result: StatTestResult) -> None:
     assert test_result.effect_size is not None, "Effect size is None"
@@ -125,6 +177,25 @@ def check_sample_size_warning(test_result: StatTestResult) -> None:
     assert any("sample size" in w.lower() or "Sample size" in w for w in test_result.warnings), (
         f"No sample size warning in: {test_result.warnings}"
     )
+
+
+@then("the permutation p-value is close to 1.0")
+def check_permutation_high_pval(test_result: StatTestResult) -> None:
+    assert test_result.p_value >= 0.8, (
+        f"Expected permutation p-value close to 1.0, got {test_result.p_value}"
+    )
+
+
+@then("a ValueError is raised for unknown test")
+def check_value_error_unknown_test(unknown_test_error: Exception | None) -> None:
+    assert unknown_test_error is not None, "Expected ValueError but none raised"
+    assert isinstance(unknown_test_error, ValueError)
+
+
+@then("a ValueError is raised for empty group")
+def check_value_error_empty_group(empty_group_error: Exception | None) -> None:
+    assert empty_group_error is not None, "Expected ValueError but none raised"
+    assert isinstance(empty_group_error, ValueError)
 
 
 # ---------------------------------------------------------------------------
@@ -216,6 +287,76 @@ def check_chain_valid(tracker: ProvenanceTracker, built_chain: ProvenanceChain) 
     assert tracker.verify_chain(built_chain), "Chain verification failed"
 
 
+@when("I try to build a chain with empty steps", target_fixture="empty_steps_error")
+def build_chain_empty_steps(tracker: ProvenanceTracker) -> Exception | None:
+    try:
+        tracker.build_chain("finding-x", [])
+        return None
+    except ValueError as exc:
+        return exc
+
+
+@then("a ValueError is raised for empty steps")
+def check_value_error_empty_steps(empty_steps_error: Exception | None) -> None:
+    assert empty_steps_error is not None, "Expected ValueError but none raised"
+    assert isinstance(empty_steps_error, ValueError)
+
+
+@when("I build a chain with empty finding_id", target_fixture="bad_chain")
+def build_chain_empty_finding(tracker: ProvenanceTracker) -> ProvenanceChain:
+    step = ProvenanceStep(
+        node_id=str(uuid.uuid4()),
+        node_type="subject",
+        description="test",
+        timestamp=datetime.now(UTC),
+    )
+    # Bypass validation by building directly
+    return ProvenanceChain(finding_id="", steps=[step])
+
+
+@then("the chain verification returns false")
+def check_chain_verify_false(tracker: ProvenanceTracker, bad_chain: ProvenanceChain) -> None:
+    assert tracker.verify_chain(bad_chain) is False
+
+
+@when("I build a chain with a step missing node_id", target_fixture="bad_chain")
+def build_chain_missing_node_id(tracker: ProvenanceTracker) -> ProvenanceChain:
+    # Bypass Pydantic by directly constructing with empty node_id
+    step = ProvenanceStep(
+        node_id="",
+        node_type="subject",
+        description="test",
+        timestamp=datetime.now(UTC),
+    )
+    return ProvenanceChain(finding_id="finding-test", steps=[step])
+
+
+@when("I build a chain with a step missing node_type", target_fixture="bad_chain")
+def build_chain_missing_node_type(tracker: ProvenanceTracker) -> ProvenanceChain:
+    step = ProvenanceStep(
+        node_id=str(uuid.uuid4()),
+        node_type="",
+        description="test",
+        timestamp=datetime.now(UTC),
+    )
+    return ProvenanceChain(finding_id="finding-test", steps=[step])
+
+
+@when("I serialize and deserialize the chain", target_fixture="round_tripped_chain")
+def serialize_deserialize_chain(report_chain: ProvenanceChain) -> ProvenanceChain:
+    d = to_dict(report_chain)
+    return from_dict(d)
+
+
+@then("the round-tripped chain matches the original")
+def check_round_trip(
+    report_chain: ProvenanceChain, round_tripped_chain: ProvenanceChain
+) -> None:
+    assert round_tripped_chain.finding_id == report_chain.finding_id
+    assert len(round_tripped_chain.steps) == len(report_chain.steps)
+    assert round_tripped_chain.chain_id == report_chain.chain_id
+
+
 # ---------------------------------------------------------------------------
 # Report generation
 # ---------------------------------------------------------------------------
@@ -282,3 +423,116 @@ def check_report_conclusion(report: ValidationReport) -> None:
     from labclaw.core.schemas import HypothesisStatus
 
     assert report.conclusion in list(HypothesisStatus), f"Invalid conclusion: {report.conclusion}"
+
+
+@when("I validate a finding with t_test and permutation tests", target_fixture="report")
+def validate_finding_multi(
+    validator: StatisticalValidator,
+    tracker: ProvenanceTracker,
+    group_a: list[float],
+    group_b: list[float],
+) -> ValidationReport:
+    t_result = validator.run_test("t_test", group_a, group_b)
+    perm_result = validator.run_test("permutation", group_a, group_b)
+    steps = [
+        ProvenanceStep(
+            node_id=str(uuid.uuid4()),
+            node_type="finding",
+            description="Multi-test finding",
+            timestamp=datetime.now(UTC),
+        )
+    ]
+    chain = tracker.build_chain("multi-find-001", steps)
+    return validator.validate_finding(
+        finding_id="multi-find-001",
+        tests=[t_result, perm_result],
+        provenance=chain,
+    )
+
+
+@then(parsers.parse("the validation report has {n:d} tests"))
+def check_report_test_count(report: ValidationReport, n: int) -> None:
+    assert len(report.tests) == n, f"Expected {n} tests, got {len(report.tests)}"
+
+
+@then("the report conclusion is not empty")
+def check_report_conclusion_not_empty(report: ValidationReport) -> None:
+    assert report.conclusion is not None
+    assert report.conclusion.value
+
+
+@when("I convert the report to markdown", target_fixture="markdown_output")
+def convert_to_markdown(report: ValidationReport) -> str:
+    return to_markdown(report)
+
+
+@then(parsers.parse('the markdown contains "{section}"'))
+def check_markdown_contains(markdown_output: str, section: str) -> None:
+    assert section in markdown_output, (
+        f"Expected {section!r} in markdown. Got:\n{markdown_output[:500]}"
+    )
+
+
+@when("I compute cohens d with identical groups", target_fixture="cohens_d_value")
+def compute_cohens_d_identical() -> float:
+    return _cohens_d([5.0, 5.0, 5.0], [5.0, 5.0, 5.0])
+
+
+@then("cohens d is 0.0")
+def check_cohens_d_zero(cohens_d_value: float) -> None:
+    assert cohens_d_value == 0.0, f"Expected 0.0, got {cohens_d_value}"
+
+
+# ---------------------------------------------------------------------------
+# Cross-validation
+# ---------------------------------------------------------------------------
+
+
+@when(
+    parsers.parse("I run holdout validation on {n:d} data points"),
+    target_fixture="holdout_result",
+)
+def run_holdout(n: int) -> dict[str, float]:
+    data = [float(i) for i in range(n)]
+    return holdout_validate(data, train_fraction=0.8, seed=42)
+
+
+@then("the holdout result has train_mean and test_mean and mae")
+def check_holdout_result(holdout_result: dict[str, float]) -> None:
+    assert "train_mean" in holdout_result
+    assert "test_mean" in holdout_result
+    assert "mae" in holdout_result
+    assert holdout_result["mae"] >= 0.0
+
+
+@when(
+    parsers.parse("I run kfold validation on {n:d} data points with k={k:d}"),
+    target_fixture="kfold_result",
+)
+def run_kfold(n: int, k: int) -> dict[str, Any]:
+    data = [float(i) for i in range(n)]
+    return kfold_validate(data, k=k, seed=42)
+
+
+@then(parsers.parse("the kfold result has {k:d} fold_maes"))
+def check_kfold_folds(kfold_result: dict[str, Any], k: int) -> None:
+    assert len(kfold_result["fold_maes"]) == k, (
+        f"Expected {k} fold MAEs, got {len(kfold_result['fold_maes'])}"
+    )
+
+
+@then("the mean_mae is non-negative")
+def check_mean_mae(kfold_result: dict[str, Any]) -> None:
+    assert kfold_result["mean_mae"] >= 0.0, f"mean_mae is negative: {kfold_result['mean_mae']}"
+
+
+@when("I run cv permutation test with identical groups", target_fixture="cv_perm_result")
+def run_cv_permutation_identical() -> dict[str, float | int]:
+    group = [5.0, 5.0, 5.0, 5.0, 5.0]
+    return permutation_test(group, group, n_perms=1000, seed=42)
+
+
+@then(parsers.parse("the cv permutation p-value is at least {threshold:g}"))
+def check_cv_permutation_pval(cv_perm_result: dict[str, float | int], threshold: float) -> None:
+    pval = float(cv_perm_result["p_value"])
+    assert pval >= threshold, f"CV permutation p-value {pval} < {threshold}"

@@ -20,6 +20,7 @@ from labclaw.discovery.unsupervised import (
     DimensionalityReducer,
     ReductionConfig,
     ReductionResult,
+    _kmeans_pure,
 )
 
 # ---------------------------------------------------------------------------
@@ -86,6 +87,31 @@ def data_multi_columns(ncols: int, nrows: int) -> list[dict[str, Any]]:
     return data
 
 
+@given("empty clustering data", target_fixture="cluster_data")
+def empty_cluster_data() -> list[dict[str, Any]]:
+    """No data rows at all."""
+    return []
+
+
+@given(
+    parsers.parse("experimental data with {ncols:d} numeric column and {nrows:d} rows"),
+    target_fixture="cluster_data",
+)
+def data_single_column(ncols: int, nrows: int) -> list[dict[str, Any]]:
+    """Single numeric column only."""
+    rng = random.Random(42)
+    return [{"feat_0": rng.gauss(0, 1.0), "session_id": f"s{i}"} for i in range(nrows)]
+
+
+@given(
+    parsers.parse("experimental data with {n:d} identical rows"),
+    target_fixture="cluster_data",
+)
+def data_identical_rows(n: int) -> list[dict[str, Any]]:
+    """All rows are identical."""
+    return [{"x": 5.0, "y": 3.0, "session_id": f"s{i}"} for i in range(n)]
+
+
 # ---------------------------------------------------------------------------
 # When steps
 # ---------------------------------------------------------------------------
@@ -128,6 +154,17 @@ def reduce_dims(
     reducer = DimensionalityReducer()
     config = ReductionConfig(n_components=n)
     return reducer.reduce(cluster_data, config)
+
+
+@when(
+    parsers.parse("I run pure python kmeans with k={k:d}"),
+    target_fixture="pure_kmeans_result",
+)
+def run_pure_kmeans(cluster_data: list[dict[str, Any]], k: int) -> dict[str, Any]:
+    """Directly invoke the pure Python k-means fallback."""
+    matrix = [[float(row["x"]), float(row["y"])] for row in cluster_data]
+    labels, centroids, inertia = _kmeans_pure(matrix, k)
+    return {"labels": labels, "centroids": centroids, "inertia": inertia, "k": k}
 
 
 # ---------------------------------------------------------------------------
@@ -186,3 +223,46 @@ def check_reduction_count(reduction_result: ReductionResult, n: int) -> None:
 def check_reduction_dims(reduction_result: ReductionResult, dims: int) -> None:
     for i, point in enumerate(reduction_result.components):
         assert len(point) == dims, f"Point {i} has {len(point)} dims, expected {dims}"
+
+
+@then(parsers.parse("each projected point has at most {dims:d} dimensions"))
+def check_reduction_dims_at_most(reduction_result: ReductionResult, dims: int) -> None:
+    for i, point in enumerate(reduction_result.components):
+        assert len(point) <= dims, f"Point {i} has {len(point)} dims, expected <= {dims}"
+
+
+@then("the cluster pattern evidence has method field")
+def check_cluster_evidence_method(cluster_patterns: list[PatternRecord]) -> None:
+    for p in cluster_patterns:
+        if p.pattern_type == "cluster":
+            assert "method" in p.evidence, f"Missing 'method' in evidence: {p.evidence}"
+
+
+@then("the cluster pattern evidence has inertia field")
+def check_cluster_evidence_inertia(cluster_patterns: list[PatternRecord]) -> None:
+    for p in cluster_patterns:
+        if p.pattern_type == "cluster":
+            assert "inertia" in p.evidence, f"Missing 'inertia' in evidence: {p.evidence}"
+
+
+@then("the cluster pattern evidence has cluster_sizes field")
+def check_cluster_evidence_sizes(cluster_patterns: list[PatternRecord]) -> None:
+    for p in cluster_patterns:
+        if p.pattern_type == "cluster":
+            assert "cluster_sizes" in p.evidence, (
+                f"Missing 'cluster_sizes' in evidence: {p.evidence}"
+            )
+
+
+@then("the clustering runs without error")
+def check_clustering_no_error(cluster_result: ClusterResult) -> None:
+    # No exception means success; verify it's a valid result
+    assert isinstance(cluster_result, ClusterResult)
+
+
+@then(parsers.parse("the pure python result has {k:d} cluster labels"))
+def check_pure_kmeans_labels(pure_kmeans_result: dict[str, Any], k: int) -> None:
+    labels = pure_kmeans_result["labels"]
+    unique = set(labels)
+    assert len(unique) <= k, f"Expected at most {k} unique labels, got {len(unique)}: {unique}"
+    assert len(labels) > 0, "No labels produced"

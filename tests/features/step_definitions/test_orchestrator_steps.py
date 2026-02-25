@@ -13,12 +13,14 @@ from typing import Any
 import pytest
 from pytest_bdd import given, parsers, then, when
 
+from labclaw.core.events import event_registry
 from labclaw.orchestrator.loop import CycleResult, ScientificLoop
 from labclaw.orchestrator.steps import (
     StepContext,
     StepName,
     StepResult,
 )
+from tests.features.conftest import EventCapture
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -72,14 +74,12 @@ def twenty_rows_numeric() -> list[dict[str, Any]]:
         speed = 10.0 + i * 0.5 + rng.gauss(0, 0.3)
         accuracy = 50.0 + speed * 2.0 + rng.gauss(0, 0.5)
         temperature = 22.0 + rng.gauss(0, 1.0)
-        data.append(
-            {
-                "speed": speed,
-                "accuracy": accuracy,
-                "temperature": temperature,
-                "session_id": f"s{i}",
-            }
-        )
+        data.append({
+            "speed": speed,
+            "accuracy": accuracy,
+            "temperature": temperature,
+            "session_id": f"s{i}",
+        })
     return data
 
 
@@ -88,7 +88,26 @@ def twenty_rows_numeric() -> list[dict[str, Any]]:
     target_fixture="exp_data",
 )
 def five_rows() -> list[dict[str, Any]]:
-    return [{"x": float(i), "y": float(i * 2), "session_id": f"s{i}"} for i in range(5)]
+    return [
+        {"x": float(i), "y": float(i * 2), "session_id": f"s{i}"}
+        for i in range(5)
+    ]
+
+
+@given(
+    "9 rows of experiment data",
+    target_fixture="exp_data",
+)
+def nine_rows() -> list[dict[str, Any]]:
+    return [{"x": float(i), "y": float(i * 2), "session_id": f"s{i}"} for i in range(9)]
+
+
+@given(
+    "empty experiment data",
+    target_fixture="exp_data",
+)
+def empty_experiment_data() -> list[dict[str, Any]]:
+    return []
 
 
 @given(
@@ -113,6 +132,33 @@ def orchestrator_runs_cycle(
     exp_data: list[dict[str, Any]],
     orchestrator_loop: ScientificLoop,
 ) -> CycleResult:
+    loop = asyncio.new_event_loop()
+    try:
+        return loop.run_until_complete(orchestrator_loop.run_cycle(exp_data))
+    finally:
+        loop.close()
+
+
+@when(
+    "the orchestrator runs a complete cycle with event capture",
+    target_fixture="cycle_result",
+)
+def orchestrator_runs_cycle_with_events(
+    exp_data: list[dict[str, Any]],
+    orchestrator_loop: ScientificLoop,
+    event_capture: EventCapture,
+) -> CycleResult:
+    """Run cycle and subscribe events to capture."""
+    for evt_name in [
+        "orchestrator.cycle.started",
+        "orchestrator.cycle.completed",
+        "orchestrator.step.started",
+        "orchestrator.step.completed",
+        "orchestrator.step.skipped",
+    ]:
+        if event_registry.is_registered(evt_name):
+            event_registry.subscribe(evt_name, event_capture)
+
     loop = asyncio.new_event_loop()
     try:
         return loop.run_until_complete(orchestrator_loop.run_cycle(exp_data))
@@ -169,3 +215,33 @@ def check_cycle_failed(cycle_result: CycleResult) -> None:
 @then("the failing step should be recorded")
 def check_failing_step_recorded(cycle_result: CycleResult) -> None:
     assert len(cycle_result.steps_completed) >= 1, "Expected at least 1 step completed"
+
+
+@then("the observe step should be skipped")
+def check_observe_skipped(cycle_result: CycleResult) -> None:
+    assert StepName.OBSERVE in cycle_result.steps_skipped, (
+        f"Expected OBSERVE to be skipped, skipped={cycle_result.steps_skipped}"
+    )
+
+
+@then("the cycle result has a non-empty cycle_id")
+def check_cycle_id(cycle_result: CycleResult) -> None:
+    assert cycle_result.cycle_id, "cycle_id is empty"
+    assert len(cycle_result.cycle_id) > 0
+
+
+@then(parsers.parse("the cycle result has at least {n:d} finding"))
+def check_cycle_findings(cycle_result: CycleResult, n: int) -> None:
+    # findings are tracked via hypotheses_generated and patterns_found
+    total = cycle_result.patterns_found + cycle_result.hypotheses_generated
+    assert total >= n, (
+        f"Expected at least {n} finding, got patterns={cycle_result.patterns_found} "
+        f"hypotheses={cycle_result.hypotheses_generated}"
+    )
+
+
+@then(parsers.parse("the cycle total_duration is greater than {threshold:g}"))
+def check_cycle_duration(cycle_result: CycleResult, threshold: float) -> None:
+    assert cycle_result.total_duration > threshold, (
+        f"Expected duration > {threshold}, got {cycle_result.total_duration}"
+    )

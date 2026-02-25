@@ -38,3 +38,31 @@ Feature: Session Chronicle (OBSERVE)
     Given 3 completed sessions
     When I list all sessions
     Then I get 3 sessions
+
+  Scenario: Multiple recordings in one session
+    When I start a session with operator "bob"
+    And I add a recording with modality "video" and file "rec_a.avi"
+    And I add a recording with modality "ephys" and file "rec_b.nwb"
+    Then the session has 2 recordings
+
+  Scenario: Session with no recordings ends cleanly
+    When I start a session with operator "carol"
+    Then a SessionNode is created
+    When I end the session
+    Then the session has a duration
+    And the session has 0 recordings
+
+  Scenario: Quality check on large file returns good level
+    Given a file "large_data.bin" with 1048576 bytes of content
+    When I run a quality check on the file
+    Then the quality level is "good"
+
+  Scenario: File detection with supported video extension
+    Given a watched directory for device "cam-002"
+    When a new file "recording_002.mp4" appears in the directory
+    Then the file is detected
+
+  Scenario: File detection ignores dotfiles
+    Given a watched directory for device "cam-003"
+    When a new file ".hidden_file.avi" appears in the directory
+    Then the hidden file is not detected as a valid recording

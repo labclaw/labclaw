@@ -24,7 +24,9 @@ def check_event_emitted(event_capture: object, event_name: str) -> None:
     """Verify an event was emitted by name."""
     # event_capture is the EventCapture fixture from conftest
     cap = event_capture  # type: ignore[attr-defined]
-    assert event_name in cap.names, f"Expected event {event_name!r}, got {cap.names}"
+    assert event_name in cap.names, (
+        f"Expected event {event_name!r}, got {cap.names}"
+    )
 
 
 @then(parsers.parse('an event "{event_name}" is emitted with {key} "{value}"'))

@@ -87,3 +87,66 @@ Feature: REST API Endpoints
     When I GET "/api/evolution/history"
     Then the response status is 200
     And the response is a list
+
+  Scenario: POST invalid JSON to device endpoint returns 422
+    When I POST "/api/devices/" with invalid JSON body
+    Then the response status is 422
+
+  Scenario: PATCH device with invalid status returns 422
+    When I POST "/api/devices/" with device name "patch-test" type "sensor"
+    Then the response status is 201
+    And I store the device_id
+    When I PATCH the stored device status to "not_a_real_status"
+    Then the response status is 422
+
+  Scenario: DELETE nonexistent device returns 404
+    When I DELETE "/api/devices/does-not-exist"
+    Then the response status is 404
+
+  Scenario: API metrics endpoint returns data
+    When I GET "/api/metrics"
+    Then the response status is 200
+    And the metrics response contains "labclaw_uptime_seconds"
+
+  Scenario: API plugins list endpoint returns a list
+    When I GET "/api/plugins/"
+    Then the response status is 200
+    And the response is a list
+
+  Scenario: API plugins by type endpoint returns a list
+    When I GET "/api/plugins/by-type/device"
+    Then the response status is 200
+    And the response is a list
+
+  Scenario: API agents tools endpoint returns available tools
+    When I GET "/api/agents/tools"
+    Then the response status is 200
+    And the response is a list
+
+  Scenario: API orchestrator history is empty at start
+    When I GET "/api/orchestrator/history"
+    Then the response status is 200
+    And the response is a list
+
+  Scenario: Search memory with empty query returns empty list
+    When I GET "/api/memory/search/query?q="
+    Then the response status is 200
+    And the response is a list
+
+  Scenario: Mining with empty data returns patterns list
+    When I POST "/api/discovery/mine" with empty data
+    Then the response status is 200
+    And the response contains "patterns"
+
+  Scenario: Evolution history filtered by target
+    When I GET "/api/evolution/history?target=analysis_params"
+    Then the response status is 200
+    And the response is a list
+
+  Scenario: Evolution start cycle
+    When I POST "/api/evolution/cycle" for target "analysis_params"
+    Then the response status is 201
+
+  Scenario: Discovery hypothesize endpoint accepts patterns
+    When I POST "/api/discovery/hypothesize" with empty patterns
+    Then the hypothesize response is acceptable

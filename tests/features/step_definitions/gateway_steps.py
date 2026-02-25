@@ -141,6 +141,19 @@ def broadcast_message(
     return msg
 
 
+@when(
+    parsers.parse('I try to send a message to nonexistent client "{client_id}"'),
+    target_fixture="gw_error",
+)
+def try_send_to_nonexistent(gateway: Gateway, client_id: str) -> Exception | None:
+    try:
+        msg = GatewayMessage(source="system", target=client_id, message_type="ping")
+        gateway.send(msg)
+        return None
+    except KeyError as exc:
+        return exc
+
+
 # ---------------------------------------------------------------------------
 # Then steps — Gateway
 # ---------------------------------------------------------------------------
@@ -179,6 +192,47 @@ def message_reaches_all(gateway: Gateway, message_capture: MessageCapture) -> No
     )
 
 
+@then(parsers.parse('the connection type is "{client_type}"'))
+def connection_type_is(gateway: Gateway, client_type: str) -> None:
+    conns = gateway.get_connections()
+    assert len(conns) == 1
+    assert conns[0].client_type == client_type, (
+        f"Expected type {client_type!r}, got {conns[0].client_type!r}"
+    )
+
+
+@then("a KeyError is raised")
+def keyerror_raised(gw_error: Exception | None) -> None:
+    assert gw_error is not None, "Expected a KeyError but no exception was raised"
+    assert isinstance(gw_error, KeyError), f"Expected KeyError, got {type(gw_error).__name__}"
+
+
+@then("no gateway exception is raised")
+def no_gateway_exception(gateway: Gateway) -> None:
+    # If we got here without exception, the broadcast succeeded
+    assert gateway is not None
+
+
+@then("the connection has a connection_id")
+def connection_has_connection_id(registered_connection: ConnectionInfo) -> None:
+    assert registered_connection.connection_id
+    assert len(registered_connection.connection_id) > 0
+
+
+@then("the connection has a connected_at timestamp")
+def connection_has_timestamp(registered_connection: ConnectionInfo) -> None:
+    assert registered_connection.connected_at is not None
+
+
+@then("I can retrieve the connection by its connection_id")
+def retrieve_by_connection_id(
+    gateway: Gateway,
+    registered_connection: ConnectionInfo,
+) -> None:
+    conn = gateway.get_connection(registered_connection.connection_id)
+    assert conn.client_id == registered_connection.client_id
+
+
 # ---------------------------------------------------------------------------
 # Event Bus fixtures / Given steps
 # ---------------------------------------------------------------------------
@@ -197,6 +251,12 @@ def bus_capture() -> EventCapture:
 @pytest.fixture()
 def wildcard_capture() -> EventCapture:
     return EventCapture()
+
+
+@pytest.fixture()
+def event_bus_error() -> dict:
+    """Mutable container to capture errors from event bus operations."""
+    return {}
 
 
 @given(
@@ -250,6 +310,84 @@ def unsubscribe_from(
     event_bus.unsubscribe(event_name, bus_capture)
 
 
+@when(
+    parsers.parse('I register event type "{event_name}"'),
+    target_fixture="registered_event_name",
+)
+def register_event_type(event_bus: EventBus, event_name: str) -> str:
+    if not event_bus._registry.is_registered(event_name):
+        event_bus._registry.register(event_name)
+    return event_name
+
+
+@when(
+    "I publish an event \"discovery.mining.complete\" with nested payload",
+    target_fixture="published_event",
+)
+def publish_nested_payload_event(
+    event_bus: EventBus,
+) -> LabEvent:
+    payload = {
+        "results": {
+            "patterns": [{"type": "trend", "confidence": 0.9}],
+            "metadata": {"source": "miner-v1"},
+        },
+        "count": 1,
+    }
+    return event_bus.create_event("discovery.mining.complete", payload=payload)
+
+
+@when(
+    parsers.parse('I publish an event "{event_name}" with no subscribers'),
+    target_fixture="orphan_event_result",
+)
+def publish_orphan_event(  # noqa: E501
+    event_bus: EventBus,
+    event_name: str,
+    event_bus_error: dict,
+) -> LabEvent | None:
+    try:
+        result = event_bus.create_event(event_name)
+        return result
+    except Exception as exc:
+        event_bus_error["exc"] = exc
+        return None
+
+
+@when(
+    parsers.parse('I create an event with name "{event_name}"'),
+    target_fixture="created_event",
+)
+def create_event_for_inspection(event_bus: EventBus, event_name: str) -> LabEvent:
+    return event_bus.create_event(event_name)
+
+
+@when(
+    parsers.parse('I try to register an event with invalid name "{bad_name}"'),
+    target_fixture="registration_error",
+)
+def try_register_invalid_event(bad_name: str) -> Exception | None:
+    from labclaw.core.events import EventRegistry as _EventRegistry
+    reg = _EventRegistry()
+    try:
+        reg.register(bad_name)
+        return None
+    except (ValueError, Exception) as exc:
+        return exc
+
+
+@when(
+    "I check 5 different actions as PI",
+    target_fixture="checked_5_decisions",
+)
+def check_5_actions_pi(gov_engine) -> list:  # noqa: ANN001
+    decisions = []
+    for i in range(5):
+        d = gov_engine.check(action=f"action_{i}", actor="dr_pi", role="pi")
+        decisions.append(d)
+    return decisions
+
+
 # ---------------------------------------------------------------------------
 # Then steps — Event Bus
 # ---------------------------------------------------------------------------
@@ -276,3 +414,51 @@ def wildcard_received_n(wildcard_capture: EventCapture, count: int) -> None:
 @then(parsers.parse("the subscriber received {count:d} events"))
 def subscriber_received_n(bus_capture: EventCapture, count: int) -> None:
     assert len(bus_capture.events) == count, f"Expected {count}, got {len(bus_capture.events)}"
+
+
+@then(parsers.parse('the event type "{event_name}" is registered'))
+def event_type_is_registered(event_bus: EventBus, event_name: str) -> None:
+    assert event_bus._registry.is_registered(event_name), (
+        f"Event {event_name!r} should be registered"
+    )
+
+
+@then(parsers.parse('the event has layer "{layer}" module "{module}" action "{action}"'))
+def event_has_parts(created_event: LabEvent, layer: str, module: str, action: str) -> None:
+    assert created_event.event_name.layer == layer
+    assert created_event.event_name.module == module
+    assert created_event.event_name.action == action
+
+
+@then("the event registry lists at least 1 event")
+def event_registry_has_events(event_bus: EventBus) -> None:
+    events = event_bus._registry.list_events()
+    assert len(events) >= 1, f"Expected >= 1 registered events, got {len(events)}"
+
+
+@then("the event has a timestamp")
+def event_has_timestamp(bus_capture: EventCapture) -> None:
+    event = bus_capture.last
+    assert event.timestamp is not None
+
+
+@then("the event has an event_id")
+def event_has_event_id(bus_capture: EventCapture) -> None:
+    event = bus_capture.last
+    assert event.event_id is not None
+    assert len(event.event_id) > 0
+
+
+@then("no exception is raised")
+def no_exception_raised(orphan_event_result: LabEvent | None, event_bus_error: dict) -> None:
+    assert "exc" not in event_bus_error, (
+        f"Unexpected exception: {event_bus_error.get('exc')}"
+    )
+
+
+@then("a ValueError is raised")
+def valueerror_raised(registration_error: Exception | None) -> None:
+    assert registration_error is not None, "Expected a ValueError but no exception was raised"
+    assert isinstance(registration_error, ValueError), (
+        f"Expected ValueError, got {type(registration_error).__name__}: {registration_error}"
+    )
