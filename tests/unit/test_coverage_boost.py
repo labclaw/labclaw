@@ -162,3 +162,27 @@ class TestFitnessTrackerGetLatest:
         tracker._history[EvolutionTarget.PROMPTS] = []
         result = tracker.get_latest(EvolutionTarget.PROMPTS)
         assert result is None
+
+
+class TestFitnessTrackerFromDict:
+    def test_from_dict_roundtrip(self) -> None:
+        """FitnessTracker.from_dict restores history across all targets."""
+        tracker = FitnessTracker()
+        tracker.measure(EvolutionTarget.ANALYSIS_PARAMS, {"acc": 0.75}, data_points=10)
+        tracker.measure(EvolutionTarget.PROMPTS, {"quality": 0.9}, data_points=5)
+
+        serialized = tracker.to_dict()
+        restored = FitnessTracker.from_dict(serialized)
+
+        latest_ap = restored.get_latest(EvolutionTarget.ANALYSIS_PARAMS)
+        assert latest_ap is not None
+        assert latest_ap.metrics["acc"] == 0.75
+
+        latest_pr = restored.get_latest(EvolutionTarget.PROMPTS)
+        assert latest_pr is not None
+        assert latest_pr.metrics["quality"] == 0.9
+
+    def test_from_dict_empty(self) -> None:
+        """from_dict with empty dict returns empty tracker."""
+        tracker = FitnessTracker.from_dict({})
+        assert tracker.get_history(EvolutionTarget.PROMPTS) == []

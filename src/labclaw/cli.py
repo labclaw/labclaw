@@ -2,6 +2,10 @@
 
 from __future__ import annotations
 
+import asyncio
+import csv
+import json
+import random
 import subprocess
 import sys
 from pathlib import Path
@@ -42,6 +46,8 @@ def main() -> None:
         mcp_main()
     elif cmd == "plugin":
         _plugin_cmd(sys.argv[2:])
+    elif cmd == "pipeline":
+        _pipeline_cmd(sys.argv[2:])
     else:
         print("Usage: labclaw <command>")
         print()
@@ -51,6 +57,7 @@ def main() -> None:
         print("  init           Scaffold a new LabClaw project directory")
         print("  mcp            Start MCP server (stdio transport)")
         print("  plugin         Manage plugins (see: labclaw plugin --help)")
+        print("  pipeline       Run one discovery cycle on CSV data and print JSON result")
         print("  --dashboard    Launch Streamlit dashboard only")
         print("  --api [PORT]   Launch FastAPI server only")
         print()
@@ -232,6 +239,101 @@ def _plugin_cmd(args: list[str]) -> None:
         print("  create <name>             Scaffold a new plugin project")
         print("    --type device|domain|analysis  Plugin type (default: domain)")
         print("    --out DIR                      Output directory (default: .)")
+
+
+def _pipeline_cmd(args: list[str]) -> None:
+    """Run one discovery cycle on CSV data and print the JSON result to stdout.
+
+    Usage:
+        labclaw pipeline --once --data-dir PATH [--memory-root PATH] [--seed INT]
+    """
+    if args and args[0] in ("-h", "--help"):
+        print("Usage: labclaw pipeline --once --data-dir PATH [--memory-root PATH] [--seed INT]")
+        print()
+        print("Options:")
+        print("  --once              Run exactly one cycle and exit")
+        print("  --data-dir PATH     Directory containing .csv files (required)")
+        print("  --memory-root PATH  Memory root for Tier A logging (optional)")
+        print("  --seed INT          Random seed for reproducibility (optional)")
+        return
+
+    if not args:
+        print(
+            "Error: --data-dir is required. "
+            "Run 'labclaw pipeline --help' for usage.",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+
+    data_dir: Path | None = None
+    memory_root: Path | None = None
+    seed: int | None = None
+
+    i = 0
+    while i < len(args):
+        if args[i] == "--data-dir" and i + 1 < len(args):
+            data_dir = Path(args[i + 1])
+            i += 2
+        elif args[i] == "--memory-root" and i + 1 < len(args):
+            memory_root = Path(args[i + 1])
+            i += 2
+        elif args[i] == "--seed" and i + 1 < len(args):
+            seed = int(args[i + 1])
+            i += 2
+        else:
+            i += 1
+
+    if data_dir is None:
+        print(
+            "Error: --data-dir is required. "
+            "Run 'labclaw pipeline --help' for usage.",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+
+    if not data_dir.exists() or not data_dir.is_dir():
+        print(f"Error: data-dir '{data_dir}' does not exist or is not a directory", file=sys.stderr)
+        sys.exit(1)
+
+    csv_files = sorted(data_dir.glob("*.csv"))
+    if not csv_files:
+        print(f"Error: no .csv files found in '{data_dir}'", file=sys.stderr)
+        sys.exit(1)
+
+    if seed is not None:
+        random.seed(seed)
+
+    all_rows: list[dict[str, str]] = []
+    for csv_path in csv_files:
+        with open(csv_path, newline="") as fh:
+            reader = csv.DictReader(fh)
+            for row in reader:
+                all_rows.append(dict(row))
+
+    from labclaw.orchestrator.loop import ScientificLoop
+    from labclaw.orchestrator.steps import (
+        AnalyzeStep,
+        AskStep,
+        ConcludeStep,
+        ExperimentStep,
+        HypothesizeStep,
+        ObserveStep,
+        PredictStep,
+    )
+
+    conclude = ConcludeStep(memory_root=memory_root)
+    steps = [
+        ObserveStep(),
+        AskStep(),
+        HypothesizeStep(llm_provider=None),
+        PredictStep(),
+        ExperimentStep(),
+        AnalyzeStep(),
+        conclude,
+    ]
+    loop = ScientificLoop(steps=steps)
+    result = asyncio.run(loop.run_cycle(all_rows))
+    print(json.dumps(result.model_dump()))
 
 
 if __name__ == "__main__":

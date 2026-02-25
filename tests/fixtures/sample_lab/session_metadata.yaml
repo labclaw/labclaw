@@ -1,0 +1,13 @@
+sessions:
+  - session_id: behavioral_session_001
+    date: "2026-01-15"
+    animal_id: mouse_01
+    paradigm: open_field
+    duration_min: 30
+    apparatus: behavior_box_A
+  - session_id: behavioral_session_002
+    date: "2026-01-16"
+    animal_id: mouse_02
+    paradigm: open_field
+    duration_min: 30
+    apparatus: behavior_box_A
