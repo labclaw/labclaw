@@ -6,10 +6,16 @@ import asyncio
 import csv
 import json
 import random
+import re
 import subprocess
 import sys
 from pathlib import Path
 from typing import Any
+
+# Matches UUID v4 strings embedded in finding descriptions (e.g. pattern IDs)
+_uuid_re = re.compile(
+    r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}", re.I
+)
 
 
 def main() -> None:
@@ -725,19 +731,20 @@ def _reproduce_cmd(args: list[str]) -> None:
     loop2 = ScientificLoop(steps=_build_steps())
     result2 = asyncio.run(loop2.run_cycle(all_rows))
 
-    d1 = result1.model_dump()
-    d2 = result2.model_dump()
-
-    # Zero out non-deterministic fields (unique IDs, timing, and UUID-keyed context)
-    for d in (d1, d2):
+    def _normalize(d: dict) -> None:
         d["cycle_id"] = "X"
         d["total_duration"] = 0.0
-        # findings can embed run-specific UUIDs (pattern IDs), so normalize away.
-        d["findings"] = []
+        # Redact embedded UUIDs in finding strings (e.g. pattern IDs in per-pattern lines)
+        d["findings"] = [_uuid_re.sub("<uuid>", f) for f in d.get("findings", [])]
         # finding_chains contain per-run UUIDs and timestamps — exclude from comparison
         fc = d.get("final_context", {})
         fc.pop("finding_chains", None)
         d["final_context"] = fc
+
+    d1 = result1.model_dump()
+    d2 = result2.model_dump()
+    _normalize(d1)
+    _normalize(d2)
 
     reproducible = d1 == d2
     output: dict = {
