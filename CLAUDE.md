@@ -6,7 +6,7 @@ LabClaw is a self-evolving agentic system that serves as the super brain for res
 
 **Tech stack:** Python 3.11+, FastAPI, SQLite, Redis Streams, Claude API, Streamlit, Graphiti
 **Domain:** Neuroscience (first vertical) — video behavior tracking, microscopy, electrophysiology, behavioral apparatus
-**Design doc:** `docs/plans/2026-02-19-jarvis-mesh-design-v2.md`
+**Design doc:** `docs/plans/2026-02-19-labclaw-design-v2.md`
 
 ## Build & Test
 
@@ -14,8 +14,8 @@ LabClaw is a self-evolving agentic system that serves as the super brain for res
 # Install all dependencies
 make dev-install                    # or: uv sync --extra dev --extra science
 
-# Run tests (90% coverage required)
-make test                           # or: uv run pytest --cov=labclaw --cov-fail-under=90 -q
+# Run tests (100% coverage required — TDD enforced)
+make test                           # or: uv run pytest --cov=labclaw --cov-fail-under=100 -q
 
 # Lint and format
 make lint                           # check only
@@ -68,6 +68,13 @@ Layer 1: HARDWARE                — Devices, interfaces, manager, safety
 - **Validate at boundaries** (API input, file parsing) — trust internal code
 - **Never silently catch exceptions** — log or re-raise with specific types
 
+## Testing Strategy: TDD + BDD Dual-Layer
+
+- **TDD (unit tests):** 100% code coverage required (`--cov-fail-under=100`). Tests in `tests/unit/`.
+- **BDD (behavior specs):** Comprehensive Gherkin `.feature` files in `tests/features/`. BDD must cover **all** high-level features, conditions, branches, edge cases, and behaviors — not just happy paths. Every behavior the system exhibits should have a corresponding BDD scenario.
+- **BDD coverage rule:** When adding new features or modifying behavior, always add/update BDD scenarios to cover: (a) happy path, (b) error/failure paths, (c) edge cases and boundary conditions, (d) all significant branches in business logic.
+- **BDD organization:** `tests/features/layer{N}_{name}/` with `.feature` files + step definitions in `tests/features/step_definitions/`.
+
 ## Project Structure
 
 ```
@@ -91,7 +98,7 @@ lab/                # Lab memory — Tier A: human-readable (SOUL.md, MEMORY.md,
 members/            # Per-member profiles — human + digital (SOUL.md, MEMORY.md)
 devices/            # Per-device profiles (SOUL.md, MEMORY.md)
 plugins/            # Extension plugins (devices, analysis, metrics, schemas)
-tests/              # Unit, integration, BDD feature tests
+tests/              # TDD unit tests + BDD behavior specs (dual-layer)
 configs/            # Environment configs (YAML)
 ```
 
@@ -100,6 +107,7 @@ configs/            # Environment configs (YAML)
 - Source mirrors: `src/labclaw/core/graph.py` → `tests/unit/core/test_graph.py`
 - BDD features: `tests/features/layer{N}_{name}/test_{feature}.feature`
 - Step definitions: `tests/features/step_definitions/{module}_steps.py`
+- Integration tests: `tests/integration/test_{feature}.py`
 - Config files: `configs/{environment}.yaml`
 
 ## PR Checklist
@@ -107,7 +115,7 @@ configs/            # Environment configs (YAML)
 Before submitting a pull request, verify:
 
 - [ ] `make lint` passes with no errors
-- [ ] `make test` passes with ≥90% coverage
+- [ ] `make test` passes with 100% coverage
 - [ ] Type hints on all new public functions
 - [ ] Pydantic models for any new data schemas
 - [ ] New tests for all behavior changes

@@ -61,11 +61,11 @@ jobs:
         run: uv sync --extra dev --frozen
 
       - name: Run bandit SAST scan
-        run: uv run bandit -r src/labclaw -f json -o bandit-report.json -ll --skip B104 || true
+        run: uv run bandit -r src/labclaw -f json -o bandit-report.json -ll || true
 
       - name: Display results
         if: always()
-        run: uv run bandit -r src/labclaw -f screen -ll --skip B104 || true
+        run: uv run bandit -r src/labclaw -f screen -ll
 
       - name: Upload report
         if: always()
@@ -109,13 +109,9 @@ jobs:
 
       - name: Install gitleaks
         run: |
-          GITLEAKS_VERSION=$(curl -sH "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-            https://api.github.com/repos/gitleaks/gitleaks/releases/latest \
-            | grep '"tag_name"' | sed 's/.*"v\(.*\)".*/\1/')
-          if [ -z "$GITLEAKS_VERSION" ]; then echo "Failed to fetch gitleaks version"; exit 1; fi
-          curl -sSfL "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz" \
+          GITLEAKS_VERSION=$(curl -s https://api.github.com/repos/gitleaks/gitleaks/releases/latest | grep '"tag_name"' | sed 's/.*"v\(.*\)".*/\1/')
+          curl -sSfL "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_amd64.tar.gz" \
             | tar xz -C /usr/local/bin gitleaks
-          gitleaks version
 
       - name: Run gitleaks
         run: gitleaks detect --source . --verbose

@@ -86,7 +86,7 @@ select = ["E", "F", "I", "N", "W", "UP"]
 # sklearn import alias naming
 "src/labclaw/discovery/unsupervised.py" = ["N811"]
 # Standard math notation (X, A) in modeling tests
-"tests/unit/test_discovery_modeling_full.py" = ["N803", "N806"]
+"tests/unit/test_discovery_modeling_full.py" = ["N806"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
@@ -94,6 +94,7 @@ asyncio_mode = "auto"
 markers = [
     "slow: marks tests as slow (deselect with '-m \"not slow\"')",
     "integration: marks integration tests",
+    "e2e: marks end-to-end pipeline tests",
 ]
 
 [tool.coverage.run]
@@ -102,11 +103,10 @@ omit = [
     "*/tests/*",
     "*/demo/*",
     "*/dashboard/*",
-    "*/cli.py",
 ]
 
 [tool.coverage.report]
-fail_under = 90
+fail_under = 100
 show_missing = true
 exclude_lines = [
     "pragma: no cover",
@@ -114,6 +114,7 @@ exclude_lines = [
     "if TYPE_CHECKING:",
     "raise NotImplementedError",
     "@overload",
+    "^\\s+\\.\\.\\.$",
 ]
 
 [tool.commitizen]

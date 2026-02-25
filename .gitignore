@@ -28,8 +28,6 @@ credentials.json
 
 # Data (never commit raw data)
 data/
-!src/labclaw/demo/data/
-!src/labclaw/demo/data/**
 *.h5
 *.nwb
 *.avi
@@ -48,6 +46,7 @@ Thumbs.db
 
 # Testing
 .coverage
+coverage.json
 htmlcov/
 .pytest_cache/
 

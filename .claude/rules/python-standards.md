@@ -21,9 +21,14 @@
 - Use specific exception types, not bare `except`
 - Device/network operations: retry with exponential backoff, then fail loudly
 
-## Testing
+## Testing — TDD + BDD
+- **TDD is mandatory** — write the failing test FIRST, then implement
+- **BDD for high-level behavior** — `.feature` files as behavior specs, `pytest-bdd` for step definitions
 - `pytest` with `pytest-asyncio` for async tests
-- Test files mirror source structure: `tests/unit/core/test_graph.py` for `src/labclaw/core/graph.py`
+- **100% coverage required** — `make test` enforces `--cov-fail-under=100`
+- Test files mirror source: `tests/unit/core/test_graph.py` for `src/labclaw/core/graph.py`
+- BDD features: `tests/features/layer{N}_{name}/` with `.feature` + step definitions
+- Integration tests in `tests/integration/`
 - Fixtures in `tests/fixtures/` for sample data files
 
 ## Imports

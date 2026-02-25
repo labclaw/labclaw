@@ -1,7 +1,7 @@
 .PHONY: test lint format build docker demo clean install dev-install coverage-html release
 
 test:
-	uv run pytest --cov=labclaw --cov-report=term-missing --cov-fail-under=90 -q
+	uv run pytest --cov=labclaw --cov-report=term-missing --cov-fail-under=100 -q
 
 lint:
 	uv run ruff check src/ tests/
