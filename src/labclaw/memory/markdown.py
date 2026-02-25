@@ -152,9 +152,7 @@ class TierABackend:
         if not entity_id:
             raise ValueError("entity_id must be non-empty")
         if not re.fullmatch(r"[A-Za-z0-9](?:[A-Za-z0-9_-]|\.(?!\.)){0,127}", entity_id):
-            raise ValueError(
-                "entity_id must match [A-Za-z0-9](?:[A-Za-z0-9_-]|\\.(?!\\.)){0,127}"
-            )
+            raise ValueError("entity_id must match [A-Za-z0-9](?:[A-Za-z0-9_-]|\\.(?!\\.)){0,127}")
         return self._root / entity_id
 
     def _soul_path(self, entity_id: str) -> Path:
