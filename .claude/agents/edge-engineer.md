@@ -27,4 +27,4 @@ Key constraints:
 - Quality checks must be fast (real-time or near-real-time during acquisition)
 - Never move or modify raw data files — only read and generate metadata/quality reports
 - Device adapters follow the plugin manifest pattern (manifest.yaml + capability declarations)
-- Support for SAM-Behavior as a video analysis backend (pose estimation, animal detection)
+- Support for video analysis backends (pose estimation, animal detection) via plugins
