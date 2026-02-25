@@ -10,7 +10,7 @@
 
 **Do NOT open a public GitHub issue for security vulnerabilities.**
 
-Please report security issues via email to: **security@shenlab.org**
+Please report security issues via email to: **security@labclaw.org**
 
 Include:
 

@@ -43,12 +43,12 @@ Contains YAML frontmatter and markdown body describing an entity's identity:
 
 ```markdown
 ---
-name: Shen Lab
+name: LabClaw
 type: lab
 created: 2026-01-15
 ---
 
-# Shen Lab
+# LabClaw
 
 ## Identity
 
@@ -88,7 +88,7 @@ backend = TierABackend(Path("lab"))
 
 # Read SOUL.md
 soul = backend.read_soul("lab")
-print(soul.frontmatter)  # {"name": "Shen Lab", "type": "lab", ...}
+print(soul.frontmatter)  # {"name": "LabClaw", "type": "lab", ...}
 print(soul.content)       # Markdown body
 
 # Write SOUL.md

@@ -11,7 +11,7 @@
 
 ## v0.0.5 — First Discovery (C1: DISCOVER)
 
-- Real Shen Lab behavioral data through the pipeline
+- Real behavioral data through the pipeline
 - Claude API hypothesis generation with cost guard (`--max-llm-calls N`)
 - First real ValidationReport with p-values
 - First automated MEMORY.md entry from discovery

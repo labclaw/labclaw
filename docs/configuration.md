@@ -194,7 +194,7 @@ edge:
 
 ```yaml
 system:
-  name: shen-lab
+  name: labclaw
   log_level: WARNING
 
 graph:

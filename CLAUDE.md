@@ -172,7 +172,7 @@ Before submitting a pull request, verify:
 - **Graphiti**: `graphiti-core` — temporal knowledge graph for lab memory
 - **NWB**: `pynwb` + `hdmf` — Neurodata Without Borders export
 - **NeuroConv**: Format conversion from 47+ neuroscience formats
-- **SAM-Behavior**: Zero-shot multi-animal pose estimation (Shen Lab)
+- **SAM-Behavior**: Zero-shot multi-animal pose estimation ()
 - **watchdog**: File system monitoring for edge nodes
 - **scikit-optimize**: Bayesian optimization engine
 - **sentence-transformers**: Embedding model for memory search
