@@ -2,14 +2,13 @@
 
 ## Identity
 
-- **Name:** PI
+- **Name:** (your name)
 - **Role:** PI
-- **Language:** Chinese for discussion, English for data/code
 
 ## Expertise
 
-- **Strong at:** Experimental design, behavioral neuroscience, computer vision, project strategy
-- **Interests:** Zero-shot tracking (SAM-Behavior), agentic lab systems, closed-loop neuroscience
+- **Strong at:** (your areas of expertise)
+- **Interests:** (your research interests)
 
 ## Work Style
 
@@ -24,6 +23,4 @@
 
 ## Notes
 
-- Cares about big picture and paper narrative
-- Wants to know "what changed" and "what's blocked", not routine status
-- Decisions should come with trade-offs and recommendation
+- (Customize this profile for your lab's PI)
