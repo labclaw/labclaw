@@ -48,6 +48,8 @@ def main() -> None:
         _plugin_cmd(sys.argv[2:])
     elif cmd == "pipeline":
         _pipeline_cmd(sys.argv[2:])
+    elif cmd == "ablation":
+        _ablation_cmd(sys.argv[2:])
     else:
         print("Usage: labclaw <command>")
         print()
@@ -58,6 +60,7 @@ def main() -> None:
         print("  mcp            Start MCP server (stdio transport)")
         print("  plugin         Manage plugins (see: labclaw plugin --help)")
         print("  pipeline       Run one discovery cycle on CSV data and print JSON result")
+        print("  ablation       Run full vs no-evolution comparison and print JSON result")
         print("  --dashboard    Launch Streamlit dashboard only")
         print("  --api [PORT]   Launch FastAPI server only")
         print()
@@ -246,15 +249,20 @@ def _pipeline_cmd(args: list[str]) -> None:
 
     Usage:
         labclaw pipeline --once --data-dir PATH [--memory-root PATH] [--seed INT]
+                         [--max-llm-calls N]
     """
     if args and args[0] in ("-h", "--help"):
-        print("Usage: labclaw pipeline --once --data-dir PATH [--memory-root PATH] [--seed INT]")
+        print(
+            "Usage: labclaw pipeline --once --data-dir PATH "
+            "[--memory-root PATH] [--seed INT] [--max-llm-calls N]"
+        )
         print()
         print("Options:")
         print("  --once              Run exactly one cycle and exit")
         print("  --data-dir PATH     Directory containing .csv files (required)")
         print("  --memory-root PATH  Memory root for Tier A logging (optional)")
         print("  --seed INT          Random seed for reproducibility (optional)")
+        print("  --max-llm-calls N   Max LLM calls before template fallback (default: 50)")
         return
 
     if not args:
@@ -268,6 +276,7 @@ def _pipeline_cmd(args: list[str]) -> None:
     data_dir: Path | None = None
     memory_root: Path | None = None
     seed: int | None = None
+    max_llm_calls: int = 50
 
     i = 0
     while i < len(args):
@@ -279,6 +288,9 @@ def _pipeline_cmd(args: list[str]) -> None:
             i += 2
         elif args[i] == "--seed" and i + 1 < len(args):
             seed = int(args[i + 1])
+            i += 2
+        elif args[i] == "--max-llm-calls" and i + 1 < len(args):
+            max_llm_calls = int(args[i + 1])
             i += 2
         else:
             i += 1
@@ -325,7 +337,7 @@ def _pipeline_cmd(args: list[str]) -> None:
     steps = [
         ObserveStep(),
         AskStep(),
-        HypothesizeStep(llm_provider=None),
+        HypothesizeStep(llm_provider=None, max_llm_calls=max_llm_calls),
         PredictStep(),
         ExperimentStep(),
         AnalyzeStep(),
@@ -334,6 +346,149 @@ def _pipeline_cmd(args: list[str]) -> None:
     loop = ScientificLoop(steps=steps)
     result = asyncio.run(loop.run_cycle(all_rows))
     print(json.dumps(result.model_dump()))
+
+
+def _ablation_cmd(args: list[str]) -> None:
+    """Run full vs no-evolution ablation and print comparison as JSON.
+
+    Usage:
+        labclaw ablation --data-dir PATH [--n-cycles INT] [--seed INT]
+    """
+    if args and args[0] in ("-h", "--help"):
+        print("Usage: labclaw ablation --data-dir PATH [--n-cycles INT] [--seed INT]")
+        print()
+        print("Options:")
+        print("  --data-dir PATH  Directory containing .csv files (required)")
+        print("  --n-cycles INT   Number of evolution cycles (default: 10)")
+        print("  --seed INT       Random seed for reproducibility (default: 42)")
+        return
+
+    if not args:
+        print(
+            "Error: --data-dir is required. "
+            "Run 'labclaw ablation --help' for usage.",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+
+    data_dir: Path | None = None
+    n_cycles: int = 10
+    seed: int = 42
+
+    i = 0
+    while i < len(args):
+        if args[i] == "--data-dir" and i + 1 < len(args):
+            data_dir = Path(args[i + 1])
+            i += 2
+        elif args[i] == "--n-cycles" and i + 1 < len(args):
+            n_cycles = int(args[i + 1])
+            i += 2
+        elif args[i] == "--seed" and i + 1 < len(args):
+            seed = int(args[i + 1])
+            i += 2
+        else:
+            i += 1
+
+    if data_dir is None:
+        print(
+            "Error: --data-dir is required. "
+            "Run 'labclaw ablation --help' for usage.",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+
+    if not data_dir.exists() or not data_dir.is_dir():
+        print(f"Error: data-dir '{data_dir}' does not exist or is not a directory", file=sys.stderr)
+        sys.exit(1)
+
+    csv_files = sorted(data_dir.glob("*.csv"))
+    if not csv_files:
+        print(f"Error: no .csv files found in '{data_dir}'", file=sys.stderr)
+        sys.exit(1)
+
+    all_rows: list[dict[str, str]] = []
+    for csv_path in csv_files:
+        with open(csv_path, newline="") as fh:
+            reader = csv.DictReader(fh)
+            for row in reader:
+                all_rows.append(dict(row))
+
+    from labclaw.orchestrator.loop import ScientificLoop
+    from labclaw.orchestrator.steps import (
+        AnalyzeStep,
+        AskStep,
+        ConcludeStep,
+        ExperimentStep,
+        HypothesizeStep,
+        ObserveStep,
+        PredictStep,
+    )
+    from labclaw.validation.statistics import StatisticalValidator, ValidationConfig
+
+    # Full pipeline run
+    conclude_full = ConcludeStep()
+    steps_full = [
+        ObserveStep(),
+        AskStep(),
+        HypothesizeStep(llm_provider=None, max_llm_calls=0),
+        PredictStep(),
+        ExperimentStep(),
+        AnalyzeStep(),
+        conclude_full,
+    ]
+    loop_full = ScientificLoop(steps=steps_full)
+
+    # No-hypothesis ablation run
+    conclude_ablation = ConcludeStep()
+    steps_ablation = [
+        ObserveStep(),
+        AskStep(),
+        HypothesizeStep(llm_provider=None, max_llm_calls=0),
+        PredictStep(),
+        ExperimentStep(),
+        AnalyzeStep(),
+        conclude_ablation,
+    ]
+    loop_ablation = ScientificLoop(steps=steps_ablation)
+
+    full_scores: list[float] = []
+    ablation_scores: list[float] = []
+
+    random.seed(seed)
+    for _ in range(n_cycles):
+        r_full = asyncio.run(loop_full.run_cycle(all_rows))
+        full_scores.append(float(r_full.patterns_found))
+
+        r_abl = asyncio.run(loop_ablation.run_cycle(all_rows))
+        ablation_scores.append(float(r_abl.patterns_found))
+
+    validator = StatisticalValidator()
+    cfg = ValidationConfig(min_sample_size=2)
+    try:
+        stat_result = validator.run_test(
+            "permutation",
+            full_scores,
+            ablation_scores,
+            config=cfg,
+        )
+        p_value: float | None = float(stat_result.p_value)
+        significant: bool | None = bool(stat_result.significant)
+    except (ValueError, ZeroDivisionError):
+        p_value = None
+        significant = None
+
+    output = {
+        "full": {"fitness_scores": full_scores, "n_cycles": n_cycles, "seed": seed},
+        "no_evolution": {"fitness_scores": ablation_scores, "n_cycles": n_cycles, "seed": seed},
+        "comparison": {
+            "full_mean": float(sum(full_scores) / len(full_scores)) if full_scores else 0.0,
+            "ablation_mean": float(sum(ablation_scores) / len(ablation_scores))
+            if ablation_scores else 0.0,
+            "p_value": p_value,
+            "significant": significant,
+        },
+    }
+    print(json.dumps(output))
 
 
 if __name__ == "__main__":

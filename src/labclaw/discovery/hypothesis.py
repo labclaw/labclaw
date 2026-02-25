@@ -256,15 +256,32 @@ class _LLMHypothesisResponse(BaseModel):
 class LLMHypothesisGenerator:
     """LLM-powered hypothesis generation from discovered patterns.
 
-    Falls back to template-based HypothesisGenerator on any LLM error.
+    Falls back to template-based HypothesisGenerator on any LLM error or when
+    the cost guard limit (max_calls) is exceeded.
     """
 
-    def __init__(self, llm: LLMProvider) -> None:
+    def __init__(self, llm: LLMProvider, max_calls: int = 50) -> None:
         self._llm = llm
         self._fallback = HypothesisGenerator()
+        self._max_calls = max_calls
+        self._call_count = 0
 
     def generate(self, hypothesis_input: HypothesisInput) -> list[HypothesisOutput]:
-        """Generate hypotheses — delegates to async _generate_llm, falls back on error."""
+        """Generate hypotheses — delegates to async _generate_llm, falls back on error.
+
+        If _call_count >= max_calls the cost guard activates and template-based
+        generation is used instead of calling the LLM.
+        """
+        if self._call_count >= self._max_calls:
+            logger.info(
+                "LLM cost guard triggered (call_count=%d >= max_calls=%d): using templates",
+                self._call_count,
+                self._max_calls,
+            )
+            return self._fallback.generate(hypothesis_input)
+
+        self._call_count += 1
+
         import asyncio
 
         try:
