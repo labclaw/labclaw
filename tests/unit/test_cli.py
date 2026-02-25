@@ -27,6 +27,27 @@ def _run_main(argv: list[str]) -> None:
 
 
 # ---------------------------------------------------------------------------
+# _coerce_row_values helper
+# ---------------------------------------------------------------------------
+
+
+def test_coerce_row_values_handles_empty_none_and_text() -> None:
+    from labclaw.cli import _coerce_row_values
+
+    row = {
+        "num": "1.5",
+        "empty": "   ",
+        "text": "abc",
+        "none": None,
+    }
+    parsed = _coerce_row_values(row)
+    assert parsed["num"] == pytest.approx(1.5)
+    assert parsed["text"] == "abc"
+    assert "empty" not in parsed
+    assert "none" not in parsed
+
+
+# ---------------------------------------------------------------------------
 # main() — no command (help text)
 # ---------------------------------------------------------------------------
 
