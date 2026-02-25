@@ -8,6 +8,8 @@ Allows any MCP-compatible AI (Claude Desktop, etc.) to:
 - View device status
 """
 
+from __future__ import annotations
+
 import json
 import logging
 from typing import Any
