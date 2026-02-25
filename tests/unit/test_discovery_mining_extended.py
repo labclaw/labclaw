@@ -127,6 +127,19 @@ def test_find_correlations_below_threshold() -> None:
     assert patterns == []
 
 
+def test_find_correlations_skips_non_numeric_values() -> None:
+    miner = PatternMiner()
+    data = [
+        {"x": 1.0, "y": 2.0},
+        {"x": "bad", "y": 4.0},
+        {"x": 3.0, "y": "bad"},
+        {"x": 4.0, "y": 8.0},
+        {"x": 5.0, "y": 10.0},
+    ]
+    patterns = miner.find_correlations(data, threshold=0.1)
+    assert isinstance(patterns, list)
+
+
 # ---------------------------------------------------------------------------
 # find_anomalies — edge cases
 # ---------------------------------------------------------------------------
@@ -175,3 +188,18 @@ def test_find_temporal_patterns_flat_signal() -> None:
     data = [{"timestamp": float(i), "metric": 5.0} for i in range(20)]
     patterns = miner.find_temporal_patterns(data)
     assert patterns == []
+
+
+def test_find_temporal_patterns_skips_non_numeric_values() -> None:
+    miner = PatternMiner()
+
+    def _row(i: int) -> dict[str, object]:
+        if i in (3, 11):
+            return {"timestamp": float(i), "metric": "bad"}
+        return {"timestamp": float(i), "metric": float(i)}
+
+    data = [
+        _row(i) for i in range(20)
+    ]
+    patterns = miner.find_temporal_patterns(data)
+    assert isinstance(patterns, list)

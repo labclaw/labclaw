@@ -14,21 +14,16 @@ that feed into HypothesisGenerator.
 from __future__ import annotations
 
 import logging
-import math
 import random
 import uuid
 from datetime import UTC, datetime
 from typing import Any
 
+import numpy as np
 from pydantic import BaseModel, Field
 
 from labclaw.core.events import event_registry
 from labclaw.discovery.mining import PatternRecord
-
-try:
-    import numpy as np
-except ImportError:  # pragma: no cover
-    np = None  # type: ignore[assignment]
 
 try:
     from sklearn.cluster import KMeans as SklearnKMeans
@@ -67,12 +62,6 @@ def _now() -> datetime:
     return datetime.now(UTC)
 
 
-def _mean(values: list[float]) -> float:
-    if not values:
-        return 0.0
-    return sum(values) / len(values)
-
-
 # ---------------------------------------------------------------------------
 # Pydantic schemas
 # ---------------------------------------------------------------------------
@@ -82,7 +71,7 @@ class ClusterConfig(BaseModel):
     """Configuration for clustering."""
 
     n_clusters: int = 3
-    method: str = "kmeans"  # "kmeans" (fallback: pure-Python)
+    method: str = "kmeans"  # "kmeans" (fallback: numpy-based)
     max_iterations: int = 100
     random_seed: int = 42
     feature_columns: list[str] = Field(default_factory=list)
@@ -92,7 +81,7 @@ class ReductionConfig(BaseModel):
     """Configuration for dimensionality reduction."""
 
     n_components: int = 2
-    method: str = "pca"  # "pca" (fallback: pure-Python)
+    method: str = "pca"  # "pca" (fallback: numpy-based)
 
 
 class ClusterResult(BaseModel):
@@ -114,12 +103,12 @@ class ReductionResult(BaseModel):
 
 
 # ---------------------------------------------------------------------------
-# Pure-Python k-means fallback
+# Numpy-based k-means fallback (replaces pure-Python version)
 # ---------------------------------------------------------------------------
 
 
 def _euclidean_dist(a: list[float], b: list[float]) -> float:
-    return math.sqrt(sum((x - y) ** 2 for x, y in zip(a, b)))
+    return float(np.linalg.norm(np.array(a) - np.array(b)))
 
 
 def _kmeans_pure(
@@ -128,7 +117,7 @@ def _kmeans_pure(
     max_iter: int = 100,
     seed: int = 42,
 ) -> tuple[list[int], list[list[float]], float]:
-    """Pure-Python k-means clustering.
+    """Numpy-based k-means clustering (sklearn fallback).
 
     Returns: (labels, centroids, inertia)
     """
@@ -136,45 +125,44 @@ def _kmeans_pure(
     if n == 0 or k <= 0:
         return [], [], 0.0
 
-    dim = len(data[0])
     rng = random.Random(seed)
+    arr = np.array(data)
 
-    # Initialize centroids by random selection
-    indices = rng.sample(range(n), min(k, n))
-    centroids = [list(data[i]) for i in indices]
+    # Initialize centroids by random selection; resample if duplicates
+    for _attempt in range(n * k + 1):
+        indices = rng.sample(range(n), min(k, n))
+        centroids = arr[indices].copy()
+        if len({tuple(c.tolist()) for c in centroids}) == len(centroids):
+            break
 
-    labels = [0] * n
+    labels = np.zeros(n, dtype=int)
 
     for _ in range(max_iter):
-        # Assign
-        new_labels = [0] * n
-        for i, point in enumerate(data):
-            best_dist = float("inf")
-            best_k = 0
-            for ki, c in enumerate(centroids):
-                d = _euclidean_dist(point, c)
-                if d < best_dist:
-                    best_dist = d
-                    best_k = ki
-            new_labels[i] = best_k
+        # Assign each point to nearest centroid
+        dists = np.linalg.norm(arr[:, np.newaxis] - centroids[np.newaxis, :], axis=2)
+        new_labels = np.argmin(dists, axis=1)
 
-        if new_labels == labels:
+        if np.array_equal(new_labels, labels):
             break
         labels = new_labels
 
         # Update centroids
         for ki in range(k):
-            members = [data[i] for i in range(n) if labels[i] == ki]
-            if members:
-                centroids[ki] = [sum(m[d] for m in members) / len(members) for d in range(dim)]
+            members = arr[labels == ki]
+            if len(members) > 0:
+                centroids[ki] = members.mean(axis=0)
 
     # Compute inertia
-    inertia = sum(_euclidean_dist(data[i], centroids[labels[i]]) ** 2 for i in range(n))
-    return labels, centroids, inertia
+    inertia = float(np.sum(np.min(
+        np.linalg.norm(arr[:, np.newaxis] - centroids[np.newaxis, :], axis=2) ** 2,
+        axis=1,
+    )))
+
+    return labels.tolist(), centroids.tolist(), inertia
 
 
 # ---------------------------------------------------------------------------
-# Pure-Python PCA fallback
+# Numpy-based PCA fallback (replaces pure-Python power iteration)
 # ---------------------------------------------------------------------------
 
 
@@ -182,7 +170,7 @@ def _pca_pure(
     data: list[list[float]],
     n_components: int = 2,
 ) -> tuple[list[list[float]], list[float]]:
-    """Pure-Python PCA via covariance matrix eigendecomposition (power iteration).
+    """Numpy-based PCA via eigendecomposition (sklearn fallback).
 
     Returns: (projected_data, explained_variance_per_component)
     """
@@ -190,61 +178,31 @@ def _pca_pure(
     if n == 0:
         return [], []
 
-    dim = len(data[0])
+    arr = np.array(data)
+    dim = arr.shape[1]
     n_comp = min(n_components, dim, n)
 
     # Center data
-    means = [sum(row[d] for row in data) / n for d in range(dim)]
-    centered = [[row[d] - means[d] for d in range(dim)] for row in data]
+    centered = arr - arr.mean(axis=0)
 
-    # Compute covariance matrix
-    cov = [[0.0] * dim for _ in range(dim)]
-    for i in range(dim):
-        for j in range(i, dim):
-            val = sum(centered[k][i] * centered[k][j] for k in range(n)) / max(n - 1, 1)
-            cov[i][j] = val
-            cov[j][i] = val
+    # Covariance matrix
+    cov = np.cov(centered, rowvar=False, ddof=1)
+    if cov.ndim == 0:
+        cov = cov.reshape(1, 1)
 
-    # Power iteration to find top eigenvectors
-    eigenvectors: list[list[float]] = []
-    eigenvalues: list[float] = []
+    # Eigendecomposition (symmetric matrix)
+    eigenvalues, eigenvectors = np.linalg.eigh(cov)
 
-    for _ in range(n_comp):
-        rng = random.Random(42 + len(eigenvectors))
-        vec = [rng.gauss(0, 1) for _ in range(dim)]
-        norm = math.sqrt(sum(v * v for v in vec))
-        vec = [v / norm for v in vec]
+    # Sort by eigenvalue descending
+    idx = np.argsort(eigenvalues)[::-1][:n_comp]
+    top_vectors = eigenvectors[:, idx]
+    top_values = eigenvalues[idx]
 
-        for _ in range(200):  # power iteration steps
-            # Multiply cov @ vec
-            new_vec = [sum(cov[i][j] * vec[j] for j in range(dim)) for i in range(dim)]
+    # Project
+    projected = (centered @ top_vectors).tolist()
+    explained = [max(float(v), 0.0) for v in top_values]
 
-            norm = math.sqrt(sum(v * v for v in new_vec))
-            if norm < 1e-12:
-                break
-            vec = [v / norm for v in new_vec]
-
-        # Compute eigenvalue
-        eigenvalue = 0.0
-        for i in range(dim):
-            val = sum(cov[i][j] * vec[j] for j in range(dim))
-            eigenvalue += val * vec[i]
-
-        eigenvectors.append(vec)
-        eigenvalues.append(max(eigenvalue, 0.0))
-
-        # Deflate covariance matrix after finding this eigenvector
-        for i in range(dim):
-            for j in range(dim):
-                cov[i][j] -= eigenvalue * vec[i] * vec[j]
-
-    # Project data
-    projected = [
-        [sum(centered[i][d] * eigenvectors[c][d] for d in range(dim)) for c in range(n_comp)]
-        for i in range(n)
-    ]
-
-    return projected, eigenvalues
+    return projected, explained
 
 
 # ---------------------------------------------------------------------------
@@ -255,7 +213,7 @@ def _pca_pure(
 class ClusterDiscovery:
     """Clustering on feature matrices to discover subpopulations.
 
-    Uses sklearn KMeans when available, falls back to pure Python.
+    Uses sklearn KMeans when available, falls back to numpy k-means.
     Produces PatternRecord entries with pattern_type="cluster".
     """
 
@@ -264,13 +222,9 @@ class ClusterDiscovery:
         data: list[dict[str, Any]],
         config: ClusterConfig | None = None,
     ) -> ClusterResult:
-        """Run clustering on numeric features extracted from data rows.
-
-        Returns ClusterResult with labels, centroids, and inertia.
-        """
+        """Run clustering on numeric features extracted from data rows."""
         cfg = config or ClusterConfig()
 
-        # Extract numeric feature matrix
         matrix, col_names = self._extract_features(data, cfg.feature_columns)
         k = min(cfg.n_clusters, len(matrix))
         if k <= 0:
@@ -281,7 +235,7 @@ class ClusterDiscovery:
                 config=cfg,
             )
 
-        if np is not None and SklearnKMeans is not None:
+        if SklearnKMeans is not None:
             arr = np.array(matrix)
             km = SklearnKMeans(
                 n_clusters=k,
@@ -314,17 +268,13 @@ class ClusterDiscovery:
         data: list[dict[str, Any]],
         config: ClusterConfig | None = None,
     ) -> list[PatternRecord]:
-        """Run clustering and convert to PatternRecord entries.
-
-        This is the main API for integration with the discovery pipeline.
-        """
+        """Run clustering and convert to PatternRecord entries."""
         cfg = config or ClusterConfig()
         result = self.cluster(data, cfg)
 
         if result.n_clusters == 0:
             return []
 
-        # Count members per cluster
         cluster_counts: dict[int, int] = {}
         for label in result.labels:
             cluster_counts[label] = cluster_counts.get(label, 0) + 1
@@ -367,13 +317,10 @@ class ClusterDiscovery:
         for label in result.labels:
             counts[label] = counts.get(label, 0) + 1
 
-        # Balanced clusters = higher confidence
-        # Ideal: each cluster has n/k members
         ideal_size = n / result.n_clusters
         imbalance = sum(abs(c - ideal_size) for c in counts.values()) / n
         balance_score = max(0.0, 1.0 - imbalance)
 
-        # Require at least 2 members in the smallest cluster
         min_size = min(counts.values())
         size_penalty = 0.0 if min_size >= 2 else 0.5
 
@@ -391,7 +338,6 @@ class ClusterDiscovery:
         if feature_columns:
             cols = feature_columns
         else:
-            # Auto-detect numeric columns
             cols = []
             for key, val in data[0].items():
                 if isinstance(val, (int, float)) and not isinstance(val, bool):
@@ -416,7 +362,7 @@ class ClusterDiscovery:
 class DimensionalityReducer:
     """Dimensionality reduction for visualization and preprocessing.
 
-    Uses sklearn PCA when available, falls back to pure Python.
+    Uses sklearn PCA when available, falls back to numpy eigendecomposition.
     """
 
     def reduce(
@@ -425,13 +371,9 @@ class DimensionalityReducer:
         config: ReductionConfig | None = None,
         feature_columns: list[str] | None = None,
     ) -> ReductionResult:
-        """Reduce dimensionality of numeric features.
-
-        Returns ReductionResult with projected coordinates and explained variance.
-        """
+        """Reduce dimensionality of numeric features."""
         cfg = config or ReductionConfig()
 
-        # Extract numeric matrix
         matrix, _ = ClusterDiscovery._extract_features(
             data,
             feature_columns or [],
@@ -443,7 +385,7 @@ class DimensionalityReducer:
                 config=cfg,
             )
 
-        if np is not None and SklearnPCA is not None:
+        if SklearnPCA is not None:
             arr = np.array(matrix)
             n_comp = min(cfg.n_components, arr.shape[1], arr.shape[0])
             pca = SklearnPCA(n_components=n_comp)

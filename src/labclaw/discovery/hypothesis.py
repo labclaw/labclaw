@@ -350,13 +350,24 @@ class LLMHypothesisGenerator:
         pattern_ids = [p.pattern_id for p in hypothesis_input.patterns]
         hypotheses: list[HypothesisOutput] = []
 
-        for item in response.hypotheses:
+        for item in response.hypotheses[:20]:
+            statement = item.statement.strip()
+            experiments = [e.strip() for e in item.required_experiments if e.strip()]
+            if not statement:
+                logger.warning("Discarding empty LLM hypothesis statement")
+                continue
+            if len(statement) > 1000:
+                logger.warning("Discarding overly long LLM hypothesis statement")
+                continue
+            if not experiments:
+                logger.warning("Discarding LLM hypothesis without experiments")
+                continue
             hypothesis = HypothesisOutput(
-                statement=item.statement,
+                statement=statement,
                 testable=item.testable,
                 confidence=max(0.0, min(item.confidence, 1.0)),
-                required_experiments=item.required_experiments,
-                resource_estimate=item.resource_estimate,
+                required_experiments=experiments[:10],
+                resource_estimate=item.resource_estimate.strip()[:200],
                 patterns_used=pattern_ids,
             )
             hypotheses.append(hypothesis)

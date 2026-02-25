@@ -18,6 +18,8 @@ from labclaw.discovery.modeling import (
     _r_squared,
 )
 
+# Note: _mean/_std removed in wheel replacement; _linreg_pure/_r_squared kept with numpy impl
+
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------

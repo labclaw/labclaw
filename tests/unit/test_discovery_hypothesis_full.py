@@ -192,6 +192,45 @@ def test_generate_llm_output_conforms_to_schema() -> None:
     assert isinstance(h.hypothesis_id, str) and len(h.hypothesis_id) > 0
 
 
+def test_generate_llm_discards_empty_statement() -> None:
+    item = _make_llm_item(statement="   ", confidence=0.7)
+    response = _make_llm_response(item)
+    llm = _make_llm_provider(response)
+    gen = LLMHypothesisGenerator(llm=llm)
+
+    pattern = _make_pattern()
+    results = gen.generate(HypothesisInput(patterns=[pattern]))
+    assert results == []
+
+
+def test_generate_llm_discards_overly_long_statement() -> None:
+    item = _make_llm_item(statement="x" * 1001, confidence=0.7)
+    response = _make_llm_response(item)
+    llm = _make_llm_provider(response)
+    gen = LLMHypothesisGenerator(llm=llm)
+
+    pattern = _make_pattern()
+    results = gen.generate(HypothesisInput(patterns=[pattern]))
+    assert results == []
+
+
+def test_generate_llm_discards_missing_experiments() -> None:
+    item = _LLMHypothesisItem(
+        statement="Valid statement",
+        testable=True,
+        confidence=0.5,
+        required_experiments=[],
+        resource_estimate="test",
+    )
+    response = _make_llm_response(item)
+    llm = _make_llm_provider(response)
+    gen = LLMHypothesisGenerator(llm=llm)
+
+    pattern = _make_pattern()
+    results = gen.generate(HypothesisInput(patterns=[pattern]))
+    assert results == []
+
+
 # ---------------------------------------------------------------------------
 # LLM generation path — inside running event loop (lines 272-277)
 # ---------------------------------------------------------------------------
