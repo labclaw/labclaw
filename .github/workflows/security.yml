@@ -24,10 +24,10 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
       - name: Setup uv
-        uses: astral-sh/setup-uv@v7
+        uses: astral-sh/setup-uv@a2a8b00df0aa22a77a33ee5f956c2128661fabeb # v7
         with:
           enable-cache: true
 
@@ -47,10 +47,10 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
       - name: Setup uv
-        uses: astral-sh/setup-uv@v7
+        uses: astral-sh/setup-uv@a2a8b00df0aa22a77a33ee5f956c2128661fabeb # v7
         with:
           enable-cache: true
 
@@ -61,7 +61,7 @@ jobs:
         run: uv sync --extra dev --frozen
 
       - name: Run bandit SAST scan
-        run: uv run bandit -r src/labclaw -f json -o bandit-report.json -ll || true
+        run: uv run bandit -r src/labclaw -f json -o bandit-report.json -ll
 
       - name: Display results
         if: always()
@@ -69,7 +69,7 @@ jobs:
 
       - name: Upload report
         if: always()
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         with:
           name: bandit-report
           path: bandit-report.json
@@ -86,15 +86,15 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@v4
+        uses: github/codeql-action/init@bb471cdcf4dda2c934c5b656f554d43c1434ed13 # v4
         with:
           languages: python
 
       - name: Analyze
-        uses: github/codeql-action/analyze@v4
+        uses: github/codeql-action/analyze@bb471cdcf4dda2c934c5b656f554d43c1434ed13 # v4
 
   secrets-scan:
     name: secrets-scan
@@ -103,15 +103,21 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           fetch-depth: 0
 
       - name: Install gitleaks
         run: |
-          GITLEAKS_VERSION=$(curl -s https://api.github.com/repos/gitleaks/gitleaks/releases/latest | grep '"tag_name"' | sed 's/.*"v\(.*\)".*/\1/')
-          curl -sSfL "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_amd64.tar.gz" \
-            | tar xz -C /usr/local/bin gitleaks
+          set -euo pipefail
+          GITLEAKS_VERSION="8.24.2"
+          ARCHIVE="gitleaks_${GITLEAKS_VERSION}_linux_amd64.tar.gz"
+          BASE_URL="https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}"
+          curl -sSfLO "${BASE_URL}/${ARCHIVE}"
+          curl -sSfLO "${BASE_URL}/gitleaks_${GITLEAKS_VERSION}_checksums.txt"
+          grep " ${ARCHIVE}\$" "gitleaks_${GITLEAKS_VERSION}_checksums.txt" | sha256sum -c -
+          tar xzf "${ARCHIVE}"
+          install -m 0755 gitleaks /usr/local/bin/gitleaks
 
       - name: Run gitleaks
         run: gitleaks detect --source . --verbose
