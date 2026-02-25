@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 from pathlib import Path
 from typing import Any
 from unittest.mock import MagicMock, patch
@@ -193,6 +194,23 @@ class TestPluginLoader:
         assert found == []
         assert any(e.payload["name"] == "bad-plugin" for e in events)
 
+    def test_discover_entry_points_disabled_when_flag_off(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        reg = PluginRegistry()
+        loader = PluginLoader(registry=reg)
+        monkeypatch.setenv("LABCLAW_ENABLE_ENTRYPOINT_PLUGINS", "0")
+
+        mock_ep = MagicMock()
+        mock_ep.name = "disabled-plugin"
+        mock_ep.load.return_value = StubDevicePlugin
+
+        with patch("importlib.metadata.entry_points", return_value=[mock_ep]):
+            found = loader.discover_entry_points()
+
+        assert found == []
+        mock_ep.load.assert_not_called()
+
     def test_discover_local(self, tmp_path: Path) -> None:
         plugin_dir = tmp_path / "my_plugin"
         plugin_dir.mkdir()
@@ -217,6 +235,19 @@ class TestPluginLoader:
         plugin_dir = tmp_path / "bad_plugin"
         plugin_dir.mkdir()
         (plugin_dir / "__init__.py").write_text("x = 1\n")
+
+        reg = PluginRegistry()
+        loader = PluginLoader(registry=reg)
+        found = loader.discover_local(tmp_path)
+        assert found == []
+
+    def test_discover_local_disabled_when_flag_off(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        plugin_dir = tmp_path / "my_plugin"
+        plugin_dir.mkdir()
+        (plugin_dir / "__init__.py").write_text("def create_plugin(): return None\n")
+        monkeypatch.setenv("LABCLAW_ENABLE_LOCAL_PLUGINS", "0")
 
         reg = PluginRegistry()
         loader = PluginLoader(registry=reg)
@@ -282,6 +313,89 @@ class TestPluginLoader:
             loader.discover_entry_points()
 
         assert any(e.payload["name"] == "ev-plugin" for e in events)
+
+    def test_discover_entry_points_skips_not_allowlisted(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        reg = PluginRegistry()
+        loader = PluginLoader(registry=reg)
+        monkeypatch.setenv("LABCLAW_PLUGIN_ALLOWLIST", "only-this")
+
+        mock_ep = MagicMock()
+        mock_ep.name = "ev-plugin"
+        mock_ep.load.return_value = StubAnalysisPlugin
+
+        with patch("importlib.metadata.entry_points", return_value=[mock_ep]):
+            found = loader.discover_entry_points()
+
+        assert found == []
+
+    def test_plugin_allowlist_defaults_to_deny_outside_pytest(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        monkeypatch.delenv("PYTEST_CURRENT_TEST", raising=False)
+        monkeypatch.delenv("LABCLAW_PLUGIN_ALLOWLIST", raising=False)
+        monkeypatch.setenv("LABCLAW_PLUGIN_ALLOW_ALL", "0")
+        assert PluginLoader._plugin_allowed("test-plugin") is False
+
+        monkeypatch.setenv("LABCLAW_PLUGIN_ALLOW_ALL", "1")
+        assert PluginLoader._plugin_allowed("test-plugin") is True
+
+    def test_discover_local_missing_path_returns_empty(self, tmp_path: Path) -> None:
+        reg = PluginRegistry()
+        loader = PluginLoader(registry=reg)
+        found = loader.discover_local(tmp_path / "does-not-exist")
+        assert found == []
+
+    def test_discover_local_skips_allowlist_miss(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        plugin_dir = tmp_path / "my_plugin"
+        plugin_dir.mkdir()
+        (plugin_dir / "__init__.py").write_text(
+            "from labclaw.plugins.base import PluginMetadata\n"
+            "class MyPlugin:\n"
+            "    metadata = PluginMetadata(name='my-local', version='1.0', "
+            "description='test', plugin_type='device')\n"
+            "    def register_devices(self): return []\n"
+            "    def get_driver(self, dt): return None\n"
+            "def create_plugin(): return MyPlugin()\n"
+        )
+        monkeypatch.setenv("LABCLAW_PLUGIN_ALLOWLIST", "different_plugin")
+        reg = PluginRegistry()
+        loader = PluginLoader(registry=reg)
+        found = loader.discover_local(tmp_path)
+        assert found == []
+
+    def test_discover_local_insecure_dir_world_writable(self, tmp_path: Path) -> None:
+        plugin_dir = tmp_path / "my_plugin"
+        plugin_dir.mkdir()
+        os.chmod(plugin_dir, 0o777)
+        (plugin_dir / "__init__.py").write_text("def create_plugin(): return None\n")
+
+        reg = PluginRegistry()
+        loader = PluginLoader(registry=reg)
+        found = loader.discover_local(tmp_path)
+        assert found == []
+
+    def test_is_secure_plugin_dir_handles_uid_error(self, tmp_path: Path) -> None:
+        plugin_dir = tmp_path / "my_plugin"
+        plugin_dir.mkdir()
+        with patch("labclaw.plugins.loader.os.getuid", side_effect=OSError("uid error")):
+            assert PluginLoader._is_secure_plugin_dir(plugin_dir) is False
+
+    def test_is_secure_plugin_dir_handles_stat_error(self, tmp_path: Path) -> None:
+        plugin_dir = tmp_path / "my_plugin"
+        plugin_dir.mkdir()
+        with patch.object(Path, "stat", side_effect=OSError("stat error")):
+            assert PluginLoader._is_secure_plugin_dir(plugin_dir) is False
+
+    def test_is_secure_plugin_dir_rejects_symlink(self, tmp_path: Path) -> None:
+        real_dir = tmp_path / "real_plugin"
+        real_dir.mkdir()
+        symlink_dir = tmp_path / "symlink_plugin"
+        symlink_dir.symlink_to(real_dir, target_is_directory=True)
+        assert PluginLoader._is_secure_plugin_dir(symlink_dir) is False
 
 
 # ---------------------------------------------------------------------------

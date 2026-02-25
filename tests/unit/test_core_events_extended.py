@@ -158,6 +158,24 @@ def test_is_registered_true_and_false() -> None:
     assert reg.is_registered("hardware.device.online") is False
 
 
+def test_unsubscribe_removes_handler() -> None:
+    reg = _reg_with("hardware.file.detected")
+    received: list[LabEvent] = []
+    reg.subscribe("hardware.file.detected", received.append)
+    reg.unsubscribe("hardware.file.detected", received.append)
+
+    reg.emit("hardware.file.detected")
+
+    assert received == []
+
+
+def test_unsubscribe_noop_when_not_subscribed() -> None:
+    reg = _reg_with("hardware.file.detected")
+    # Should not raise even if handler was never registered
+    reg.unsubscribe("hardware.file.detected", lambda e: None)
+    reg.unsubscribe("hardware.device.online", lambda e: None)
+
+
 def test_clear_empties_registry() -> None:
     reg = _reg_with("hardware.file.detected", "hardware.device.online")
     received: list[LabEvent] = []

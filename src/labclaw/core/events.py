@@ -91,6 +91,13 @@ class EventRegistry:
         with self._lock:
             self._handlers.setdefault(name, []).append(handler)
 
+    def unsubscribe(self, name: str, handler: Callable[[LabEvent], None]) -> None:
+        """Remove a previously registered handler. No-op if not found."""
+        with self._lock:
+            handlers = self._handlers.get(name)
+            if handlers and handler in handlers:
+                handlers.remove(handler)
+
     def get_schema(self, name: str) -> type[LabEvent] | None:
         return self._schemas.get(name)
 
