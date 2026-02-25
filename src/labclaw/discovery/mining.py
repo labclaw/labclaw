@@ -11,24 +11,15 @@ mine all variable pairs and time scales for statistically significant patterns.
 from __future__ import annotations
 
 import logging
-import math
 import uuid
 from datetime import UTC, datetime
 from typing import Any
 
+import numpy as np
 from pydantic import BaseModel, Field
+from scipy import stats as scipy_stats
 
 from labclaw.core.events import event_registry
-
-try:
-    import numpy as np
-except ImportError:  # pragma: no cover
-    np = None  # type: ignore[assignment]
-
-try:
-    from scipy import stats as scipy_stats
-except ImportError:  # pragma: no cover
-    scipy_stats = None  # type: ignore[assignment]
 
 logger = logging.getLogger(__name__)
 
@@ -96,54 +87,6 @@ for _evt in _DISCOVERY_EVENTS:
 
 
 # ---------------------------------------------------------------------------
-# Pure-Python math fallbacks
-# ---------------------------------------------------------------------------
-
-
-def _mean(values: list[float]) -> float:
-    if not values:
-        return 0.0
-    return sum(values) / len(values)
-
-
-def _std(values: list[float], ddof: int = 0) -> float:
-    if len(values) <= ddof:
-        return 0.0
-    m = _mean(values)
-    variance = sum((x - m) ** 2 for x in values) / (len(values) - ddof)
-    return math.sqrt(variance)
-
-
-def _pearson_r(x: list[float], y: list[float]) -> tuple[float, float]:
-    """Compute Pearson correlation coefficient and approximate p-value."""
-    n = len(x)
-    if n < 3:
-        return 0.0, 1.0
-
-    mx, my = _mean(x), _mean(y)
-    sx, sy = _std(x), _std(y)
-
-    if sx == 0.0 or sy == 0.0:
-        return 0.0, 1.0
-
-    cov = sum((xi - mx) * (yi - my) for xi, yi in zip(x, y)) / n
-    r = cov / (sx * sy)
-
-    # Approximate p-value via t-distribution (requires scipy for exact)
-    if abs(r) >= 1.0:
-        p = 0.0
-    else:
-        t_stat = r * math.sqrt((n - 2) / (1.0 - r * r))
-        if scipy_stats is not None:
-            p = float(2.0 * scipy_stats.t.sf(abs(t_stat), n - 2))
-        else:
-            # Two-tailed p-value via complementary error function
-            p = math.erfc(abs(t_stat) / math.sqrt(2.0))
-
-    return r, p
-
-
-# ---------------------------------------------------------------------------
 # PatternMiner
 # ---------------------------------------------------------------------------
 
@@ -153,6 +96,9 @@ class PatternMiner:
 
     Spec: docs/specs/L3-discovery.md
     """
+
+    def __init__(self) -> None:
+        self.last_result: MiningResult | None = None
 
     def mine(
         self,
@@ -194,6 +140,7 @@ class PatternMiner:
             },
         )
 
+        self.last_result = result
         return result
 
     def find_correlations(
@@ -219,18 +166,20 @@ class PatternMiner:
                 vals_b: list[float] = []
                 for row in data:
                     if col_a in row and col_b in row:
-                        vals_a.append(float(row[col_a]))
-                        vals_b.append(float(row[col_b]))
+                        try:
+                            val_a = float(row[col_a])
+                            val_b = float(row[col_b])
+                        except (TypeError, ValueError):
+                            continue
+                        vals_a.append(val_a)
+                        vals_b.append(val_b)
 
                 if len(vals_a) < 3:
                     continue
 
-                if np is not None and scipy_stats is not None:
-                    r, p = scipy_stats.pearsonr(vals_a, vals_b)
-                    r = float(r)
-                    p = float(p)
-                else:
-                    r, p = _pearson_r(vals_a, vals_b)
+                r_val, p_val = scipy_stats.pearsonr(vals_a, vals_b)
+                r = float(r_val)
+                p = float(p_val)
 
                 if abs(r) > threshold:
                     session_ids = [str(row.get("session_id", idx)) for idx, row in enumerate(data)]
@@ -285,9 +234,9 @@ class PatternMiner:
             if len(indexed_values) < 3:
                 continue
 
-            values = [v for _, v in indexed_values]
-            mean_val = _mean(values)
-            std_val = _std(values)
+            values = np.array([v for _, v in indexed_values])
+            mean_val = float(np.mean(values))
+            std_val = float(np.std(values))
 
             if std_val == 0.0:
                 continue
@@ -359,18 +308,30 @@ class PatternMiner:
             if col == time_col:
                 continue
 
-            first_half = [float(row[col]) for row in sorted_data[:mid] if col in row]
-            second_half = [float(row[col]) for row in sorted_data[mid:] if col in row]
+            first_half: list[float] = []
+            second_half: list[float] = []
+            for row in sorted_data[:mid]:
+                if col in row:
+                    try:
+                        first_half.append(float(row[col]))
+                    except (TypeError, ValueError):
+                        continue
+            for row in sorted_data[mid:]:
+                if col in row:
+                    try:
+                        second_half.append(float(row[col]))
+                    except (TypeError, ValueError):
+                        continue
 
             if not first_half or not second_half:
                 continue
 
-            mean_first = _mean(first_half)
-            mean_second = _mean(second_half)
-            diff = mean_second - mean_first
+            all_values = np.array(first_half + second_half)
+            mean_first = float(np.mean(first_half))
+            mean_second = float(np.mean(second_half))
+            overall_std = float(np.std(all_values))
 
-            all_values = first_half + second_half
-            overall_std = _std(all_values)
+            diff = mean_second - mean_first
 
             if overall_std == 0.0:
                 continue
