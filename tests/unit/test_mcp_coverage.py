@@ -90,7 +90,7 @@ class TestDiscoverToolExceptionAndEmptyRows:
         mock_chronicle.list_sessions.return_value = [mock_session] * 15
 
         mock_result = MagicMock()
-        mock_result.model_dump_json.return_value = '{"patterns": [], "run_at": "now"}'
+        mock_result.model_dump.return_value = {"patterns": [], "run_at": "now"}
 
         mock_miner = MagicMock()
         mock_miner.mine.return_value = mock_result
@@ -264,3 +264,94 @@ class TestMainFunction:
             main()
 
         mock_server.run.assert_called_once_with(transport="stdio")
+
+
+# ---------------------------------------------------------------------------
+# _get_provenance_for_entity — lines 55-64
+# ---------------------------------------------------------------------------
+
+
+class TestGetProvenanceForEntity:
+    def test_returns_chain_dict_when_found(self) -> None:
+        """Line 61: chain found → model_dump(mode='json') returned."""
+        from labclaw.api.routers import provenance as prov_module
+        from labclaw.mcp.server import _get_provenance_for_entity
+        from labclaw.validation.statistics import ProvenanceChain, ProvenanceStep
+
+        prov_module._chains.clear()
+        chain = ProvenanceChain(
+            finding_id="f1",
+            steps=[ProvenanceStep(node_id="n1", node_type="obs", description="d")],
+        )
+        prov_module._chains["f1"] = chain
+
+        result = _get_provenance_for_entity("f1")
+        assert result is not None
+        assert result["finding_id"] == "f1"
+        prov_module._chains.clear()
+
+    def test_returns_none_when_not_found(self) -> None:
+        """Line 60: chain is None → return None."""
+        from labclaw.api.routers import provenance as prov_module
+        from labclaw.mcp.server import _get_provenance_for_entity
+
+        prov_module._chains.clear()
+        result = _get_provenance_for_entity("no-such-id")
+        assert result is None
+
+    def test_returns_none_on_general_exception(self) -> None:
+        """Lines 62-64: exception inside the try block → except catches, returns None."""
+        from labclaw.api.routers import provenance as prov_module
+        from labclaw.mcp.server import _get_provenance_for_entity
+        from labclaw.validation.statistics import ProvenanceChain
+
+        bad_chain = MagicMock(spec=ProvenanceChain)
+        bad_chain.model_dump.side_effect = RuntimeError("serialisation error")
+        prov_module._chains["bad-id"] = bad_chain
+
+        result = _get_provenance_for_entity("bad-id")
+        assert result is None
+        prov_module._chains.clear()
+
+
+# ---------------------------------------------------------------------------
+# provenance MCP tool — lines 267-287
+# ---------------------------------------------------------------------------
+
+
+class TestProvenanceTool:
+    def test_provenance_tool_no_chain_returns_message(self) -> None:
+        """Lines 267-279: finding_id not registered → returns informative message."""
+        import json
+
+        from labclaw.api.routers import provenance as prov_module
+
+        prov_module._chains.clear()
+        server = create_server()
+        result = _call_tool(server, "provenance", finding_id="unknown-finding")
+        parsed = json.loads(result)
+        assert parsed["chain"] is None
+        assert "No provenance chain registered" in parsed["message"]
+        assert parsed["finding_id"] == "unknown-finding"
+
+    def test_provenance_tool_with_chain_returns_chain(self) -> None:
+        """Lines 280-287: finding_id registered → chain dict returned."""
+        import json
+
+        from labclaw.api.routers import provenance as prov_module
+        from labclaw.validation.statistics import ProvenanceChain, ProvenanceStep
+
+        prov_module._chains.clear()
+        chain = ProvenanceChain(
+            finding_id="f-mcp",
+            steps=[ProvenanceStep(node_id="n1", node_type="obs", description="raw data")],
+        )
+        prov_module._chains["f-mcp"] = chain
+
+        server = create_server()
+        result = _call_tool(server, "provenance", finding_id="f-mcp")
+        parsed = json.loads(result)
+        assert parsed["finding_id"] == "f-mcp"
+        assert parsed["chain"] is not None
+        assert parsed["chain"]["finding_id"] == "f-mcp"
+        prov_module._chains.clear()
