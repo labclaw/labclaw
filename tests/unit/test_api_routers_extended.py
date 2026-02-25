@@ -205,6 +205,25 @@ class TestOrchestratorRoutes:
             resp = await client.post("/api/orchestrator/cycle", json={"data_rows": rows})
         assert resp.status_code == 201
 
+    @pytest.mark.asyncio
+    async def test_cycle_history_is_capped(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        from labclaw.api.routers import orchestrator as orch_module
+
+        monkeypatch.setattr(orch_module, "_MAX_CYCLE_HISTORY", 1)
+        orch_module._cycle_history.clear()
+
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+            first = await client.post("/api/orchestrator/cycle", json={"data_rows": []})
+            assert first.status_code == 201
+            second = await client.post("/api/orchestrator/cycle", json={"data_rows": []})
+            assert second.status_code == 201
+            history = await client.get("/api/orchestrator/history")
+
+        assert history.status_code == 200
+        rows = history.json()
+        assert len(rows) == 1
+        assert rows[0]["cycle_id"] == second.json()["cycle_id"]
+
 
 # ---------------------------------------------------------------------------
 # /api/plugins (lines 15-16, 22-24)

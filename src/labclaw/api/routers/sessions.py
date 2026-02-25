@@ -77,7 +77,7 @@ def add_recording(
         raise HTTPException(status_code=400, detail="Path outside data directory")
     if not resolved.is_file():
         raise HTTPException(status_code=400, detail="Recording file does not exist")
-    file_ref = FileReference(path=Path(body.file_path))
+    file_ref = FileReference(path=resolved)
     try:
         return chronicle.add_recording(
             session_id=session_id,

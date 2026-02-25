@@ -130,7 +130,7 @@ class TestOrchestratorException:
                 resp = await client.post("/api/orchestrator/cycle", json={"data_rows": []})
 
         assert resp.status_code == 500
-        assert "loop crashed" in resp.json()["detail"]
+        assert resp.json()["detail"] == "Internal server error"
 
 
 # ---------------------------------------------------------------------------
