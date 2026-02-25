@@ -244,3 +244,36 @@ def test_build_prompt_with_context() -> None:
     prompt = LLMHypothesisGenerator._build_prompt(inp)
     assert "Neuroscience experiment" in prompt
     assert "Domain context:" in prompt
+
+
+class TestLLMHypothesisPromptContextFindings:
+    """Cover hypothesis.py lines 386-397: context_findings in LLM prompt."""
+
+    def test_build_prompt_with_context_findings(self) -> None:
+        from labclaw.discovery.hypothesis import HypothesisInput, LLMHypothesisGenerator
+        from labclaw.discovery.mining import PatternRecord
+
+        h_input = HypothesisInput(
+            patterns=[
+                PatternRecord(
+                    pattern_type="correlation",
+                    description="speed correlates with distance",
+                    columns=["speed", "distance"],
+                    strength=0.8,
+                    metadata={},
+                )
+            ],
+            context="neuroscience",
+            context_findings=[
+                {"description": "Past finding about grooming"},
+                {"statement": "Speed increases with age"},
+                {"finding_id": "f-003"},
+            ],
+        )
+
+        prompt = LLMHypothesisGenerator._build_prompt(h_input)
+        assert "Past findings (3)" in prompt
+        assert "Past finding about grooming" in prompt
+        assert "Speed increases with age" in prompt
+        assert "f-003" in prompt
+        assert "Build on these past findings" in prompt

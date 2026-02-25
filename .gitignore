@@ -58,3 +58,4 @@ htmlcov/
 *.log
 logs/
 .hypothesis/
+.claude/worktrees/
