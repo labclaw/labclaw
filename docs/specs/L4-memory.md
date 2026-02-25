@@ -122,7 +122,7 @@ Events are registered at module import time via the global `event_registry`.
 ## Boundary Contracts
 
 - All timestamps MUST be timezone-aware UTC.
-- Entity IDs MUST match regex `[A-Za-z0-9][A-Za-z0-9._-]{0,127}`.
+- Entity IDs MUST match regex `\[A-Za-z0-9\]\[A-Za-z0-9._-\]{0,127}`.
 - SOUL.md MUST have valid YAML frontmatter between `---` markers.
 - MEMORY.md entries are append-only; entries are never deleted or modified.
 - File paths are `pathlib.Path` objects throughout.
@@ -148,7 +148,7 @@ Events are registered at module import time via the global `event_registry`.
 | `read_memory()` for nonexistent entity | `FileNotFoundError` | Includes entity_id and expected path |
 | SOUL.md with malformed YAML frontmatter | `ValueError` | Includes parse error details |
 | Empty entity_id | `ValueError` | "entity_id must be non-empty" |
-| Invalid entity_id format | `ValueError` | "entity_id must match [A-Za-z0-9][A-Za-z0-9._-]{0,127}" |
+| Invalid entity_id format | `ValueError` | "entity_id must match `\[A-Za-z0-9\]\[A-Za-z0-9._-\]{0,127}`" |
 | API search `limit < 1` | HTTP `422` | FastAPI validation error (query parameter `limit`) |
 
 ---

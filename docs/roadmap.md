@@ -14,10 +14,11 @@ Each domain plugin provides:
 
 ```python
 class DomainPlugin(Protocol):
-    def sample_types(self) -> list[type[GraphNode]]: ...
-    def sentinel_rules(self) -> list[SentinelRule]: ...
-    def hypothesis_templates(self) -> list[str]: ...
-    def analysis_defaults(self) -> dict[str, Any]: ...
+    metadata: PluginMetadata
+
+    def get_sample_node_types(self) -> dict[str, type]: ...
+    def get_sentinel_rules(self) -> list[dict[str, Any]]: ...
+    def get_hypothesis_templates(self) -> list[dict[str, Any]]: ...
 ```
 
 A new domain = **< 100 lines** of Python to define sample types, safety rules, and analysis defaults.
@@ -127,19 +128,17 @@ class MyDomainPlugin:
         name="labclaw-my-domain",
         version="0.1.0",
         description="My science domain for LabClaw",
+        plugin_type="domain",
     )
 
-    def sample_types(self):
-        return [MySampleNode]
+    def get_sample_node_types(self):
+        return {"my_sample": MySampleNode}
 
-    def sentinel_rules(self):
-        return [MyQualityRule()]
+    def get_sentinel_rules(self):
+        return [{"name": "quality_check", "condition": {...}}]
 
-    def hypothesis_templates(self):
-        return ["If {condition}, then {outcome} because {mechanism}"]
-
-    def analysis_defaults(self):
-        return {"correlation_threshold": 0.5}
+    def get_hypothesis_templates(self):
+        return [{"template": "If {condition}, then {outcome}", "required_evidence": ["correlation"]}]
 ```
 
 ## Community Contribution Model

@@ -106,3 +106,6 @@ nav:
   - API Reference:
       - REST API: api-reference.md
       - Python API: reference/python-api.md
+      - CI/CD: reference/ci-cd.md
+  - Migrations:
+      - "2026-02-20 API Changes": migrations/2026-02-20-api-behavior-changes.md
