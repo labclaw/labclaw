@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
+import asyncio
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
+from starlette.requests import Request
 
 import labclaw.api.deps as deps
 
@@ -111,3 +113,81 @@ class TestGetHypothesisGenerator:
             gen = deps.get_hypothesis_generator()
 
         assert isinstance(gen, HypothesisGenerator)
+
+
+def _request(
+    path: str,
+    method: str = "GET",
+    headers: dict[str, str] | None = None,
+    client: tuple[str, int] = ("127.0.0.1", 12345),
+) -> Request:
+    scope = {
+        "type": "http",
+        "asgi": {"version": "3.0"},
+        "http_version": "1.1",
+        "method": method,
+        "path": path,
+        "raw_path": path.encode(),
+        "query_string": b"",
+        "headers": [
+            (k.lower().encode("latin-1"), v.encode("latin-1"))
+            for k, v in (headers or {}).items()
+        ],
+        "client": client,
+        "server": ("testserver", 80),
+        "scheme": "http",
+    }
+    return Request(scope)
+
+
+class TestSecurityHelpersCoverage:
+    def test_get_latest_patterns_non_empty(self) -> None:
+        from labclaw.discovery.mining import MiningConfig
+
+        rows = [{"x": float(i), "y": float(i * 2)} for i in range(1, 12)]
+        deps.get_pattern_miner().mine(rows, MiningConfig(min_sessions=3))
+        assert len(deps.get_latest_patterns()) > 0
+
+    def test_extract_presented_token_supports_x_api_key(self) -> None:
+        req = _request("/api/events/", headers={"X-API-Key": "abc123"})
+        assert deps._extract_presented_token(req) == "abc123"
+
+    def test_extract_presented_token_returns_none_when_missing(self) -> None:
+        req = _request("/api/events/")
+        assert deps._extract_presented_token(req) is None
+
+    def test_map_action_from_request_branches(self) -> None:
+        assert deps._map_action_from_request(_request("/api/events/", method="GET")) == "read"
+        assert (
+            deps._map_action_from_request(_request("/api/evolution/run", method="POST"))
+            == "execute"
+        )
+        assert deps._map_action_from_request(_request("/api/events/", method="POST")) == "write"
+        assert deps._map_action_from_request(_request("/api/events/", method="PATCH")) == "execute"
+        assert deps._map_action_from_request(_request("/api/events/", method="TRACE")) == "read"
+
+    def test_auth_exempt_path_helper(self) -> None:
+        assert deps._is_auth_exempt_path("/api/health")
+
+    def test_rate_limit_parsing_and_disabled_paths(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setenv("LABCLAW_RATE_LIMIT_ENABLED", "1")
+        monkeypatch.setenv("LABCLAW_RATE_LIMIT_PER_MINUTE", "not-an-int")
+        deps._apply_rate_limit_or_429(_request("/api/events/"))
+        # Exempt path should return early even when limiter is enabled.
+        deps._apply_rate_limit_or_429(_request("/api/health"))
+        monkeypatch.setenv("LABCLAW_RATE_LIMIT_PER_MINUTE", "0")
+        deps._apply_rate_limit_or_429(_request("/api/events/"))
+
+    def test_rate_limit_window_resets(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setenv("LABCLAW_RATE_LIMIT_ENABLED", "1")
+        monkeypatch.setenv("LABCLAW_RATE_LIMIT_PER_MINUTE", "10")
+        with patch.object(deps.time, "monotonic", side_effect=[0.0, 61.0]):
+            deps._apply_rate_limit_or_429(_request("/api/events/"))
+            deps._apply_rate_limit_or_429(_request("/api/events/"))
+
+    def test_enforce_request_security_non_api_path(self) -> None:
+        asyncio.run(deps.enforce_request_security(_request("/not-api")))
+
+    def test_enforce_request_security_exempt_path(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setenv("LABCLAW_RATE_LIMIT_ENABLED", "0")
+        asyncio.run(deps.enforce_request_security(_request("/api/health")))

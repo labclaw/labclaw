@@ -49,7 +49,7 @@ def test_create_chain_empty_steps_returns_400() -> None:
         json={"finding_id": "find-002", "steps": []},
     )
     assert resp.status_code == 400
-    assert "at least one step" in resp.json()["detail"]
+    assert resp.json()["detail"] == "Invalid provenance chain"
 
 
 # ---------------------------------------------------------------------------
@@ -122,3 +122,39 @@ def test_chain_preserves_all_steps() -> None:
     assert resp.status_code == 201
     body = resp.json()
     assert len(body["steps"]) == 5
+
+
+def test_recreating_same_finding_id_updates_chain_in_place() -> None:
+    payload = {
+        "finding_id": "same-id",
+        "steps": [{"node_id": "n1", "node_type": "obs", "description": "v1"}],
+    }
+    resp1 = client.post("/api/v0/provenance/", json=payload)
+    assert resp1.status_code == 201
+
+    payload["steps"] = [{"node_id": "n2", "node_type": "obs", "description": "v2"}]
+    resp2 = client.post("/api/v0/provenance/", json=payload)
+    assert resp2.status_code == 201
+
+    got = client.get("/api/v0/provenance/same-id")
+    assert got.status_code == 200
+    assert got.json()["steps"][0]["node_id"] == "n2"
+
+
+def test_chain_store_evicts_oldest_when_capacity_exceeded(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(provenance_module, "_MAX_CHAINS", 1)
+
+    first = {
+        "finding_id": "old",
+        "steps": [{"node_id": "n1", "node_type": "obs", "description": "old"}],
+    }
+    second = {
+        "finding_id": "new",
+        "steps": [{"node_id": "n2", "node_type": "obs", "description": "new"}],
+    }
+    assert client.post("/api/v0/provenance/", json=first).status_code == 201
+    assert client.post("/api/v0/provenance/", json=second).status_code == 201
+    assert client.get("/api/v0/provenance/old").status_code == 404
+    assert client.get("/api/v0/provenance/new").status_code == 200
