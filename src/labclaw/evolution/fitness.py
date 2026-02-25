@@ -76,6 +76,33 @@ class FitnessTracker:
             for target, scores in self._history.items()
         }
 
+    def get_trajectory(self, target: EvolutionTarget) -> list[float]:
+        """Return composite fitness scores in chronological order for a target.
+
+        Composite score = mean of all metric values in each FitnessScore.
+        Returns an empty list if no history exists.
+        """
+        scores = self._history.get(target, [])
+        result: list[float] = []
+        for s in scores:
+            if s.metrics:
+                result.append(sum(s.metrics.values()) / len(s.metrics))
+        return result
+
+    def compute_improvement(self, target: EvolutionTarget) -> float:
+        """Return (final - initial) / |initial| * 100 as a percentage.
+
+        Returns 0.0 if fewer than 2 data points exist.
+        """
+        trajectory = self.get_trajectory(target)
+        if len(trajectory) < 2:
+            return 0.0
+        initial = trajectory[0]
+        final = trajectory[-1]
+        if initial == 0.0:
+            return 0.0
+        return (final - initial) / abs(initial) * 100.0
+
     @classmethod
     def from_dict(cls, data: dict[str, list[dict]]) -> FitnessTracker:
         """Deserialize fitness history from target-keyed dict."""
