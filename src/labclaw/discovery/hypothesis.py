@@ -53,6 +53,7 @@ class HypothesisInput(BaseModel):
     patterns: list[PatternRecord]
     context: str = ""
     constraints: list[str] = Field(default_factory=list)
+    context_findings: list[dict] = Field(default_factory=list)
 
 
 class HypothesisOutput(BaseModel):
@@ -97,13 +98,16 @@ class HypothesisGenerator:
         """Generate hypotheses from discovered patterns.
 
         For each pattern, applies a type-specific template to produce a
-        testable hypothesis statement. Emits discovery.hypothesis.created
-        for each hypothesis.
+        testable hypothesis statement. When ``context_findings`` are provided
+        the generated statements reference those past discoveries.
+        Emits discovery.hypothesis.created for each hypothesis.
         """
         hypotheses: list[HypothesisOutput] = []
 
+        past_context = self._format_past_findings(hypothesis_input.context_findings)
+
         for pattern in hypothesis_input.patterns:
-            hypothesis = self._generate_from_pattern(pattern)
+            hypothesis = self._generate_from_pattern(pattern, past_context=past_context)
             if hypothesis is not None:
                 hypotheses.append(hypothesis)
 
@@ -120,19 +124,38 @@ class HypothesisGenerator:
         hypotheses.sort(key=lambda h: h.confidence, reverse=True)
         return hypotheses
 
-    def _generate_from_pattern(self, pattern: PatternRecord) -> HypothesisOutput | None:
+    @staticmethod
+    def _format_past_findings(context_findings: list[dict]) -> str:
+        """Build a human-readable summary of past findings for template use."""
+        if not context_findings:
+            return ""
+        lines: list[str] = ["Building on past findings:"]
+        for i, f in enumerate(context_findings, 1):
+            desc = f.get("description") or f.get("statement") or f.get("finding_id", f"finding-{i}")
+            lines.append(f"  [{i}] {desc}")
+        return " ".join(lines)
+
+    def _generate_from_pattern(
+        self, pattern: PatternRecord, past_context: str = ""
+    ) -> HypothesisOutput | None:
         """Generate a single hypothesis from a pattern using templates."""
         if pattern.pattern_type == "correlation":
-            return self._from_correlation(pattern)
-        if pattern.pattern_type == "anomaly":
-            return self._from_anomaly(pattern)
-        if pattern.pattern_type == "temporal":
-            return self._from_temporal(pattern)
-        if pattern.pattern_type == "cluster":
-            return self._from_cluster(pattern)
+            hyp = self._from_correlation(pattern)
+        elif pattern.pattern_type == "anomaly":
+            hyp = self._from_anomaly(pattern)
+        elif pattern.pattern_type == "temporal":
+            hyp = self._from_temporal(pattern)
+        elif pattern.pattern_type == "cluster":
+            hyp = self._from_cluster(pattern)
+        else:
+            logger.warning("Unknown pattern type: %s", pattern.pattern_type)
+            return None
 
-        logger.warning("Unknown pattern type: %s", pattern.pattern_type)
-        return None
+        if past_context and hyp is not None:
+            hyp = hyp.model_copy(
+                update={"statement": hyp.statement + " " + past_context}
+            )
+        return hyp
 
     @staticmethod
     def _from_correlation(pattern: PatternRecord) -> HypothesisOutput:
@@ -353,11 +376,25 @@ class LLMHypothesisGenerator:
 
     @staticmethod
     def _build_prompt(hypothesis_input: HypothesisInput) -> str:
-        """Build a prompt from patterns and context."""
+        """Build a prompt from patterns, context, and past findings."""
         parts: list[str] = []
 
         if hypothesis_input.context:
             parts.append(f"Domain context: {hypothesis_input.context}")
+
+        if hypothesis_input.context_findings:
+            parts.append(f"Past findings ({len(hypothesis_input.context_findings)}):")
+            for i, f in enumerate(hypothesis_input.context_findings, 1):
+                desc = (
+                    f.get("description")
+                    or f.get("statement")
+                    or f.get("finding_id", f"finding-{i}")
+                )
+                parts.append(f"  [{i}] {desc}")
+            parts.append(
+                "Build on these past findings; do not re-propose already-known results."
+            )
+            parts.append("")
 
         parts.append(f"Number of patterns discovered: {len(hypothesis_input.patterns)}")
         parts.append("")
