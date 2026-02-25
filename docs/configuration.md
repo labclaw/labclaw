@@ -26,7 +26,7 @@ events:
   redis_url: redis://localhost:6379
 
 api:
-  host: 0.0.0.0
+  host: 127.0.0.1
   port: 8000
 
 edge:
@@ -87,7 +87,7 @@ REST API server settings.
 
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
-| `host` | string | `"0.0.0.0"` | Bind address |
+| `host` | string | `"127.0.0.1"` | Bind address |
 | `port` | int | `8000` | Listen port |
 
 Note: The daemon uses `--port` (default 18800), which overrides this value.

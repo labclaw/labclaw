@@ -40,7 +40,7 @@ my-lab/
 Open `lab/SOUL.md` and describe your lab:
 
 ```markdown
-# Shen Neuroscience Lab
+# My Neuroscience Lab
 
 ## Identity
 
