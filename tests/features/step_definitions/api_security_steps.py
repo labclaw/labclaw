@@ -6,7 +6,6 @@ and governance integration via the enforce_request_security dependency.
 
 from __future__ import annotations
 
-import os
 from unittest.mock import AsyncMock, patch
 
 import pytest
@@ -15,7 +14,6 @@ from pytest_bdd import given, parsers, then, when
 
 from labclaw.api.app import app
 from labclaw.api.deps import reset_all
-
 
 # ---------------------------------------------------------------------------
 # Fixtures
@@ -326,7 +324,8 @@ def _when_post_session_bearer(
 
 @when(
     parsers.parse(
-        'I POST "/api/sessions/" with operator "{operator}" as role "{role}" with Bearer token "{token}"'
+        'I POST "/api/sessions/" with operator "{operator}"'
+        ' as role "{role}" with Bearer token "{token}"'
     ),
     target_fixture="response",
 )
