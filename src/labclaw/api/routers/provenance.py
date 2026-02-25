@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from collections import OrderedDict
+
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
@@ -11,7 +13,8 @@ from labclaw.validation.statistics import ProvenanceChain, ProvenanceStep
 router = APIRouter()
 
 # In-process store (process-scoped; replaced by persistent store in v0.1.0)
-_chains: dict[str, ProvenanceChain] = {}
+_chains: OrderedDict[str, ProvenanceChain] = OrderedDict()
+_MAX_CHAINS = 10_000
 
 
 class ProvenanceStepIn(BaseModel):
@@ -54,8 +57,14 @@ def create_provenance_chain(body: ProvenanceRequest) -> ProvenanceChain:
     try:
         chain = tracker.build_chain(body.finding_id, steps)
     except ValueError as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
+        raise HTTPException(
+            status_code=400, detail="Invalid provenance chain"
+        ) from exc
+    if body.finding_id in _chains:
+        _chains.move_to_end(body.finding_id)
     _chains[body.finding_id] = chain
+    while len(_chains) > _MAX_CHAINS:
+        _chains.popitem(last=False)
     return chain
 
 

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from typing import Any
 
 from fastapi import APIRouter, HTTPException
@@ -10,9 +11,11 @@ from pydantic import BaseModel
 from labclaw.orchestrator.loop import CycleResult
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
 
 # In-process cycle history (process-scoped; cleared on restart)
 _cycle_history: list[CycleResult] = []
+_MAX_CYCLE_HISTORY = 1000
 
 
 class CycleRequest(BaseModel):
@@ -34,9 +37,12 @@ async def run_cycle(body: CycleRequest) -> CycleResult:
     try:
         result = await loop.run_cycle(body.data_rows)
     except Exception as exc:
-        raise HTTPException(status_code=500, detail=str(exc)) from exc
+        logger.exception("Orchestrator cycle failed")
+        raise HTTPException(status_code=500, detail="Internal server error") from exc
 
     _cycle_history.append(result)
+    if len(_cycle_history) > _MAX_CYCLE_HISTORY:
+        del _cycle_history[0 : len(_cycle_history) - _MAX_CYCLE_HISTORY]
     return result
 
 
