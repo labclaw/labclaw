@@ -1,0 +1,12 @@
+services:
+  labclaw:
+    build: .
+    ports:
+      - "18800:18800"
+      - "18801:18801"
+    volumes:
+      - ./data:/app/data
+      - ./lab:/app/lab
+    environment:
+      - LABCLAW_DATA_DIR=/app/data
+    restart: unless-stopped
