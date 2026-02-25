@@ -322,8 +322,6 @@ class TestGetProvenanceForEntity:
 class TestProvenanceTool:
     def test_provenance_tool_no_chain_returns_message(self) -> None:
         """Lines 267-279: finding_id not registered → returns informative message."""
-        import json
-
         from labclaw.api.routers import provenance as prov_module
 
         prov_module._chains.clear()
@@ -336,8 +334,6 @@ class TestProvenanceTool:
 
     def test_provenance_tool_with_chain_returns_chain(self) -> None:
         """Lines 280-287: finding_id registered → chain dict returned."""
-        import json
-
         from labclaw.api.routers import provenance as prov_module
         from labclaw.validation.statistics import ProvenanceChain, ProvenanceStep
 
