@@ -54,6 +54,9 @@ htmlcov/
 .ruff_cache/
 .mypy_cache/
 
+# Docs build
+site/
+
 # Logs
 *.log
 logs/
