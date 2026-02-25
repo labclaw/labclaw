@@ -128,9 +128,12 @@ def _kmeans_pure(
     rng = random.Random(seed)
     arr = np.array(data)
 
-    # Initialize centroids by random selection
-    indices = rng.sample(range(n), min(k, n))
-    centroids = arr[indices].copy()
+    # Initialize centroids by random selection; resample if duplicates
+    for _attempt in range(n * k + 1):
+        indices = rng.sample(range(n), min(k, n))
+        centroids = arr[indices].copy()
+        if len({tuple(c.tolist()) for c in centroids}) == len(centroids):
+            break
 
     labels = np.zeros(n, dtype=int)
 
