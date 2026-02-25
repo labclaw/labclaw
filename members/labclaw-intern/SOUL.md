@@ -6,7 +6,7 @@
 - **Type:** digital
 - **Role:** digital-intern
 - **Trained since:** 2026-02
-- **Language:** Chinese + English
+- **Language:** English
 
 ## Expertise
 
