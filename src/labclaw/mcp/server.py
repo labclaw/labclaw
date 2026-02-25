@@ -76,11 +76,16 @@ def create_server() -> FastMCP:
             anomaly_z_threshold=anomaly_z_threshold,
         )
         # Load experiment rows from session chronicle via memory/API
+        rows: list[dict[str, Any]] = []
         try:
             from labclaw.api.deps import get_session_chronicle
 
-            rows = get_session_chronicle()
+            chronicle = get_session_chronicle()
+            for session in chronicle.list_sessions():
+                row = session.model_dump()
+                rows.append(row)
         except (ImportError, Exception):
+            logger.debug("Could not load session data for mining", exc_info=True)
             rows = []
         if not rows:
             return json.dumps(

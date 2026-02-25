@@ -210,13 +210,9 @@ class PatternMiner:
             return []
 
         patterns: list[PatternRecord] = []
-        seen_pairs: set[tuple[str, str]] = set()
 
         for i, col_a in enumerate(numeric_cols):
             for col_b in numeric_cols[i + 1 :]:
-                if (col_a, col_b) in seen_pairs:
-                    continue
-                seen_pairs.add((col_a, col_b))
 
                 # Build paired observations — only rows where both columns exist
                 vals_a: list[float] = []

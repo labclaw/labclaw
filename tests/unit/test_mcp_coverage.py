@@ -81,6 +81,30 @@ class TestDiscoverToolExceptionAndEmptyRows:
         assert parsed["patterns"] == []
         mock_miner.mine.assert_not_called()
 
+    def test_discover_with_session_data_runs_mining(self) -> None:
+        """Lines 84-86, 99-100: sessions exist → iterate, build rows, mine."""
+        mock_session = MagicMock()
+        mock_session.model_dump.return_value = {"x": 1.0, "y": 2.0, "session_id": "s1"}
+
+        mock_chronicle = MagicMock()
+        mock_chronicle.list_sessions.return_value = [mock_session] * 15
+
+        mock_result = MagicMock()
+        mock_result.model_dump_json.return_value = '{"patterns": [], "run_at": "now"}'
+
+        mock_miner = MagicMock()
+        mock_miner.mine.return_value = mock_result
+
+        with (
+            patch("labclaw.mcp.server._get_pattern_miner", return_value=mock_miner),
+            patch("labclaw.api.deps.get_session_chronicle", return_value=mock_chronicle),
+        ):
+            server = create_server()
+            result = _call_tool(server, "discover")
+
+        mock_miner.mine.assert_called_once()
+        assert "patterns" in result
+
 
 # ---------------------------------------------------------------------------
 # hypothesize — Lines 77-78: get_latest_patterns succeeds (non-empty patterns)
