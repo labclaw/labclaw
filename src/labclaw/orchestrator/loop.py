@@ -80,10 +80,11 @@ class ScientificLoop:
     """7-step scientific method state machine."""
 
     def __init__(self, steps: list[ScientificStep] | None = None) -> None:
+        self._steps: list[ScientificStep]
         if steps is not None:
             self._steps = steps
         else:
-            self._steps: list[ScientificStep] = [
+            self._steps = [
                 ObserveStep(),
                 AskStep(),
                 HypothesizeStep(),

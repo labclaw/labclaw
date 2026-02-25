@@ -46,7 +46,10 @@ class AnthropicProvider:
             system=system or "You are a helpful assistant.",
             messages=[{"role": "user", "content": prompt}],
         )
-        return msg.content[0].text
+        block = msg.content[0]
+        if not hasattr(block, "text"):
+            raise ValueError(f"Unexpected content block type: {type(block).__name__}")
+        return block.text  # type: ignore[union-attr]
 
     async def complete_structured(
         self,

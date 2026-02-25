@@ -234,6 +234,18 @@ class TestAnthropicProvider:
         assert result == "Hello from Claude"
 
     @pytest.mark.asyncio
+    async def test_complete_non_text_block_raises(self) -> None:
+        p = AnthropicProvider(api_key="test-key")
+
+        mock_block = MagicMock(spec=[])  # no attributes — simulates non-TextBlock
+        mock_msg = MagicMock()
+        mock_msg.content = [mock_block]
+
+        p._client.messages.create = AsyncMock(return_value=mock_msg)
+        with pytest.raises(ValueError, match="Unexpected content block type"):
+            await p.complete("Hi")
+
+    @pytest.mark.asyncio
     async def test_complete_structured(self) -> None:
         p = AnthropicProvider(api_key="test-key")
 

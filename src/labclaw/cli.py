@@ -373,10 +373,11 @@ def _pipeline_cmd(args: list[str]) -> None:
         HypothesizeStep,
         ObserveStep,
         PredictStep,
+        ScientificStep,
     )
 
     conclude = ConcludeStep(memory_root=memory_root)
-    steps = [
+    steps: list[ScientificStep] = [
         ObserveStep(),
         AskStep(),
         HypothesizeStep(llm_provider=None, max_llm_calls=max_llm_calls),
