@@ -148,6 +148,36 @@ def test_daemon_stop_kills_dashboard_after_timeout(tmp_path: Path) -> None:
     assert daemon._dashboard_log is None
 
 
+def test_dashboard_host_defaults_to_localhost(tmp_path: Path) -> None:
+    daemon = LabClawDaemon(
+        data_dir=tmp_path / "data",
+        memory_root=tmp_path / "memory",
+    )
+    assert daemon.dashboard_host == "127.0.0.1"
+
+
+def test_dashboard_host_custom_value_passed_to_streamlit(tmp_path: Path) -> None:
+    from unittest.mock import MagicMock, patch
+
+    daemon = LabClawDaemon(
+        data_dir=tmp_path / "data",
+        memory_root=tmp_path / "memory",
+        dashboard_host="0.0.0.0",
+    )
+    assert daemon.dashboard_host == "0.0.0.0"
+
+    mock_proc = MagicMock()
+    with patch("labclaw.daemon.subprocess.Popen", return_value=mock_proc) as mock_popen:
+        daemon._start_dashboard()
+
+    call_args = mock_popen.call_args[0][0]
+    addr_idx = call_args.index("--server.address")
+    assert call_args[addr_idx + 1] == "0.0.0.0"
+
+    if daemon._dashboard_log:
+        daemon._dashboard_log.close()
+
+
 def test_tier_a_backend_rejects_path_traversal_entity_ids(tmp_path: Path) -> None:
     backend = TierABackend(root=tmp_path / "memory")
     entry = MemoryEntry(timestamp=datetime.now(UTC), category="note", detail="x")

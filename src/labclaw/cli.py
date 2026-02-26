@@ -79,10 +79,11 @@ def main() -> None:
         print("  --api [PORT]   Launch FastAPI server only")
         print()
         print("Serve options (pass after 'serve'):")
-        print("  --data-dir PATH        Directory to watch (default: /opt/labclaw/data)")
-        print("  --memory-root PATH     Memory directory (default: /opt/labclaw/memory)")
-        print("  --port PORT            API port (default: 18800)")
-        print("  --dashboard-port PORT  Dashboard port (default: 18801)")
+        print("  --data-dir PATH          Directory to watch (default: /opt/labclaw/data)")
+        print("  --memory-root PATH       Memory directory (default: /opt/labclaw/memory)")
+        print("  --port PORT              API port (default: 18800)")
+        print("  --dashboard-port PORT    Dashboard port (default: 18801)")
+        print("  --dashboard-host HOST    Dashboard bind address (default: 127.0.0.1)")
 
 
 def _coerce_row_values(row: dict[str, str | None]) -> dict[str, Any]:
