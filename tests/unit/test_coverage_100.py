@@ -1800,17 +1800,8 @@ def test_file_watcher_event_registration() -> None:
     assert event_registry.is_registered("hardware.file.detected")
 
 
-def test_evolution_get_cycle_unknown_id() -> None:
-    """Line 424: _get_cycle raises KeyError for unknown cycle_id."""
-    from labclaw.evolution.engine import EvolutionEngine
-
-    engine = EvolutionEngine()
-    with pytest.raises(KeyError, match="not found"):
-        engine._get_cycle("ghost-cycle-id")
-
-
 def test_evolution_get_cycle_public_api_unknown() -> None:
-    """Line 416: get_cycle (public) raises KeyError for unknown cycle_id."""
+    """get_cycle raises KeyError for unknown cycle_id."""
     from labclaw.evolution.engine import EvolutionEngine
 
     engine = EvolutionEngine()

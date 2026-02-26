@@ -131,7 +131,8 @@ class HybridSearchEngine:
 
     def _search_tier_a(self, query: HybridSearchQuery) -> list[HybridSearchResult]:
         """Search Tier A (markdown memory)."""
-        assert self._tier_a is not None
+        if self._tier_a is None:
+            raise RuntimeError("HybridSearchEngine: tier_a backend not configured")
         weight = self._config.tier_a_weight
         tier_a_results: list[SearchResult] = self._tier_a.search(query.text, limit=query.limit * 2)
 
@@ -152,7 +153,8 @@ class HybridSearchEngine:
 
     def _search_tier_b(self, query: HybridSearchQuery) -> list[HybridSearchResult]:
         """Search Tier B (knowledge graph)."""
-        assert self._tier_b is not None
+        if self._tier_b is None:
+            raise RuntimeError("HybridSearchEngine: tier_b backend not configured")
         weight = self._config.tier_b_weight
         kg_results = self._tier_b.search(query.text, limit=query.limit * 2)
 

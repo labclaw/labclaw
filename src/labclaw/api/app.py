@@ -114,13 +114,6 @@ app.include_router(
     tags=["orchestrator"],
     dependencies=_secure_dep,
 )
-# Provenance endpoints — both versioned and legacy prefixes
-app.include_router(
-    provenance_router,
-    prefix="/api/v0/provenance",
-    tags=["provenance"],
-    dependencies=_secure_dep,
-)
 app.include_router(
     provenance_router,
     prefix="/api/provenance",

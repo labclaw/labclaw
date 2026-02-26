@@ -229,6 +229,22 @@ def test_search_tier_b_builds_snippet_from_name() -> None:
     assert results[0].snippet == "[session] plain-node"
 
 
+def test_search_tier_a_raises_runtime_error_when_backend_none() -> None:
+    """_search_tier_a raises RuntimeError if called with no tier_a backend."""
+    engine = HybridSearchEngine(tier_a=None)
+    query = HybridSearchQuery(text="test")
+    with pytest.raises(RuntimeError, match="tier_a backend not configured"):
+        engine._search_tier_a(query)
+
+
+def test_search_tier_b_raises_runtime_error_when_backend_none() -> None:
+    """_search_tier_b raises RuntimeError if called with no tier_b backend."""
+    engine = HybridSearchEngine(tier_b=None)
+    query = HybridSearchQuery(text="test")
+    with pytest.raises(RuntimeError, match="tier_b backend not configured"):
+        engine._search_tier_b(query)
+
+
 def test_search_both_tiers() -> None:
     """When both tiers are active, results from A and B are combined and sorted."""
     tier_a = MagicMock()
