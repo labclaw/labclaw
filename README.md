@@ -8,6 +8,15 @@
 
 Distributed, agentic lab infrastructure for **self-documenting** and **self-improving** neuroscience workflows.
 
+## OpenClaw Integration
+
+LabClaw builds its researcher community on top of the
+[OpenClaw](https://github.com/openclaw/openclaw) platform (191k+ stars):
+OpenClaw provides chat, LLM routing, and AgentSkill distribution;
+LabClaw builds the science engine, lab memory, hardware safety layer,
+and domain plugins. See [docs/openclaw-extension.md](docs/openclaw-extension.md)
+for the full architecture.
+
 ## Why LabClaw
 
 LabClaw turns raw experimental activity into a closed loop:
@@ -85,7 +94,7 @@ See:
 
 ## Demo
 
-> Demo server coming soon. See `deploy/` for self-hosting instructions.
+> Demo server coming soon at `demo.labclaw.dev`. See `deploy/` for self-hosting instructions.
 
 ## Roadmap
 
