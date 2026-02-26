@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from labclaw.api.deps import get_evolution_engine
 from labclaw.core.schemas import EvolutionTarget
@@ -21,12 +21,12 @@ router = APIRouter()
 class FitnessRequest(BaseModel):
     target: EvolutionTarget
     metrics: dict[str, float]
-    data_points: int = 0
+    data_points: int = Field(default=0, ge=0, le=1_000_000)
 
 
 class CycleStartRequest(BaseModel):
     target: EvolutionTarget
-    n_candidates: int = 1
+    n_candidates: int = Field(default=1, ge=1, le=100)
 
 
 # ---------------------------------------------------------------------------

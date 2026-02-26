@@ -20,14 +20,14 @@ router = APIRouter()
 
 
 class MineRequest(BaseModel):
-    data: list[dict[str, Any]]
+    data: list[dict[str, Any]] = Field(max_length=100_000)
     config: MiningConfig | None = None
 
 
 class HypothesizeRequest(BaseModel):
-    patterns: list[PatternRecord]
-    context: str = ""
-    constraints: list[str] = Field(default_factory=list)
+    patterns: list[PatternRecord] = Field(default_factory=list, max_length=10_000)
+    context: str = Field(default="", max_length=10_000)
+    constraints: list[str] = Field(default_factory=list, max_length=1_000)
 
 
 # ---------------------------------------------------------------------------
