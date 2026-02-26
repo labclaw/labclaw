@@ -1,7 +1,7 @@
-# Open-Source Release Plan — v0.1.0
+# Open-Source Release Preparation Plan
 
-> **Date:** 2026-02-25
-> **Goal:** Ship LabClaw v0.1.0 as an open-source project on top of OpenClaw
+> **Date:** 2026-02-26
+> **Goal:** Prepare LabClaw for public GitHub release (open-source readiness, not the v0.1.0 paper milestone)
 
 ---
 
@@ -135,7 +135,7 @@ grep -i 'paper release' ROADMAP.md                   # nothing
 #### D2: Tag and release
 
 ```
-git tag -a v0.1.0 -m "v0.1.0: open-source release"
+git tag -a v0.0.11 -m "v0.0.11: open-source readiness"
 git push origin main --tags
 ```
 
@@ -189,7 +189,7 @@ After Phase A (all PRs merged + rebase):
 - [ ] `deploy/Caddyfile` exists
 - [ ] `deploy/deploy.sh` uses `LABCLAW_REMOTE` env var
 - [ ] Demo server accessible with TLS (after D3)
-- [ ] `v0.1.0` tag created (after D2)
+- [ ] `v0.0.11` tag created (after D2)
 
 ---
 

@@ -137,7 +137,6 @@
 |------|-------|-------------|-------------|
 | **[DeepLabCut](https://github.com/DeepLabCut/DeepLabCut)** | 5.5K | Markerless multi-animal pose estimation | Output → edge watcher → NWB |
 | **[SLEAP](https://github.com/talmolab/sleap)** | 557 | Multi-animal pose tracking (top-down + bottom-up) | Output → edge watcher → NWB |
-| **SAM-Behavior** | — | Zero-shot tracking, no training needed | Native integration (same lab, repo not yet public) |
 
 ### Behavioral Analysis (ASK step)
 
@@ -179,7 +178,6 @@
 | **[PyVISA](https://github.com/pyvisa/pyvisa)** | 910+ | VISA instrument control | Device manager adapter |
 | **[NI-DAQmx](https://github.com/ni/nidaqmx-python)** | 555 | National Instruments DAQ | Hardware I/O adapter |
 | **[Pycro-Manager](https://github.com/micro-manager/pycro-manager)** | 176 | Microscope control | Microscope device adapter |
-| **[PyLabRobot](https://github.com/PyLabRobot/pylabrobot)** | 370+ | Vendor-agnostic liquid handling | Robot device adapter |
 
 ## Data APIs
 
@@ -238,8 +236,8 @@
 | Agent | Approach | Key Innovation | Open Source |
 |-------|----------|----------------|-------------|
 | **[AI Scientist v2](https://github.com/SakanaAI/AI-Scientist)** | End-to-end research pipeline | Idea → experiment → paper → review | Yes (Apache-2.0) |
-| **[Robin](https://arxiv.org/abs/2505.13400)** (FutureHouse) | Multi-agent drug discovery | First AI-discovered therapeutic candidate | No |
-| **[Coscientist](https://github.com/gomesgroup/coscientist)** | LLM + robotic chemistry | GPT-4 planned & executed synthesis | Yes (Apache-2.0 w/ Commons Clause) |
+| **[Robin](https://arxiv.org/abs/2505.13400)** (FutureHouse) | Multi-agent drug discovery | Multi-agent pipeline with candidate nomination | No |
+| **[Coscientist](https://github.com/gomesgroup/coscientist)** | LLM + robotic chemistry | GPT-4 planned & executed synthesis | Source-available (Apache-2.0 + Commons Clause) |
 | **[PaperQA2](https://github.com/Future-House/paper-qa)** | RAG literature agent | Answers with citations, 200M+ papers | Yes (Apache-2.0) |
 | **[MARS](https://doi.org/10.1016/j.matt.2025.102577)** | 19 agents + 16 tools | Hierarchical multi-agent materials discovery | No |
 | **[DOLPHIN](https://arxiv.org/abs/2501.03916)** | Closed-loop scientific method | LLM generates → experiments → evaluates → iterates | Yes |
@@ -319,7 +317,7 @@
 ## How LabClaw Uses This Stack
 
 ```
-OBSERVE  ─→  DeepLabCut/SLEAP/SAM-Behavior → SpikeInterface → Suite2p
+OBSERVE  ─→  DeepLabCut/SLEAP → SpikeInterface → Suite2p
               │ edge watchers ingest outputs, convert via NeuroConv → NWB
               ▼
 ASK      ─→  Pattern mining (scikit-learn, scipy, statsmodels)

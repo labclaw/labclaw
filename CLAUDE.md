@@ -67,7 +67,7 @@ Layer 1: HARDWARE                — Devices, interfaces, manager, safety
 - **All event/graph node schemas live in `core/`** — plugins extend via the registry
 - **Validate at boundaries** (API input, file parsing) — trust internal code
 - **Never silently catch exceptions** — log or re-raise with specific types
-- **Never write unverified external data** — all URLs, star counts, licenses, dataset sizes, paper years in docs must be web-verified before committing. Use `gh api` for GitHub stats. Use conservative ranges for numbers that change (e.g., "370+" not "397").
+- **Never commit unverified external references** — all URLs, star counts, licenses, dataset sizes, paper years in docs must be web-verified before committing. Use `gh api` for GitHub stats. Use conservative ranges for numbers that change (e.g., "370+" not "397").
 
 ## Testing Strategy: TDD + BDD Dual-Layer
 
