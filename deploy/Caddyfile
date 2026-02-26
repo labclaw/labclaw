@@ -1,0 +1,23 @@
+# Caddyfile — LabClaw reverse proxy
+# Requires: LABCLAW_DOMAIN env var (e.g. demo.labclaw.io)
+# Caddy automatically provisions TLS via Let's Encrypt.
+
+{$LABCLAW_DOMAIN} {
+    # Security headers
+    header {
+        X-Frame-Options DENY
+        X-Content-Type-Options nosniff
+        Referrer-Policy strict-origin-when-cross-origin
+        -Server
+    }
+
+    # REST API
+    handle /api/* {
+        reverse_proxy localhost:18800
+    }
+
+    # Streamlit dashboard (catch-all)
+    handle /* {
+        reverse_proxy localhost:18801
+    }
+}
