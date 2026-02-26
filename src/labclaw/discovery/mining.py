@@ -163,7 +163,8 @@ class PatternMiner:
                 # Build paired observations — only rows where both columns exist
                 vals_a: list[float] = []
                 vals_b: list[float] = []
-                for row in data:
+                valid_indices: list[int] = []
+                for idx, row in enumerate(data):
                     if col_a in row and col_b in row:
                         try:
                             val_a = float(row[col_a])
@@ -172,6 +173,7 @@ class PatternMiner:
                             continue
                         vals_a.append(val_a)
                         vals_b.append(val_b)
+                        valid_indices.append(idx)
 
                 if len(vals_a) < 3:
                     continue
@@ -181,7 +183,7 @@ class PatternMiner:
                 p = float(p_val)
 
                 if abs(r) > threshold:
-                    session_ids = [str(row.get("session_id", idx)) for idx, row in enumerate(data)]
+                    session_ids = [str(data[i].get("session_id", i)) for i in valid_indices]
                     pattern = PatternRecord(
                         pattern_type="correlation",
                         description=(
