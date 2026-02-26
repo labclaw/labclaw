@@ -110,7 +110,7 @@ jobs:
       - name: Install gitleaks
         run: |
           set -euo pipefail
-          GITLEAKS_VERSION="8.24.2"
+          GITLEAKS_VERSION="8.30.0"
           ARCHIVE="gitleaks_${GITLEAKS_VERSION}_linux_amd64.tar.gz"
           BASE_URL="https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}"
           curl -sSfLO "${BASE_URL}/${ARCHIVE}"
