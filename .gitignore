@@ -37,6 +37,11 @@ data/
 *.bin
 *.dat
 
+# Databases
+*.sqlite
+*.sqlite3
+*.db
+
 # OS
 .DS_Store
 Thumbs.db

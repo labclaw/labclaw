@@ -17,3 +17,5 @@ We are committed to a respectful, inclusive community. Contributors are expected
 ## Enforcement
 
 Project maintainers may remove comments, close issues/PRs, or block contributors for violations.
+
+To report violations, contact: conduct@labclaw.dev
