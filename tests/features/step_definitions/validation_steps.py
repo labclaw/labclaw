@@ -349,9 +349,7 @@ def serialize_deserialize_chain(report_chain: ProvenanceChain) -> ProvenanceChai
 
 
 @then("the round-tripped chain matches the original")
-def check_round_trip(
-    report_chain: ProvenanceChain, round_tripped_chain: ProvenanceChain
-) -> None:
+def check_round_trip(report_chain: ProvenanceChain, round_tripped_chain: ProvenanceChain) -> None:
     assert round_tripped_chain.finding_id == report_chain.finding_id
     assert len(round_tripped_chain.steps) == len(report_chain.steps)
     assert round_tripped_chain.chain_id == report_chain.chain_id

@@ -96,8 +96,7 @@ def check_proposals_within_bounds(
         for name, value in proposal.parameters.items():
             low, high = bounds[name]
             assert low <= value <= high, (
-                f"Proposal {proposal.proposal_id}: {name}={value} "
-                f"outside [{low}, {high}]"
+                f"Proposal {proposal.proposal_id}: {name}={value} outside [{low}, {high}]"
             )
 
 
@@ -300,9 +299,7 @@ def pi_rejects(approval_request: ApprovalRequest, reason: str) -> ApprovalReques
 
 
 @given(
-    parsers.parse(
-        'a parameter space with 1 dimension "{dim_name}" from {low:g} to {high:g}'
-    ),
+    parsers.parse('a parameter space with 1 dimension "{dim_name}" from {low:g} to {high:g}'),
     target_fixture="single_dim_space",
 )
 def single_dimension_space(dim_name: str, low: float, high: float) -> ParameterSpace:
@@ -324,9 +321,7 @@ def request_single_dim_proposals(
 
 
 @then(parsers.parse("{n:d} proposals are returned from single dimension optimizer"))
-def check_single_dim_proposal_count(
-    single_dim_proposals: list[ExperimentProposal], n: int
-) -> None:
+def check_single_dim_proposal_count(single_dim_proposals: list[ExperimentProposal], n: int) -> None:
     assert len(single_dim_proposals) == n, (
         f"Expected {n} proposals, got {len(single_dim_proposals)}"
     )
@@ -391,9 +386,7 @@ def proposal_failed_safety(
     validator = ScientificSafetyValidator()
     # Extract first param name and use impossible bounds
     first_dim = list(proposal.parameters.keys())[0]
-    constraints = [
-        SafetyConstraint(parameter=first_dim, min_value=999.0, max_value=1000.0)
-    ]
+    constraints = [SafetyConstraint(parameter=first_dim, min_value=999.0, max_value=1000.0)]
     check = validator.validate(proposal, constraints)
     assert not check.passed, "Expected safety check to fail"
     return proposal, check

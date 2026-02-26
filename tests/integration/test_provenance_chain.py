@@ -33,15 +33,17 @@ def _load_fixture_data() -> list[dict[str, Any]]:
         with open(path, newline="") as fh:
             reader = csv.DictReader(fh)
             for row in reader:
-                rows.append({
-                    "timestamp": row["timestamp"],
-                    "x": float(row["x"]),
-                    "y": float(row["y"]),
-                    "speed": float(row["speed"]),
-                    "angle": float(row["angle"]),
-                    "zone": row["zone"],
-                    "animal_id": row["animal_id"],
-                })
+                rows.append(
+                    {
+                        "timestamp": row["timestamp"],
+                        "x": float(row["x"]),
+                        "y": float(row["y"]),
+                        "speed": float(row["speed"]),
+                        "angle": float(row["angle"]),
+                        "zone": row["zone"],
+                        "animal_id": row["animal_id"],
+                    }
+                )
     return rows
 
 
@@ -74,8 +76,7 @@ def test_every_finding_has_provenance_chain() -> None:
 
     chains = result.final_context.get("finding_chains", [])
     assert len(chains) == len(result.findings), (
-        f"Expected one chain per finding. findings={len(result.findings)}, "
-        f"chains={len(chains)}"
+        f"Expected one chain per finding. findings={len(result.findings)}, chains={len(chains)}"
     )
 
 
@@ -103,11 +104,10 @@ def test_provenance_chain_is_verifiable() -> None:
     tracker = ProvenanceTracker()
 
     from labclaw.validation.provenance import from_dict
+
     for chain_dict in chains:
         chain = from_dict(chain_dict)
-        assert tracker.verify_chain(chain), (
-            f"Chain {chain.chain_id} failed verification"
-        )
+        assert tracker.verify_chain(chain), f"Chain {chain.chain_id} failed verification"
 
 
 def test_provenance_chain_all_steps_connected() -> None:

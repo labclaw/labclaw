@@ -95,9 +95,7 @@ class TestAblationErrors:
         err = capsys.readouterr().err
         assert "does not exist" in err
 
-    def test_empty_data_dir_exits(
-        self, tmp_path: Path, capsys: pytest.CaptureFixture[str]
-    ) -> None:
+    def test_empty_data_dir_exits(self, tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
         empty = tmp_path / "empty"
         empty.mkdir()
         with pytest.raises(SystemExit) as exc:
@@ -113,9 +111,7 @@ class TestAblationErrors:
 
 
 class TestAblationHappyPath:
-    def test_runs_and_prints_json(
-        self, data_dir: Path, capsys: pytest.CaptureFixture[str]
-    ) -> None:
+    def test_runs_and_prints_json(self, data_dir: Path, capsys: pytest.CaptureFixture[str]) -> None:
         _ablation_cmd(["--data-dir", str(data_dir), "--n-cycles", "2"])
         out = capsys.readouterr().out
         result = json.loads(out)
@@ -125,17 +121,13 @@ class TestAblationHappyPath:
         assert result["full"]["n_cycles"] == 2
         assert result["no_evolution"]["n_cycles"] == 2
 
-    def test_custom_n_cycles(
-        self, data_dir: Path, capsys: pytest.CaptureFixture[str]
-    ) -> None:
+    def test_custom_n_cycles(self, data_dir: Path, capsys: pytest.CaptureFixture[str]) -> None:
         _ablation_cmd(["--data-dir", str(data_dir), "--n-cycles", "3"])
         out = capsys.readouterr().out
         result = json.loads(out)
         assert result["full"]["n_cycles"] == 3
 
-    def test_custom_seed(
-        self, data_dir: Path, capsys: pytest.CaptureFixture[str]
-    ) -> None:
+    def test_custom_seed(self, data_dir: Path, capsys: pytest.CaptureFixture[str]) -> None:
         _ablation_cmd(["--data-dir", str(data_dir), "--n-cycles", "2", "--seed", "99"])
         out = capsys.readouterr().out
         result = json.loads(out)
@@ -154,9 +146,7 @@ class TestAblationHappyPath:
         assert "full_mean_fitness" in comparison
         assert "ablation_mean_fitness" in comparison
 
-    def test_skips_unknown_arg(
-        self, data_dir: Path, capsys: pytest.CaptureFixture[str]
-    ) -> None:
+    def test_skips_unknown_arg(self, data_dir: Path, capsys: pytest.CaptureFixture[str]) -> None:
         """Unknown flags are silently skipped."""
         _ablation_cmd(["--data-dir", str(data_dir), "--n-cycles", "2", "--unknown-flag"])
         out = capsys.readouterr().out

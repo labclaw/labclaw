@@ -152,9 +152,7 @@ class HypothesisGenerator:
             return None
 
         if past_context and hyp is not None:
-            hyp = hyp.model_copy(
-                update={"statement": hyp.statement + " " + past_context}
-            )
+            hyp = hyp.model_copy(update={"statement": hyp.statement + " " + past_context})
         return hyp
 
     @staticmethod
@@ -402,9 +400,7 @@ class LLMHypothesisGenerator:
                     or f.get("finding_id", f"finding-{i}")
                 )
                 parts.append(f"  [{i}] {desc}")
-            parts.append(
-                "Build on these past findings; do not re-propose already-known results."
-            )
+            parts.append("Build on these past findings; do not re-propose already-known results.")
             parts.append("")
 
         parts.append(f"Number of patterns discovered: {len(hypothesis_input.patterns)}")

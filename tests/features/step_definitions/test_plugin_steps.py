@@ -231,7 +231,8 @@ def check_plugin_in_list(plugin_registry: PluginRegistry) -> None:
 
 @then(parsers.parse('it should be retrievable by type "{plugin_type}"'))
 def check_retrievable_by_type(
-    plugin_registry: PluginRegistry, plugin_type: str,
+    plugin_registry: PluginRegistry,
+    plugin_type: str,
 ) -> None:
     plugins = plugin_registry.get_by_type(plugin_type)
     assert len(plugins) >= 1, f"Expected >= 1 {plugin_type} plugin, got {len(plugins)}"
@@ -259,7 +260,7 @@ def check_plugin_value_error(plugin_dup_error: Exception | None) -> None:
     )
 
 
-@then(parsers.parse("listing by type \"{plugin_type}\" returns {count:d} plugin"))
+@then(parsers.parse('listing by type "{plugin_type}" returns {count:d} plugin'))
 def check_list_by_type_singular(
     plugin_registry: PluginRegistry, plugin_type: str, count: int
 ) -> None:
@@ -267,10 +268,8 @@ def check_list_by_type_singular(
     assert len(plugins) == count, f"Expected {count} {plugin_type} plugins, got {len(plugins)}"
 
 
-@then(parsers.parse("listing by type \"{plugin_type}\" returns {count:d} plugins"))
-def check_list_by_type(
-    plugin_registry: PluginRegistry, plugin_type: str, count: int
-) -> None:
+@then(parsers.parse('listing by type "{plugin_type}" returns {count:d} plugins'))
+def check_list_by_type(plugin_registry: PluginRegistry, plugin_type: str, count: int) -> None:
     plugins = plugin_registry.get_by_type(plugin_type)
     assert len(plugins) == count, f"Expected {count} {plugin_type} plugins, got {len(plugins)}"
 
@@ -319,9 +318,7 @@ def check_create_plugin_factory(scaffolded_path: Path) -> None:
 @then(parsers.parse('the scaffolded plugin type is "{plugin_type}"'))
 def check_scaffolded_plugin_type(scaffolded_path: Path, plugin_type: str) -> None:
     pyproject = (scaffolded_path / "pyproject.toml").read_text()
-    assert plugin_type in pyproject, (
-        f"Expected plugin type {plugin_type!r} in pyproject.toml"
-    )
+    assert plugin_type in pyproject, f"Expected plugin type {plugin_type!r} in pyproject.toml"
 
 
 @then("a scaffold ValueError is raised")

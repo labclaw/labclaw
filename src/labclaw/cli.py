@@ -13,9 +13,7 @@ from pathlib import Path
 from typing import Any
 
 # Matches UUID v4 strings embedded in finding descriptions (e.g. pattern IDs)
-_uuid_re = re.compile(
-    r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}", re.I
-)
+_uuid_re = re.compile(r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}", re.I)
 
 
 def main() -> None:
@@ -307,8 +305,7 @@ def _pipeline_cmd(args: list[str]) -> None:
 
     if not args:
         print(
-            "Error: --data-dir is required. "
-            "Run 'labclaw pipeline --help' for usage.",
+            "Error: --data-dir is required. Run 'labclaw pipeline --help' for usage.",
             file=sys.stderr,
         )
         sys.exit(1)
@@ -337,8 +334,7 @@ def _pipeline_cmd(args: list[str]) -> None:
 
     if data_dir is None:
         print(
-            "Error: --data-dir is required. "
-            "Run 'labclaw pipeline --help' for usage.",
+            "Error: --data-dir is required. Run 'labclaw pipeline --help' for usage.",
             file=sys.stderr,
         )
         sys.exit(1)
@@ -407,8 +403,7 @@ def _ablation_cmd(args: list[str]) -> None:
 
     if not args:
         print(
-            "Error: --data-dir is required. "
-            "Run 'labclaw ablation --help' for usage.",
+            "Error: --data-dir is required. Run 'labclaw ablation --help' for usage.",
             file=sys.stderr,
         )
         sys.exit(1)
@@ -433,8 +428,7 @@ def _ablation_cmd(args: list[str]) -> None:
 
     if data_dir is None:
         print(
-            "Error: --data-dir is required. "
-            "Run 'labclaw ablation --help' for usage.",
+            "Error: --data-dir is required. Run 'labclaw ablation --help' for usage.",
             file=sys.stderr,
         )
         sys.exit(1)
@@ -648,8 +642,7 @@ def _reproduce_cmd(args: list[str]) -> None:
 
     if not args:
         print(
-            "Error: --data-dir is required. "
-            "Run 'labclaw reproduce --help' for usage.",
+            "Error: --data-dir is required. Run 'labclaw reproduce --help' for usage.",
             file=sys.stderr,
         )
         sys.exit(1)
@@ -674,8 +667,7 @@ def _reproduce_cmd(args: list[str]) -> None:
 
     if data_dir is None:
         print(
-            "Error: --data-dir is required. "
-            "Run 'labclaw reproduce --help' for usage.",
+            "Error: --data-dir is required. Run 'labclaw reproduce --help' for usage.",
             file=sys.stderr,
         )
         sys.exit(1)

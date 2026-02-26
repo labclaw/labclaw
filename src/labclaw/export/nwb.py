@@ -123,9 +123,7 @@ class NWBExporter:
             "version": "1.0",
             "session_id": session_id,
             "session_start_time": session_data.get("session_start_time", _now_iso()),
-            "description": session_data.get(
-                "description", "LabClaw automated discovery session"
-            ),
+            "description": session_data.get("description", "LabClaw automated discovery session"),
             "findings": session_data.get("findings", []),
             "provenance_steps": session_data.get("provenance_steps", []),
             "finding_chains": session_data.get("finding_chains", []),

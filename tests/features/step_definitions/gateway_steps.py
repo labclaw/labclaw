@@ -321,7 +321,7 @@ def register_event_type(event_bus: EventBus, event_name: str) -> str:
 
 
 @when(
-    "I publish an event \"discovery.mining.complete\" with nested payload",
+    'I publish an event "discovery.mining.complete" with nested payload',
     target_fixture="published_event",
 )
 def publish_nested_payload_event(
@@ -368,6 +368,7 @@ def create_event_for_inspection(event_bus: EventBus, event_name: str) -> LabEven
 )
 def try_register_invalid_event(bad_name: str) -> Exception | None:
     from labclaw.core.events import EventRegistry as _EventRegistry
+
     reg = _EventRegistry()
     try:
         reg.register(bad_name)
@@ -451,9 +452,7 @@ def event_has_event_id(bus_capture: EventCapture) -> None:
 
 @then("no exception is raised")
 def no_exception_raised(orphan_event_result: LabEvent | None, event_bus_error: dict) -> None:
-    assert "exc" not in event_bus_error, (
-        f"Unexpected exception: {event_bus_error.get('exc')}"
-    )
+    assert "exc" not in event_bus_error, f"Unexpected exception: {event_bus_error.get('exc')}"
 
 
 @then("a ValueError is raised")

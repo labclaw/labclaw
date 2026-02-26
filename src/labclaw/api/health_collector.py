@@ -81,9 +81,7 @@ class HealthCollector:
             memory_mb = 0.0
 
         with self._lock:
-            last_at = (
-                self._last_cycle_at.isoformat() if self._last_cycle_at is not None else None
-            )
+            last_at = self._last_cycle_at.isoformat() if self._last_cycle_at is not None else None
             return {
                 "components": dict(self._components),
                 "uptime_seconds": round(time.monotonic() - self._start_time, 2),

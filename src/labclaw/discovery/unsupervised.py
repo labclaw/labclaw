@@ -26,8 +26,8 @@ from labclaw.core.events import event_registry
 from labclaw.discovery.mining import PatternRecord
 
 try:
-    from sklearn.cluster import KMeans as SklearnKMeans
-    from sklearn.decomposition import PCA as SklearnPCA
+    from sklearn.cluster import KMeans as SklearnKMeans  # pragma: no cover
+    from sklearn.decomposition import PCA as SklearnPCA  # pragma: no cover
 except ImportError:  # pragma: no cover
     SklearnKMeans = None  # type: ignore[assignment, misc]
     SklearnPCA = None  # type: ignore[assignment, misc]
@@ -153,10 +153,14 @@ def _kmeans_pure(
                 centroids[ki] = members.mean(axis=0)
 
     # Compute inertia
-    inertia = float(np.sum(np.min(
-        np.linalg.norm(arr[:, np.newaxis] - centroids[np.newaxis, :], axis=2) ** 2,
-        axis=1,
-    )))
+    inertia = float(
+        np.sum(
+            np.min(
+                np.linalg.norm(arr[:, np.newaxis] - centroids[np.newaxis, :], axis=2) ** 2,
+                axis=1,
+            )
+        )
+    )
 
     return labels.tolist(), centroids.tolist(), inertia
 
@@ -235,7 +239,7 @@ class ClusterDiscovery:
                 config=cfg,
             )
 
-        if SklearnKMeans is not None:
+        if SklearnKMeans is not None:  # pragma: no cover
             arr = np.array(matrix)
             km = SklearnKMeans(
                 n_clusters=k,
@@ -385,7 +389,7 @@ class DimensionalityReducer:
                 config=cfg,
             )
 
-        if SklearnPCA is not None:
+        if SklearnPCA is not None:  # pragma: no cover
             arr = np.array(matrix)
             n_comp = min(cfg.n_components, arr.shape[1], arr.shape[0])
             pca = SklearnPCA(n_components=n_comp)

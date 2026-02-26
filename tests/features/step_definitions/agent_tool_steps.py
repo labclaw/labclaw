@@ -199,9 +199,7 @@ def execute_run_mining(builtin_tool: AgentTool) -> ToolResult:
 
 
 @when(
-    parsers.parse(
-        'I execute propose_experiment with hypothesis_id "{hyp_id}" and no ranges'
-    ),
+    parsers.parse('I execute propose_experiment with hypothesis_id "{hyp_id}" and no ranges'),
     target_fixture="tool_exec_result",
 )
 def execute_propose_experiment_no_ranges(builtin_tool: AgentTool, hyp_id: str) -> ToolResult:
@@ -264,17 +262,13 @@ def check_tool_has_parameter(agent_tool: AgentTool, param: str) -> None:
 @then("the result is a ToolResult with success true")
 def check_result_success(tool_exec_result: ToolResult) -> None:
     assert isinstance(tool_exec_result, ToolResult)
-    assert tool_exec_result.success is True, (
-        f"Expected success=True, got {tool_exec_result}"
-    )
+    assert tool_exec_result.success is True, f"Expected success=True, got {tool_exec_result}"
 
 
 @then("the result is a ToolResult with success false")
 def check_result_failure(tool_exec_result: ToolResult) -> None:
     assert isinstance(tool_exec_result, ToolResult)
-    assert tool_exec_result.success is False, (
-        f"Expected success=False, got {tool_exec_result}"
-    )
+    assert tool_exec_result.success is False, f"Expected success=False, got {tool_exec_result}"
 
 
 @then("the result error message is not empty")
@@ -352,9 +346,7 @@ def check_result_data_has_pattern_count(tool_exec_result: ToolResult) -> None:
 
 @then(parsers.parse("{n:d} tools are returned"))
 def check_builtin_tools_count(builtin_tools_list: list[AgentTool], n: int) -> None:
-    assert len(builtin_tools_list) == n, (
-        f"Expected {n} tools, got {len(builtin_tools_list)}"
-    )
+    assert len(builtin_tools_list) == n, f"Expected {n} tools, got {len(builtin_tools_list)}"
 
 
 @then(parsers.parse('the tools include "{tool_name}"'))

@@ -229,9 +229,7 @@ class TestIsKnownPattern:
     async def test_different_pattern_not_known(self, tmp_path: Path) -> None:
         mgr = SessionMemoryManager(tmp_path / "mem")
         await mgr.init()
-        await mgr.store_finding(
-            {"column_a": "x", "column_b": "y", "pattern_type": "correlation"}
-        )
+        await mgr.store_finding({"column_a": "x", "column_b": "y", "pattern_type": "correlation"})
         other = {"column_a": "a", "column_b": "b", "pattern_type": "anomaly"}
         assert mgr.is_known_pattern(other) is False
 
@@ -267,7 +265,7 @@ class TestLoadExistingFindings:
         mem_path = findings_dir / "MEMORY.md"
         mem_path.write_text(
             "## entry\n\n```json\n{bad json\n```\n\n"
-            "## entry2\n\n```json\n{\"finding_id\": \"ok\"}\n```\n"
+            '## entry2\n\n```json\n{"finding_id": "ok"}\n```\n'
         )
         mgr = SessionMemoryManager(memory_root)
         result = mgr._load_existing_findings()
@@ -373,6 +371,7 @@ class TestSQLiteCorruptRecord:
             )
             # Insert a valid record
             import json
+
             await db.execute(
                 "INSERT INTO findings (finding_id, data_json, stored_at) VALUES (?, ?, ?)",
                 ("good-1", json.dumps({"desc": "valid"}), "2026-01-01T00:00:00"),
@@ -383,6 +382,7 @@ class TestSQLiteCorruptRecord:
         asyncio.run(_setup())
 
         from labclaw.memory.session_memory import SessionMemoryManager
+
         mgr = SessionMemoryManager(tmp_path / "mem", db_path)
         asyncio.run(mgr.init())
         findings = asyncio.run(mgr.retrieve_findings())

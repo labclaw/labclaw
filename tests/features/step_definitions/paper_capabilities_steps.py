@@ -47,15 +47,17 @@ def _load_typed_fixture_data() -> list[dict[str, Any]]:
         with open(csv_path, newline="") as f:
             reader = csv.DictReader(f)
             for row in reader:
-                rows.append({
-                    "timestamp": row["timestamp"],
-                    "x": float(row["x"]),
-                    "y": float(row["y"]),
-                    "speed": float(row["speed"]),
-                    "angle": float(row["angle"]),
-                    "zone": row["zone"],
-                    "animal_id": row["animal_id"],
-                })
+                rows.append(
+                    {
+                        "timestamp": row["timestamp"],
+                        "x": float(row["x"]),
+                        "y": float(row["y"]),
+                        "speed": float(row["speed"]),
+                        "angle": float(row["angle"]),
+                        "zone": row["zone"],
+                        "animal_id": row["animal_id"],
+                    }
+                )
     return rows
 
 
@@ -198,6 +200,7 @@ def restart_memory_manager(
     stored_count: int,
 ) -> list[dict[str, Any]]:
     """Create a new manager from the same paths and retrieve findings."""
+
     async def _retrieve() -> list[dict[str, Any]]:
         mgr2 = SessionMemoryManager(
             memory_context["memory_root"],
@@ -246,9 +249,7 @@ def finding_with_significance(bdd_data_rows: list[dict[str, Any]]) -> None:
     validator = StatisticalValidator()
     cfg = ValidationConfig(min_sample_size=2)
     stat_result = validator.run_test("permutation", speed_vals, angle_vals, config=cfg)
-    assert 0.0 <= stat_result.p_value <= 1.0, (
-        f"p_value out of range: {stat_result.p_value}"
-    )
+    assert 0.0 <= stat_result.p_value <= 1.0, f"p_value out of range: {stat_result.p_value}"
 
 
 @then("fitness improvement is at least 15 percent")
@@ -331,7 +332,4 @@ def both_runs_identical(bdd_two_results: tuple[CycleResult, CycleResult]) -> Non
         fc.pop("finding_chains", None)
         d["final_context"] = fc
 
-    assert d1 == d2, (
-        f"Pipeline outputs differ. "
-        f"Differing keys: {[k for k in d1 if d1[k] != d2[k]]}"
-    )
+    assert d1 == d2, f"Pipeline outputs differ. Differing keys: {[k for k in d1 if d1[k] != d2[k]]}"

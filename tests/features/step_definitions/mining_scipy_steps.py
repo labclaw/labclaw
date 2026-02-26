@@ -18,7 +18,6 @@ from labclaw.discovery.mining import (
     PatternRecord,
 )
 
-
 # ---------------------------------------------------------------------------
 # Additional data fixtures (new; existing ones live in discovery_steps.py)
 # ---------------------------------------------------------------------------
@@ -76,9 +75,7 @@ def create_default_config() -> MiningConfig:
 def check_correlation_has_p_value(correlation_patterns: list[PatternRecord]) -> None:
     assert correlation_patterns, "No correlation patterns found"
     for p in correlation_patterns:
-        assert "p_value" in p.evidence, (
-            f"Correlation pattern missing p_value field: {p.evidence}"
-        )
+        assert "p_value" in p.evidence, f"Correlation pattern missing p_value field: {p.evidence}"
 
 
 @then("both runs return the same number of patterns")
@@ -117,9 +114,7 @@ def check_anomaly_has_mean_and_std(anomaly_patterns: list[PatternRecord]) -> Non
 def check_anomaly_confidence_clamped(anomaly_patterns: list[PatternRecord]) -> None:
     assert anomaly_patterns, "No anomaly patterns found"
     for p in anomaly_patterns:
-        assert 0.0 <= p.confidence <= 1.0, (
-            f"Confidence {p.confidence} out of [0, 1]"
-        )
+        assert 0.0 <= p.confidence <= 1.0, f"Confidence {p.confidence} out of [0, 1]"
 
 
 # ---------------------------------------------------------------------------
@@ -205,9 +200,7 @@ def check_summary_row_count_value(mining_result: MiningResult, value: int) -> No
 @then("the miner last_result is set")
 def check_miner_last_result(miner: PatternMiner, mining_result: MiningResult) -> None:
     assert miner.last_result is not None, "miner.last_result is None after mine()"
-    assert miner.last_result is mining_result, (
-        "miner.last_result is not the returned MiningResult"
-    )
+    assert miner.last_result is mining_result, "miner.last_result is not the returned MiningResult"
 
 
 # ---------------------------------------------------------------------------

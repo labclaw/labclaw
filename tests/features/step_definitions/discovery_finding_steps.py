@@ -129,9 +129,7 @@ def run_full_discovery_cycle(behavioral_data: list[dict[str, Any]]) -> CycleResu
     parsers.parse("I generate hypotheses {n:d} times"),
     target_fixture="cost_guard_results",
 )
-def generate_hypotheses_n_times(
-    cost_guard_context: dict[str, Any], n: int
-) -> dict[str, Any]:
+def generate_hypotheses_n_times(cost_guard_context: dict[str, Any], n: int) -> dict[str, Any]:
     gen: LLMHypothesisGenerator = cost_guard_context["generator"]
     hyp_input: HypothesisInput = cost_guard_context["hyp_input"]
     all_results = []
@@ -176,9 +174,7 @@ def check_correlation_coefficient(cycle_result: CycleResult, threshold: float) -
 def check_llm_call_count(cost_guard_results: dict[str, Any], n: int) -> None:
     llm = cost_guard_results["llm"]
     actual_calls = llm.complete_structured.call_count
-    assert actual_calls == n, (
-        f"Expected {n} LLM calls, got {actual_calls}"
-    )
+    assert actual_calls == n, f"Expected {n} LLM calls, got {actual_calls}"
 
 
 @then("the remaining use template fallback")
@@ -197,9 +193,7 @@ def check_remaining_use_fallback(cost_guard_results: dict[str, Any]) -> None:
         fallback_results = all_results[max_calls:]
         for result_batch in fallback_results:
             # Template results may be empty (no patterns) or have non-LLM statements
-            assert isinstance(result_batch, list), (
-                "Expected list result from fallback generator"
-            )
+            assert isinstance(result_batch, list), "Expected list result from fallback generator"
 
 
 @then("the memory file contains statistical results")

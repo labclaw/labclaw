@@ -83,8 +83,6 @@ class PatternDeduplicator:
                 result.append(pattern)
                 seen.append(pattern)
             else:
-                logger.debug(
-                    "Dedup: skipping known pattern (%s, %s, %s)", col_a, col_b, ptype
-                )
+                logger.debug("Dedup: skipping known pattern (%s, %s, %s)", col_a, col_b, ptype)
 
         return result

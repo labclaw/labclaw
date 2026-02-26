@@ -51,9 +51,7 @@ def edge_watcher_initialized(event_capture: EventCapture) -> dict:
     parsers.parse('a watched directory for device "{device_id}"'),
     target_fixture="watch_dir",
 )
-def watched_directory(
-    tmp_path: Path, watcher_ctx: dict, device_id: str
-) -> Path:
+def watched_directory(tmp_path: Path, watcher_ctx: dict, device_id: str) -> Path:
     """Create a temp directory and a handler for the device."""
     watch_dir = tmp_path / f"watch_{device_id}"
     watch_dir.mkdir(parents=True, exist_ok=True)
@@ -137,8 +135,11 @@ def start_session(chronicle: SessionChronicle, operator: str) -> SessionNode:
     target_fixture="recording_added",
 )
 def add_recording(
-    chronicle: SessionChronicle, current_session: SessionNode, tmp_path: Path,
-    modality: str, filename: str,
+    chronicle: SessionChronicle,
+    current_session: SessionNode,
+    tmp_path: Path,
+    modality: str,
+    filename: str,
 ) -> bool:
     fpath = tmp_path / filename
     fpath.write_bytes(b"recording data " * 10)

@@ -76,32 +76,44 @@ def _make_pattern() -> PatternRecord:
 # ---------------------------------------------------------------------------
 
 
-def test_pipeline_max_llm_calls_flag(
-    tmp_path: Path, capsys: pytest.CaptureFixture[str]
-) -> None:
+def test_pipeline_max_llm_calls_flag(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
     """--max-llm-calls N is parsed and passed through."""
     data_dir = _make_data_dir(tmp_path)
-    with patch.object(sys, "argv", [
-        "labclaw", "pipeline", "--once",
-        "--data-dir", str(data_dir),
-        "--max-llm-calls", "5",
-    ]):
+    with patch.object(
+        sys,
+        "argv",
+        [
+            "labclaw",
+            "pipeline",
+            "--once",
+            "--data-dir",
+            str(data_dir),
+            "--max-llm-calls",
+            "5",
+        ],
+    ):
         main()
     out = capsys.readouterr().out
     result = json.loads(out)
     assert result["success"] is True
 
 
-def test_pipeline_max_llm_calls_zero(
-    tmp_path: Path, capsys: pytest.CaptureFixture[str]
-) -> None:
+def test_pipeline_max_llm_calls_zero(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
     """--max-llm-calls 0 forces template fallback."""
     data_dir = _make_data_dir(tmp_path)
-    with patch.object(sys, "argv", [
-        "labclaw", "pipeline", "--once",
-        "--data-dir", str(data_dir),
-        "--max-llm-calls", "0",
-    ]):
+    with patch.object(
+        sys,
+        "argv",
+        [
+            "labclaw",
+            "pipeline",
+            "--once",
+            "--data-dir",
+            str(data_dir),
+            "--max-llm-calls",
+            "0",
+        ],
+    ):
         main()
     out = capsys.readouterr().out
     result = json.loads(out)
@@ -155,10 +167,16 @@ def test_ablation_cmd_missing_data_dir_flag() -> None:
 
 def test_ablation_cmd_nonexistent_dir(tmp_path: Path) -> None:
     """_ablation_cmd with non-existent data-dir exits."""
-    with patch.object(sys, "argv", [
-        "labclaw", "ablation",
-        "--data-dir", str(tmp_path / "no_such"),
-    ]):
+    with patch.object(
+        sys,
+        "argv",
+        [
+            "labclaw",
+            "ablation",
+            "--data-dir",
+            str(tmp_path / "no_such"),
+        ],
+    ):
         with pytest.raises(SystemExit):
             main()
 
@@ -167,24 +185,37 @@ def test_ablation_cmd_empty_dir(tmp_path: Path) -> None:
     """_ablation_cmd with empty data-dir exits."""
     d = tmp_path / "empty"
     d.mkdir()
-    with patch.object(sys, "argv", [
-        "labclaw", "ablation", "--data-dir", str(d),
-    ]):
+    with patch.object(
+        sys,
+        "argv",
+        [
+            "labclaw",
+            "ablation",
+            "--data-dir",
+            str(d),
+        ],
+    ):
         with pytest.raises(SystemExit):
             main()
 
 
-def test_ablation_cmd_runs(
-    tmp_path: Path, capsys: pytest.CaptureFixture[str]
-) -> None:
+def test_ablation_cmd_runs(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
     """_ablation_cmd runs with small data and produces JSON output."""
     data_dir = _make_data_dir(tmp_path, n=5)
-    with patch.object(sys, "argv", [
-        "labclaw", "ablation",
-        "--data-dir", str(data_dir),
-        "--n-cycles", "1",
-        "--seed", "42",
-    ]):
+    with patch.object(
+        sys,
+        "argv",
+        [
+            "labclaw",
+            "ablation",
+            "--data-dir",
+            str(data_dir),
+            "--n-cycles",
+            "1",
+            "--seed",
+            "42",
+        ],
+    ):
         main()
     out = capsys.readouterr().out
     output = json.loads(out)
@@ -193,21 +224,24 @@ def test_ablation_cmd_runs(
     assert "comparison" in output
 
 
-def test_ablation_cmd_stat_error_path(
-    tmp_path: Path, capsys: pytest.CaptureFixture[str]
-) -> None:
+def test_ablation_cmd_stat_error_path(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
     """_ablation_cmd handles ValueError from stat test (p_value=None)."""
     from labclaw.validation.statistics import StatisticalValidator
 
     data_dir = _make_data_dir(tmp_path, n=5)
-    with patch.object(sys, "argv", [
-        "labclaw", "ablation",
-        "--data-dir", str(data_dir),
-        "--n-cycles", "1",
-    ]):
-        with patch.object(
-            StatisticalValidator, "run_test", side_effect=ValueError("no variance")
-        ):
+    with patch.object(
+        sys,
+        "argv",
+        [
+            "labclaw",
+            "ablation",
+            "--data-dir",
+            str(data_dir),
+            "--n-cycles",
+            "1",
+        ],
+    ):
+        with patch.object(StatisticalValidator, "run_test", side_effect=ValueError("no variance")):
             main()
     out = capsys.readouterr().out
     output = json.loads(out)

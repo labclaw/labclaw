@@ -39,15 +39,17 @@ def _load_behavioral_data() -> list[dict[str, Any]]:
         with open(csv_path, newline="") as fh:
             reader = csv.DictReader(fh)
             for row in reader:
-                rows.append({
-                    "timestamp": row["timestamp"],
-                    "x": float(row["x"]),
-                    "y": float(row["y"]),
-                    "speed": float(row["speed"]),
-                    "angle": float(row["angle"]),
-                    "zone": row["zone"],
-                    "animal_id": row["animal_id"],
-                })
+                rows.append(
+                    {
+                        "timestamp": row["timestamp"],
+                        "x": float(row["x"]),
+                        "y": float(row["y"]),
+                        "speed": float(row["speed"]),
+                        "angle": float(row["angle"]),
+                        "zone": row["zone"],
+                        "animal_id": row["animal_id"],
+                    }
+                )
     return rows
 
 
@@ -126,9 +128,7 @@ class TestFullPipeline:
         loop = _make_loop()
         result: CycleResult = asyncio.run(loop.run_cycle(data))
 
-        assert result.success is True, (
-            f"Expected cycle success=True, got success={result.success}"
-        )
+        assert result.success is True, f"Expected cycle success=True, got success={result.success}"
         assert len(result.steps_completed) >= 3, (
             f"Expected >= 3 completed steps, got {result.steps_completed}"
         )
@@ -167,9 +167,7 @@ class TestFullPipeline:
         assert result.success is True
 
         memory_file = memory_root / "lab" / "MEMORY.md"
-        assert memory_file.exists(), (
-            f"Expected MEMORY.md at {memory_file}, but it was not created"
-        )
+        assert memory_file.exists(), f"Expected MEMORY.md at {memory_file}, but it was not created"
         content = memory_file.read_text()
         assert len(content) > 0, "MEMORY.md should not be empty"
 
@@ -183,9 +181,7 @@ class TestFullPipeline:
         loop2 = _make_loop()
         result2: CycleResult = asyncio.run(loop2.run_cycle(data))
 
-        assert result1.cycle_id != result2.cycle_id, (
-            "Each cycle should have a unique cycle_id"
-        )
+        assert result1.cycle_id != result2.cycle_id, "Each cycle should have a unique cycle_id"
 
     def test_pipeline_hypotheses_from_patterns(self) -> None:
         """When patterns are found, hypotheses are generated."""

@@ -130,8 +130,7 @@ def _request(
         "raw_path": path.encode(),
         "query_string": b"",
         "headers": [
-            (k.lower().encode("latin-1"), v.encode("latin-1"))
-            for k, v in (headers or {}).items()
+            (k.lower().encode("latin-1"), v.encode("latin-1")) for k, v in (headers or {}).items()
         ],
         "client": client,
         "server": ("testserver", 80),

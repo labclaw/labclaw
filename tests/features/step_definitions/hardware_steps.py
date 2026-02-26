@@ -37,6 +37,7 @@ from tests.features.conftest import EventCapture
 # Core fixtures / Given steps — Registry & Safety
 # ---------------------------------------------------------------------------
 
+
 @given("the device registry is initialized", target_fixture="device_registry")
 def device_registry_initialized(event_capture: EventCapture) -> DeviceRegistry:
     """Provide a fresh DeviceRegistry and wire event capture."""
@@ -63,6 +64,7 @@ def hardware_manager_initialized(
 # Device ID mapping — maps human-readable names to UUIDs
 # ---------------------------------------------------------------------------
 
+
 @pytest.fixture()
 def device_ids() -> dict[str, str]:
     """Map of human-friendly device names to their actual device_id UUIDs."""
@@ -72,6 +74,7 @@ def device_ids() -> dict[str, str]:
 # ---------------------------------------------------------------------------
 # Given steps — device pre-registration
 # ---------------------------------------------------------------------------
+
 
 @given(
     parsers.parse('device "{name}" is registered with status "{status}"'),
@@ -122,6 +125,7 @@ def device_is_registered_with_caps(
 # ---------------------------------------------------------------------------
 # When steps — Registry
 # ---------------------------------------------------------------------------
+
 
 @when(
     parsers.parse('I register a device "{name}" of type "{device_type}" with status "{status}"'),
@@ -201,7 +205,7 @@ def register_second_device(
 
 
 @when(
-    parsers.parse("I re-register device \"{name}\" with the same ID"),
+    parsers.parse('I re-register device "{name}" with the same ID'),
     target_fixture="reregister_error",
 )
 def reregister_device_same_id(
@@ -296,6 +300,7 @@ def unregister_nonexistent_device(name: str) -> Exception | None:
 # When steps — Safety
 # ---------------------------------------------------------------------------
 
+
 @when(
     parsers.parse('I check safety for command "{action}" on device "{name}"'),
     target_fixture="safety_result",
@@ -350,6 +355,7 @@ def execute_command_with_params_via_manager(
 # Then steps — Registry
 # ---------------------------------------------------------------------------
 
+
 @then(parsers.parse('the registry contains device "{name}"'))
 def registry_contains(
     device_registry: DeviceRegistry,
@@ -370,9 +376,7 @@ def device_has_status(
 ) -> None:
     device_id = device_ids[name]
     device = device_registry.get(device_id)
-    assert device.status == DeviceStatus(status), (
-        f"Expected {status}, got {device.status.value}"
-    )
+    assert device.status == DeviceStatus(status), f"Expected {status}, got {device.status.value}"
 
 
 @then(parsers.parse('device "{name}" has capability "{cap}"'))
@@ -456,6 +460,7 @@ def registered_device_has_field(registered_device: DeviceRecord, field: str) -> 
 # ---------------------------------------------------------------------------
 # Then steps — Safety
 # ---------------------------------------------------------------------------
+
 
 @then("the safety check passes")
 def safety_passes(safety_result: SafetyCheckResult) -> None:
@@ -604,9 +609,7 @@ def create_file_based_driver_file(watch_dir: Path) -> FileBasedDriver:
 
 
 @when("I connect the FileBasedDriver", target_fixture="fb_connect_result")
-def connect_file_based_driver(
-    file_driver: FileBasedDriver, event_capture: EventCapture
-) -> bool:
+def connect_file_based_driver(file_driver: FileBasedDriver, event_capture: EventCapture) -> bool:
     for evt_name in event_registry.list_events():
         if evt_name.startswith("hardware."):
             event_registry.subscribe(evt_name, event_capture)
@@ -716,18 +719,14 @@ def parsed_data_row_count(parsed_file_data: dict[str, Any], count: int) -> None:
 
 
 @given(
-    parsers.parse(
-        'a plate reader CSV file "{filename}" with row "{row_letter}" values "{values}"'
-    )
+    parsers.parse('a plate reader CSV file "{filename}" with row "{row_letter}" values "{values}"')
 )
 def given_plate_csv(watch_dir: Path, filename: str, row_letter: str, values: str) -> None:
     content = f"{row_letter},{values}\n"
     (watch_dir / filename).write_text(content, encoding="utf-8")
 
 
-@given(
-    parsers.parse('a plate reader CSV file "{filename}" with metadata "{meta}"')
-)
+@given(parsers.parse('a plate reader CSV file "{filename}" with metadata "{meta}"'))
 def given_plate_csv_meta(watch_dir: Path, filename: str, meta: str) -> None:
     (watch_dir / filename).write_text(f"{meta}\n", encoding="utf-8")
 
@@ -754,48 +753,30 @@ def given_empty_plate_csv(watch_dir: Path, filename: str) -> None:
     (watch_dir / filename).write_text("", encoding="utf-8")
 
 
-@given(
-    parsers.parse('an empty qPCR export file "{filename}"')
-)
+@given(parsers.parse('an empty qPCR export file "{filename}"'))
 def given_empty_qpcr(watch_dir: Path, filename: str) -> None:
     (watch_dir / filename).write_text("", encoding="utf-8")
 
 
-@given(
-    parsers.parse('a qPCR export file "{filename}" with results header and one sample row')
-)
+@given(parsers.parse('a qPCR export file "{filename}" with results header and one sample row'))
 def given_qpcr_one_sample(watch_dir: Path, filename: str) -> None:
-    content = (
-        "Well\tSample Name\tDetector Name\tCt\n"
-        "A1\tSample1\tGAPDH\t22.45\n"
-    )
+    content = "Well\tSample Name\tDetector Name\tCt\nA1\tSample1\tGAPDH\t22.45\n"
     (watch_dir / filename).write_text(content, encoding="utf-8")
 
 
-@given(
-    parsers.parse('a qPCR export file "{filename}" with a sample having ct value "{ct}"')
-)
+@given(parsers.parse('a qPCR export file "{filename}" with a sample having ct value "{ct}"'))
 def given_qpcr_sample_ct(watch_dir: Path, filename: str, ct: str) -> None:
-    content = (
-        "Well\tSample Name\tDetector Name\tCt\n"
-        f"A1\tSample1\tGAPDH\t{ct}\n"
-    )
+    content = f"Well\tSample Name\tDetector Name\tCt\nA1\tSample1\tGAPDH\t{ct}\n"
     (watch_dir / filename).write_text(content, encoding="utf-8")
 
 
 @given(
-    parsers.parse(
-        'a qPCR export file "{filename}" with metadata "{meta_line}" and a sample row'
-    )
+    parsers.parse('a qPCR export file "{filename}" with metadata "{meta_line}" and a sample row')
 )
 def given_qpcr_meta_and_sample(watch_dir: Path, filename: str, meta_line: str) -> None:
     # Interpret \t escape sequences so feature file can use literal \t
     decoded_meta = meta_line.replace("\\t", "\t")
-    content = (
-        f"{decoded_meta}\n"
-        "Well\tSample Name\tDetector Name\tCt\n"
-        "A1\tSample1\tGAPDH\t22.0\n"
-    )
+    content = f"{decoded_meta}\nWell\tSample Name\tDetector Name\tCt\nA1\tSample1\tGAPDH\t22.0\n"
     (watch_dir / filename).write_text(content, encoding="utf-8")
 
 
@@ -857,14 +838,10 @@ def plate_has_wells_range(parsed_plate_data: dict[str, Any], from_well: str, to_
 def well_has_value(parsed_plate_data: dict[str, Any], well: str, value: float) -> None:
     wells = parsed_plate_data["wells"]
     assert well in wells, f"Well {well!r} not in {list(wells.keys())}"
-    assert abs(float(wells[well]) - value) < 1e-6, (
-        f"Expected {well}={value}, got {wells[well]}"
-    )
+    assert abs(float(wells[well]) - value) < 1e-6, f"Expected {well}={value}, got {wells[well]}"
 
 
-@then(
-    parsers.parse('the parsed plate metadata contains key "{key}" with value "{value}"')
-)
+@then(parsers.parse('the parsed plate metadata contains key "{key}" with value "{value}"'))
 def plate_metadata_has(parsed_plate_data: dict[str, Any], key: str, value: str) -> None:
     meta = parsed_plate_data["metadata"]
     assert key in meta, f"Key {key!r} not in metadata: {list(meta.keys())}"
@@ -994,9 +971,7 @@ def qpcr_result_has_key(parsed_qpcr_data: dict[str, Any], key: str) -> None:
     parsers.parse('I create a NetworkAPIDriver with id "{dev_id}" and url "{url}"'),
     target_fixture="net_driver",
 )
-def create_network_driver(
-    dev_id: str, url: str, event_capture: EventCapture
-) -> NetworkAPIDriver:
+def create_network_driver(dev_id: str, url: str, event_capture: EventCapture) -> NetworkAPIDriver:
     for evt_name in event_registry.list_events():
         if evt_name.startswith("hardware."):
             event_registry.subscribe(evt_name, event_capture)
@@ -1052,9 +1027,7 @@ def net_driver_status_is(net_status: DeviceStatus, status: str) -> None:
     parsers.parse('I create a SerialDriver with id "{dev_id}" and port "{port}"'),
     target_fixture="serial_driver",
 )
-def create_serial_driver(
-    dev_id: str, port: str, event_capture: EventCapture
-) -> SerialDriver:
+def create_serial_driver(dev_id: str, port: str, event_capture: EventCapture) -> SerialDriver:
     for evt_name in event_registry.list_events():
         if evt_name.startswith("hardware."):
             event_registry.subscribe(evt_name, event_capture)
@@ -1121,11 +1094,7 @@ def runtime_error_raised(serial_read_error: object) -> None:
     )
 
 
-@then(
-    parsers.parse(
-        'the parsed serial response contains key "{key}" with value "{value}"'
-    )
-)
+@then(parsers.parse('the parsed serial response contains key "{key}" with value "{value}"'))
 def serial_response_has_key_value(
     parsed_serial_response: dict[str, Any], key: str, value: str
 ) -> None:
@@ -1224,9 +1193,7 @@ def create_daq_driver(dev_id: str, event_capture: EventCapture) -> DAQDriver:
     parsers.parse('I create a DAQDriver with id "{dev_id}" type "{dev_type}"'),
     target_fixture="daq_driver",
 )
-def create_daq_driver_typed(
-    dev_id: str, dev_type: str, event_capture: EventCapture
-) -> DAQDriver:
+def create_daq_driver_typed(dev_id: str, dev_type: str, event_capture: EventCapture) -> DAQDriver:
     for evt_name in event_registry.list_events():
         if evt_name.startswith("hardware."):
             event_registry.subscribe(evt_name, event_capture)
@@ -1399,9 +1366,7 @@ def create_sw_driver(dev_id: str, event_capture: EventCapture) -> SoftwareBridge
     parsers.parse('I create a SoftwareBridgeDriver with id "{dev_id}" that raises on open'),
     target_fixture="sw_driver",
 )
-def create_fail_open_sw_driver(
-    dev_id: str, event_capture: EventCapture
-) -> SoftwareBridgeDriver:
+def create_fail_open_sw_driver(dev_id: str, event_capture: EventCapture) -> SoftwareBridgeDriver:
     for evt_name in event_registry.list_events():
         if evt_name.startswith("hardware."):
             event_registry.subscribe(evt_name, event_capture)
@@ -1412,9 +1377,7 @@ def create_fail_open_sw_driver(
     parsers.parse('I create a SoftwareBridgeDriver with id "{dev_id}" that raises on close'),
     target_fixture="sw_driver",
 )
-def create_fail_close_sw_driver(
-    dev_id: str, event_capture: EventCapture
-) -> SoftwareBridgeDriver:
+def create_fail_close_sw_driver(dev_id: str, event_capture: EventCapture) -> SoftwareBridgeDriver:
     for evt_name in event_registry.list_events():
         if evt_name.startswith("hardware."):
             event_registry.subscribe(evt_name, event_capture)
@@ -1425,9 +1388,7 @@ def create_fail_close_sw_driver(
     parsers.parse('I create a SoftwareBridgeDriver with id "{dev_id}" that raises on send'),
     target_fixture="sw_driver",
 )
-def create_fail_send_sw_driver(
-    dev_id: str, event_capture: EventCapture
-) -> SoftwareBridgeDriver:
+def create_fail_send_sw_driver(dev_id: str, event_capture: EventCapture) -> SoftwareBridgeDriver:
     for evt_name in event_registry.list_events():
         if evt_name.startswith("hardware."):
             event_registry.subscribe(evt_name, event_capture)
@@ -1525,9 +1486,7 @@ def sw_satisfies_driver_protocol(sw_driver: SoftwareBridgeDriver) -> None:
 
 
 @when("I create a FileWatcherDriver for that directory", target_fixture="watcher_driver")
-def create_file_watcher_driver_dir(
-    watch_dir: Path, event_capture: EventCapture
-) -> Any:
+def create_file_watcher_driver_dir(watch_dir: Path, event_capture: EventCapture) -> Any:
     from labclaw.hardware.drivers.file_watcher import FileWatcherDriver
 
     for evt_name in event_registry.list_events():

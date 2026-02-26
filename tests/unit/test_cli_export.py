@@ -90,9 +90,7 @@ def test_export_unknown_arg_is_skipped(tmp_path: Path) -> None:
     """Unrecognised tokens are silently skipped (the else: i += 1 branch)."""
     out = tmp_path / "out.json"
     # --bogus is an unknown arg; it should be skipped, not cause an error.
-    code = _call_export(
-        ["--bogus", "--format", "json", "--session", "s1", "--output", str(out)]
-    )
+    code = _call_export(["--bogus", "--format", "json", "--session", "s1", "--output", str(out)])
     assert code == 0
     assert out.exists()
 

@@ -143,9 +143,7 @@ def list_all_entities(tier_a: TierABackend) -> list[str]:
     """Return sorted list of entity_ids that have a SOUL.md."""
     if not tier_a.root.exists():
         return []
-    return sorted(
-        d.name for d in tier_a.root.iterdir() if d.is_dir() and (d / "SOUL.md").exists()
-    )
+    return sorted(d.name for d in tier_a.root.iterdir() if d.is_dir() and (d / "SOUL.md").exists())
 
 
 @then(parsers.parse('the entity list contains "{entity_id}"'))
@@ -235,14 +233,10 @@ def check_memory_entries_chronological(tier_a: TierABackend, setup_entity: str) 
     """Verify the ## timestamp headers in MEMORY.md are in ascending order."""
     doc = tier_a.read_memory(setup_entity)
     ts_headers = [
-        ln.replace("## ", "").strip()
-        for ln in doc.content.split("\n")
-        if ln.startswith("## ")
+        ln.replace("## ", "").strip() for ln in doc.content.split("\n") if ln.startswith("## ")
     ]
     assert len(ts_headers) >= 2, "Expected at least 2 entries for ordering check"
-    assert ts_headers == sorted(ts_headers), (
-        f"Entries not in chronological order: {ts_headers}"
-    )
+    assert ts_headers == sorted(ts_headers), f"Entries not in chronological order: {ts_headers}"
 
 
 # ---------------------------------------------------------------------------
@@ -655,9 +649,7 @@ def get_edges_between(tier_b: TierBBackend, src: str, tgt: str) -> list:
 @then(parsers.parse("I receive {count:d} edge between them"))
 @then(parsers.parse("I receive {count:d} edges between them"))
 def check_edges_between_count(kg_edges_between: list, count: int) -> None:
-    assert len(kg_edges_between) == count, (
-        f"Expected {count} edges, got {len(kg_edges_between)}"
-    )
+    assert len(kg_edges_between) == count, f"Expected {count} edges, got {len(kg_edges_between)}"
 
 
 # ---- search ----
@@ -918,7 +910,7 @@ def add_kg_node(search_engine: object, name: str) -> None:
     tier_b.add_node(node)
 
 
-@given(parsers.parse("{count:d} markdown entities with content \"{content}\""))
+@given(parsers.parse('{count:d} markdown entities with content "{content}"'))
 def add_multiple_markdown_entities(search_engine: object, count: int, content: str) -> None:
     tier_a: TierABackend = search_engine._test_tier_a  # type: ignore[attr-defined]
     for i in range(count):
@@ -998,9 +990,7 @@ def check_hybrid_results_contain_tier(hybrid_results: list, tier: str) -> None:
 def check_hybrid_ranked(hybrid_results: list) -> None:
     assert len(hybrid_results) > 0, "Expected at least one result"
     scores = [r.score for r in hybrid_results]
-    assert scores == sorted(scores, reverse=True), (
-        f"Hybrid results not sorted descending: {scores}"
-    )
+    assert scores == sorted(scores, reverse=True), f"Hybrid results not sorted descending: {scores}"
 
 
 @then("the hybrid result list is empty")
@@ -1019,9 +1009,7 @@ def check_hybrid_result_limit(hybrid_results: list, count: int) -> None:
 def check_hybrid_results_entity_filter(hybrid_results: list, entity_id: str) -> None:
     assert len(hybrid_results) > 0, "Expected at least one result"
     for r in hybrid_results:
-        assert r.entity_id == entity_id, (
-            f"Expected entity_id={entity_id!r}, got {r.entity_id!r}"
-        )
+        assert r.entity_id == entity_id, f"Expected entity_id={entity_id!r}, got {r.entity_id!r}"
 
 
 # ---------------------------------------------------------------------------
@@ -1076,9 +1064,7 @@ def add_person_sqlite(sqlite_tier_b: object, label: str) -> None:
 
 
 @when(
-    parsers.parse(
-        'I add a protocol node "{label}" with name "{name}" to SQLite'
-    ),
+    parsers.parse('I add a protocol node "{label}" with name "{name}" to SQLite'),
 )
 def add_protocol_sqlite(sqlite_tier_b: object, label: str, name: str) -> None:
     from labclaw.memory.sqlite_backend import SQLiteTierBBackend

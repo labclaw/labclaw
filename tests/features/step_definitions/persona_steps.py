@@ -233,9 +233,7 @@ def get_all_benchmarks(
 
 
 @then(parsers.parse('{n:d} benchmarks are returned for "{name}"'))
-def check_benchmarks_returned(
-    fetched_benchmarks: list[BenchmarkResult], n: int, name: str
-) -> None:
+def check_benchmarks_returned(fetched_benchmarks: list[BenchmarkResult], n: int, name: str) -> None:
     assert len(fetched_benchmarks) == n, (
         f"Expected {n} benchmarks for {name!r}, got {len(fetched_benchmarks)}"
     )
@@ -327,9 +325,7 @@ def check_corrections_returned(
 
 
 @then(parsers.parse('the correction has corrected_by "{corrected_by}"'))
-def check_correction_corrected_by(
-    last_correction: CorrectionEntry, corrected_by: str
-) -> None:
+def check_correction_corrected_by(last_correction: CorrectionEntry, corrected_by: str) -> None:
     assert last_correction.corrected_by == corrected_by, (
         f"Expected corrected_by {corrected_by!r}, got {last_correction.corrected_by!r}"
     )
@@ -344,9 +340,7 @@ def check_correction_corrected_by(
     parsers.parse('I try to get member with id "{member_id}"'),
     target_fixture="lookup_error",
 )
-def try_get_nonexistent_member(
-    persona_mgr: PersonaManager, member_id: str
-) -> Exception | None:
+def try_get_nonexistent_member(persona_mgr: PersonaManager, member_id: str) -> Exception | None:
     try:
         persona_mgr.get_member(member_id)
         return None
@@ -356,9 +350,7 @@ def try_get_nonexistent_member(
 
 @then("a KeyError is raised")
 def check_key_error_raised(lookup_error: Exception | None) -> None:
-    assert isinstance(lookup_error, KeyError), (
-        f"Expected KeyError, got {type(lookup_error)}"
-    )
+    assert isinstance(lookup_error, KeyError), f"Expected KeyError, got {type(lookup_error)}"
 
 
 @when(
@@ -419,9 +411,7 @@ def try_record_correction_for_nonexistent(
 
 @then("a KeyError is raised for member lookup")
 def check_key_error_member_lookup(lookup_error: Exception | None) -> None:
-    assert isinstance(lookup_error, KeyError), (
-        f"Expected KeyError, got {type(lookup_error)}"
-    )
+    assert isinstance(lookup_error, KeyError), f"Expected KeyError, got {type(lookup_error)}"
 
 
 # ---------------------------------------------------------------------------

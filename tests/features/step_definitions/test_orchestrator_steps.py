@@ -74,12 +74,14 @@ def twenty_rows_numeric() -> list[dict[str, Any]]:
         speed = 10.0 + i * 0.5 + rng.gauss(0, 0.3)
         accuracy = 50.0 + speed * 2.0 + rng.gauss(0, 0.5)
         temperature = 22.0 + rng.gauss(0, 1.0)
-        data.append({
-            "speed": speed,
-            "accuracy": accuracy,
-            "temperature": temperature,
-            "session_id": f"s{i}",
-        })
+        data.append(
+            {
+                "speed": speed,
+                "accuracy": accuracy,
+                "temperature": temperature,
+                "session_id": f"s{i}",
+            }
+        )
     return data
 
 
@@ -88,10 +90,7 @@ def twenty_rows_numeric() -> list[dict[str, Any]]:
     target_fixture="exp_data",
 )
 def five_rows() -> list[dict[str, Any]]:
-    return [
-        {"x": float(i), "y": float(i * 2), "session_id": f"s{i}"}
-        for i in range(5)
-    ]
+    return [{"x": float(i), "y": float(i * 2), "session_id": f"s{i}"} for i in range(5)]
 
 
 @given(

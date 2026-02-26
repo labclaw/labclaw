@@ -44,15 +44,17 @@ def _load_behavioral_data() -> list[dict[str, Any]]:
         with open(csv_path, newline="") as fh:
             reader = csv.DictReader(fh)
             for row in reader:
-                rows.append({
-                    "timestamp": row["timestamp"],
-                    "x": float(row["x"]),
-                    "y": float(row["y"]),
-                    "speed": float(row["speed"]),
-                    "angle": float(row["angle"]),
-                    "zone": row["zone"],
-                    "animal_id": row["animal_id"],
-                })
+                rows.append(
+                    {
+                        "timestamp": row["timestamp"],
+                        "x": float(row["x"]),
+                        "y": float(row["y"]),
+                        "speed": float(row["speed"]),
+                        "angle": float(row["angle"]),
+                        "zone": row["zone"],
+                        "animal_id": row["animal_id"],
+                    }
+                )
     return rows
 
 
@@ -153,8 +155,7 @@ def both_cycles_same_patterns(
 ) -> None:
     r1, r2 = two_cycle_results
     assert r1.patterns_found == r2.patterns_found, (
-        f"Determinism broken: run1 patterns={r1.patterns_found}, "
-        f"run2 patterns={r2.patterns_found}"
+        f"Determinism broken: run1 patterns={r1.patterns_found}, run2 patterns={r2.patterns_found}"
     )
 
 
@@ -164,9 +165,7 @@ def memory_md_created(
     memory_dir: Path,
 ) -> None:
     success = cycle_result_with_memory.success
-    assert success is True, (
-        f"Cycle must succeed before checking MEMORY.md, got success={success}"
-    )
+    assert success is True, f"Cycle must succeed before checking MEMORY.md, got success={success}"
     memory_file = memory_dir / "lab" / "MEMORY.md"
     assert memory_file.exists(), (
         f"Expected MEMORY.md at {memory_file}, but it was not created. "
