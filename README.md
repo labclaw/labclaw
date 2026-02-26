@@ -9,7 +9,7 @@
 <p align="center">
   <a href="https://github.com/labclaw/labclaw/actions/workflows/ci.yml"><img src="https://github.com/labclaw/labclaw/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <a href="https://github.com/labclaw/labclaw/actions/workflows/security.yml"><img src="https://github.com/labclaw/labclaw/actions/workflows/security.yml/badge.svg" alt="Security"></a>
-  <a href="https://codecov.io/gh/labclaw/labclaw"><img src="https://img.shields.io/badge/coverage-100%25-brightgreen.svg" alt="Coverage"></a>
+  <img src="https://img.shields.io/badge/coverage-100%25-brightgreen.svg" alt="Coverage">
   <a href="https://www.python.org/"><img src="https://img.shields.io/badge/python-3.11%2B-blue.svg" alt="Python 3.11+"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-Apache%202.0-blue.svg" alt="License: Apache 2.0"></a>
 </p>
