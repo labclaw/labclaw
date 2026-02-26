@@ -136,15 +136,15 @@
 | Tool | Stars | Description | Integration |
 |------|-------|-------------|-------------|
 | **[DeepLabCut](https://github.com/DeepLabCut/DeepLabCut)** | 5.5K | Markerless multi-animal pose estimation | Output → edge watcher → NWB |
-| **[SLEAP](https://github.com/talmolab/sleap)** | 557 | Multi-animal pose tracking (top-down + bottom-up) | Output → edge watcher → NWB |
+| **[SLEAP](https://github.com/talmolab/sleap)** | 550+ | Multi-animal pose tracking (top-down + bottom-up) | Output → edge watcher → NWB |
 
 ### Behavioral Analysis (ASK step)
 
 | Tool | Stars | Description | Integration |
 |------|-------|-------------|-------------|
-| **[keypoint-MoSeq](https://github.com/dattalab/keypoint-moseq)** | 104 | Unsupervised behavioral syllable discovery | Pose → syllables → pattern mining |
+| **[keypoint-MoSeq](https://github.com/dattalab/keypoint-moseq)** | 100+ | Unsupervised behavioral syllable discovery | Pose → syllables → pattern mining |
 | **[SimBA](https://github.com/sgoldenlab/simba)** | 300+ | Social interaction classifiers | Behavior labels → correlations |
-| **[B-SOiD](https://github.com/YttriLab/B-SOID)** | 150+ | Unsupervised behavior segmentation | Pose → clusters → mining |
+| **[B-SOiD](https://github.com/YttriLab/B-SOID)** | 200+ | Unsupervised behavior segmentation | Pose → clusters → mining |
 | **[Pynapple](https://github.com/pynapple-org/pynapple)** | 330+ | Neural time series analysis | Time series → temporal patterns |
 
 ### Electrophysiology (OBSERVE step)
@@ -152,7 +152,7 @@
 | Tool | Stars | Description | Integration |
 |------|-------|-------------|-------------|
 | **[SpikeInterface](https://github.com/SpikeInterface/spikeinterface)** | 700+ | Unified spike sorting (10+ backends) | Raw → sorted spikes → NWB |
-| **[Kilosort4](https://github.com/MouseLand/Kilosort)** | 560+ | GPU-accelerated spike sorting | Via SpikeInterface |
+| **[Kilosort4](https://github.com/MouseLand/Kilosort)** | 590+ | GPU-accelerated spike sorting | Via SpikeInterface |
 | **[MNE-Python](https://github.com/mne-tools/mne-python)** | 3.2K | MEG/EEG full pipeline | EEG → features → mining |
 
 ### Calcium Imaging (OBSERVE step)
@@ -167,8 +167,8 @@
 
 | Tool | Stars | Description | Integration |
 |------|-------|-------------|-------------|
-| **[PyNWB](https://github.com/NeurodataWithoutBorders/pynwb)** | 207 | NWB file read/write | Core data format for LabClaw |
-| **[NeuroConv](https://github.com/catalystneuro/neuroconv)** | 73 | 47+ formats → NWB conversion | Edge node format standardization |
+| **[PyNWB](https://github.com/NeurodataWithoutBorders/pynwb)** | 200+ | NWB file read/write | Core data format for LabClaw |
+| **[NeuroConv](https://github.com/catalystneuro/neuroconv)** | 70+ | 47+ formats → NWB conversion | Edge node format standardization |
 | **[HDMF](https://github.com/hdmf-dev/hdmf)** | 50+ | Hierarchical data modeling framework | PyNWB backend |
 
 ### Hardware Control (EXPERIMENT step)
@@ -176,8 +176,8 @@
 | Tool | Stars | Description | Integration |
 |------|-------|-------------|-------------|
 | **[PyVISA](https://github.com/pyvisa/pyvisa)** | 910+ | VISA instrument control | Device manager adapter |
-| **[NI-DAQmx](https://github.com/ni/nidaqmx-python)** | 555 | National Instruments DAQ | Hardware I/O adapter |
-| **[Pycro-Manager](https://github.com/micro-manager/pycro-manager)** | 176 | Microscope control | Microscope device adapter |
+| **[NI-DAQmx](https://github.com/ni/nidaqmx-python)** | 550+ | National Instruments DAQ | Hardware I/O adapter |
+| **[Pycro-Manager](https://github.com/micro-manager/pycro-manager)** | 170+ | Microscope control | Microscope device adapter |
 
 ## Data APIs
 
@@ -187,9 +187,9 @@
 
 | API | Content | Auth | Client | Why |
 |-----|---------|------|--------|-----|
-| **[DANDI Archive](https://api.dandiarchive.org/)** | 1,000+ NWB datasets | API key (free) | `dandi` | Reference datasets for benchmarking |
+| **[DANDI Archive](https://api.dandiarchive.org/)** | 790+ dandisets | API key (free) | `dandi` | Reference datasets for benchmarking |
 | **[Allen Brain Observatory](https://allensdk.readthedocs.io/)** | Visual coding, connectivity | None | `allensdk` | Cross-reference neural data |
-| **[OpenNeuro](https://openneuro.org/)** | 1,000+ BIDS datasets | None | `openneuro-py` | Public neuro datasets |
+| **[OpenNeuro](https://openneuro.org/)** | 1,800+ BIDS datasets | None | `openneuro-py` | Public neuro datasets |
 
 ### Literature (P0)
 
@@ -243,7 +243,7 @@
 | **[DOLPHIN](https://arxiv.org/abs/2501.03916)** | Closed-loop scientific method | LLM generates → experiments → evaluates → iterates | Yes |
 | **[Google AI Co-Scientist](https://research.google/blog/accelerating-scientific-breakthroughs-with-an-ai-co-scientist/)** | Multi-agent reasoning | Tournament-style hypothesis ranking | No |
 
-**LabClaw's differentiation:** Only system combining (1) 24/7 self-evolution, (2) three-tier persistent memory, (3) hardware-software full stack, (4) neuroscience specialization, (5) complete scientific method loop.
+**LabClaw's design combines:** (1) 24/7 self-evolution, (2) three-tier persistent memory, (3) hardware-software full stack, (4) neuroscience specialization, (5) complete scientific method loop.
 
 ## Benchmarks
 
@@ -251,7 +251,7 @@
 |-----------|-------|------------|------|
 | **[ScienceAgentBench](https://github.com/OSU-NLP-Group/ScienceAgentBench)** | 102 tasks, 4 disciplines | 42.2% (o1-preview) | [Leaderboard](https://hal.cs.princeton.edu/scienceagentbench) |
 | **[FrontierScience](https://openai.com/index/frontierscience/)** | AI scientific reasoning | — | OpenAI |
-| **[MLAgentBench](https://arxiv.org/abs/2310.03302)** | 13 ML experimentation tasks | 37.5% (Claude 3 Opus) | arXiv |
+| **[MLAgentBench](https://arxiv.org/abs/2310.03302)** | 13 ML experimentation tasks | — | arXiv |
 
 ## Related Awesome Lists
 
