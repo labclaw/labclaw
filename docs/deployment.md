@@ -112,7 +112,9 @@ WorkingDirectory=/opt/labclaw
 ExecStart=/opt/labclaw/venv/bin/labclaw serve \
     --data-dir /opt/labclaw/data \
     --memory-root /opt/labclaw/memory \
+    --host 0.0.0.0 \
     --port 18800 \
+    --dashboard-host 0.0.0.0 \
     --dashboard-port 18801
 Restart=on-failure
 RestartSec=10
@@ -182,7 +184,7 @@ The script:
 Customize the target by editing `deploy/deploy.sh`:
 
 ```bash
-REMOTE="claw"                    # SSH alias
+REMOTE="labclaw-server"          # SSH alias (or set LABCLAW_REMOTE env var)
 REMOTE_DIR="/opt/labclaw"        # Installation directory
 ```
 
@@ -214,6 +216,12 @@ venv/bin/pip install "labclaw[science]"
 ```bash
 ufw allow 18800/tcp   # API
 ufw allow 18801/tcp   # Dashboard
+```
+
+If you want local-only access (for SSH tunnel or reverse proxy setup), use:
+
+```ini
+--host 127.0.0.1 --dashboard-host 127.0.0.1
 ```
 
 ### AWS EC2
@@ -269,6 +277,13 @@ docker compose --env-file .env up -d
 |---------|-------------|------|
 | REST API | 18800 | `--port` |
 | Dashboard | 18801 | `--dashboard-port` |
+
+### Bind Addresses
+
+| Service | Default host | Flag |
+|---------|--------------|------|
+| REST API | `127.0.0.1` | `--host` |
+| Dashboard | `127.0.0.1` | `--dashboard-host` |
 
 ### Intervals
 

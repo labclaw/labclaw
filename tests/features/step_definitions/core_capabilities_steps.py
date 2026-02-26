@@ -1,6 +1,6 @@
-"""BDD step definitions for Paper Capabilities (v0.1.0).
+"""BDD step definitions for Core Capabilities.
 
-Covers scenarios in tests/features/layer3_engine/paper_capabilities.feature.
+Covers scenarios in tests/features/layer3_engine/core_capabilities.feature.
 """
 
 from __future__ import annotations

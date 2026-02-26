@@ -1,5 +1,5 @@
-Feature: Paper Capabilities (v0.1.0)
-  LabClaw must demonstrate 5 core capabilities for the Nature/Science paper.
+Feature: Core Capabilities
+  LabClaw must demonstrate 5 core capabilities.
 
   Scenario: C1 — Discover statistically significant finding
     Given behavioral session data with embedded correlations

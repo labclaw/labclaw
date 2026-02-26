@@ -96,11 +96,11 @@
 
 ## 0.0.1 — 2026-02-20
 
-First production release. All 5 layers functional, deployed on DO server.
+First production release. All 5 layers functional.
 
 ### Security
 
-- API bound to `127.0.0.1` (access via Tailscale mesh / SSH tunnel)
+- API bound to `127.0.0.1` (access via SSH tunnel or reverse proxy)
 - Path traversal protection on session recording endpoints
 - Service runs as dedicated `labclaw` user (non-root)
 - Proper SIGTERM signal handling with graceful shutdown
