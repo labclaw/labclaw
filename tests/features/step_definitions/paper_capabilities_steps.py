@@ -249,7 +249,9 @@ def finding_with_significance(bdd_data_rows: list[dict[str, Any]]) -> None:
     validator = StatisticalValidator()
     cfg = ValidationConfig(min_sample_size=2)
     stat_result = validator.run_test("permutation", speed_vals, angle_vals, config=cfg)
-    assert 0.0 <= stat_result.p_value <= 1.0, f"p_value out of range: {stat_result.p_value}"
+    assert stat_result.p_value < 0.05, (
+        f"Expected p < 0.05 for C1 DISCOVER, got p={stat_result.p_value:.6f}"
+    )
 
 
 @then("fitness improvement is at least 15 percent")
@@ -278,7 +280,9 @@ def ablation_statistically_significant(bdd_evolution_result: dict[str, Any]) -> 
         ablation.fitness_scores,
         config=cfg,
     )
-    assert 0.0 <= stat_result.p_value <= 1.0
+    assert stat_result.p_value < 0.05, (
+        f"Expected p < 0.05 for C2 ablation, got p={stat_result.p_value:.6f}"
+    )
 
 
 @then("at least 90 percent of findings are retrievable")
