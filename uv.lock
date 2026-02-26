@@ -1180,6 +1180,7 @@ dependencies = [
     { name = "mcp" },
     { name = "numpy" },
     { name = "openai" },
+    { name = "plotly" },
     { name = "pydantic" },
     { name = "pyyaml" },
     { name = "redis" },
@@ -1249,6 +1250,7 @@ requires-dist = [
     { name = "numpy", specifier = ">=1.26.0,<3.0.0" },
     { name = "openai", specifier = ">=1.0.0,<2.0.0" },
     { name = "pip-audit", marker = "extra == 'dev'", specifier = ">=2.7.0,<3.0.0" },
+    { name = "plotly", specifier = ">=5.18.0,<10.0.0" },
     { name = "pre-commit", marker = "extra == 'dev'", specifier = ">=4.0,<5.0" },
     { name = "pydantic", specifier = ">=2.0.0,<3.0.0" },
     { name = "pynwb", marker = "extra == 'nwb'", specifier = ">=2.8.0" },
@@ -2409,6 +2411,19 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/1b/04/fea538adf7dbbd6d186f551d595961e564a3b6715bdf276b477460858672/platformdirs-4.9.2.tar.gz", hash = "sha256:9a33809944b9db043ad67ca0db94b14bf452cc6aeaac46a88ea55b26e2e9d291", size = 28394, upload-time = "2026-02-16T03:56:10.574Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/48/31/05e764397056194206169869b50cf2fee4dbbbc71b344705b9c0d878d4d8/platformdirs-4.9.2-py3-none-any.whl", hash = "sha256:9170634f126f8efdae22fb58ae8a0eaa86f38365bc57897a6c4f781d1f5875bd", size = 21168, upload-time = "2026-02-16T03:56:08.891Z" },
+]
+
+[[package]]
+name = "plotly"
+version = "5.24.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "packaging" },
+    { name = "tenacity" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/79/4f/428f6d959818d7425a94c190a6b26fbc58035cbef40bf249be0b62a9aedd/plotly-5.24.1.tar.gz", hash = "sha256:dbc8ac8339d248a4bcc36e08a5659bacfe1b079390b8953533f4eb22169b4bae", size = 9479398, upload-time = "2024-09-12T15:36:31.068Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/e5/ae/580600f441f6fc05218bd6c9d5794f4aef072a7d9093b291f1c50a9db8bc/plotly-5.24.1-py3-none-any.whl", hash = "sha256:f67073a1e637eb0dc3e46324d9d51e2fe76e9727c892dde64ddf1e1b51f29089", size = 19054220, upload-time = "2024-09-12T15:36:24.08Z" },
 ]
 
 [[package]]
