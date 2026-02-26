@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 120" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="480" y2="0" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#0a1628"/>
+      <stop offset="100%" stop-color="#0e1e35"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#1a9cb0"/>
+      <stop offset="100%" stop-color="#14b8a6"/>
+    </linearGradient>
+  </defs>
+  <rect width="480" height="120" rx="16" fill="url(#bg)"/>
+  <!-- Icon: stylized claw/brain -->
+  <circle cx="60" cy="60" r="30" fill="none" stroke="url(#accent)" stroke-width="2.5" opacity="0.3"/>
+  <circle cx="60" cy="60" r="20" fill="none" stroke="url(#accent)" stroke-width="2" opacity="0.5"/>
+  <circle cx="60" cy="60" r="10" fill="url(#accent)" opacity="0.8"/>
+  <!-- Orbital dots -->
+  <circle cx="60" cy="30" r="3" fill="#1a9cb0"/>
+  <circle cx="86" cy="45" r="3" fill="#14b8a6"/>
+  <circle cx="86" cy="75" r="3" fill="#1a9cb0"/>
+  <circle cx="60" cy="90" r="3" fill="#14b8a6"/>
+  <circle cx="34" cy="75" r="3" fill="#1a9cb0"/>
+  <circle cx="34" cy="45" r="3" fill="#14b8a6"/>
+  <!-- LAB text -->
+  <text x="110" y="72" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-weight="800" font-size="48" fill="#e8edf4" letter-spacing="-1">LAB</text>
+  <!-- CLAW text -->
+  <text x="238" y="72" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-weight="800" font-size="48" fill="#1a9cb0" letter-spacing="-1">CLAW</text>
+  <!-- Tagline -->
+  <text x="110" y="98" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-weight="400" font-size="13" fill="#8899aa" letter-spacing="3">EACH LAB DESERVES A SUPERBRAIN</text>
+</svg>
