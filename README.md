@@ -83,13 +83,9 @@ See:
 - `docs/specs/L3-engine.md`
 - `docs/migrations/2026-02-20-api-behavior-changes.md`
 
-## Launch Checklist
+## Demo
 
-- [ ] Add a 60-second demo GIF in `docs/`
-- [ ] Publish benchmark datasets + reproducible scripts
-- [ ] Tag `v0.0.1` release notes
-- [ ] Open 10 beginner-friendly issues (`good first issue`)
-- [ ] Post roadmap updates weekly
+> Demo server coming soon. See `deploy/` for self-hosting instructions.
 
 ## Roadmap
 
