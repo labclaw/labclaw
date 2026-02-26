@@ -181,7 +181,7 @@ def _generate_chemistry() -> list[dict[str, Any]]:
     rows: list[dict[str, Any]] = []
 
     # Grid exploration + random exploration
-    temps = list(range(40, 100, 10))      # 6 levels
+    temps = list(range(40, 100, 10))  # 6 levels
     pressures = [100, 150, 200, 250, 300]  # 5 levels
 
     exp_id = 1
@@ -204,9 +204,7 @@ def _generate_chemistry() -> list[dict[str, Any]]:
                 )
 
                 # purity negatively correlated with catalyst
-                purity_pct = float(
-                    np.clip(98.0 - 0.25 * cat + rng.normal(0, 1.5), 50, 99)
-                )
+                purity_pct = float(np.clip(98.0 - 0.25 * cat + rng.normal(0, 1.5), 50, 99))
 
                 # pH determined by conditions
                 ph_base = 6.5 + rng.normal(0, 0.3)

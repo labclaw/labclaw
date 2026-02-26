@@ -63,7 +63,9 @@ class PatternRecord(BaseModel):
         """Assign a content-stable ID so the same pattern always gets the same ID."""
         if not self.pattern_id:
             key = f"{self.pattern_type}:{self.description}"
-            self.pattern_id = hashlib.sha1(key.encode()).hexdigest()[:8]  # noqa: S324
+            self.pattern_id = hashlib.sha1(  # noqa: S324
+                key.encode(), usedforsecurity=False
+            ).hexdigest()[:8]
         return self
 
 
