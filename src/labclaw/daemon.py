@@ -155,6 +155,7 @@ class LabClawDaemon:
         host: str = "127.0.0.1",
         api_port: int = DEFAULT_PORT,
         dashboard_port: int = DASHBOARD_PORT,
+        dashboard_host: str = "127.0.0.1",
         discovery_interval: int = DISCOVERY_INTERVAL_SECONDS,
         evolution_interval: int = EVOLUTION_INTERVAL_SECONDS,
     ) -> None:
@@ -163,6 +164,7 @@ class LabClawDaemon:
         self.host = host
         self.api_port = api_port
         self.dashboard_port = dashboard_port
+        self.dashboard_host = dashboard_host
         self.discovery_interval = discovery_interval
         self.evolution_interval = evolution_interval
 
@@ -540,7 +542,7 @@ class LabClawDaemon:
                     "--server.port",
                     str(self.dashboard_port),
                     "--server.address",
-                    "127.0.0.1",
+                    self.dashboard_host,
                     "--server.headless",
                     "true",
                     "--browser.gatherUsageStats",
@@ -592,6 +594,12 @@ def main() -> None:
         help=f"Streamlit dashboard port (default: {DASHBOARD_PORT})",
     )
     parser.add_argument(
+        "--dashboard-host",
+        type=str,
+        default="127.0.0.1",
+        help="Streamlit dashboard bind address (default: 127.0.0.1)",
+    )
+    parser.add_argument(
         "--discovery-interval",
         type=int,
         default=DISCOVERY_INTERVAL_SECONDS,
@@ -617,6 +625,7 @@ def main() -> None:
         host=args.host,
         api_port=args.port,
         dashboard_port=args.dashboard_port,
+        dashboard_host=args.dashboard_host,
         discovery_interval=args.discovery_interval,
         evolution_interval=args.evolution_interval,
     )
