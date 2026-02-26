@@ -386,7 +386,7 @@ class EvolutionEngine:
         """Save all evolution state to JSON file."""
         state = EvolutionState(
             cycles=list(self._cycles.values()),
-            fitness_history=self._fitness.to_dict(),
+            fitness_history=self._fitness.to_dict(),  # type: ignore[arg-type]
         )
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(state.model_dump_json(indent=2))
@@ -398,7 +398,7 @@ class EvolutionEngine:
         try:
             state = EvolutionState.model_validate_json(path.read_text())
             self._cycles = {c.cycle_id: c for c in state.cycles}
-            self._fitness = FitnessTracker.from_dict(state.fitness_history)
+            self._fitness = FitnessTracker.from_dict(state.fitness_history)  # type: ignore[arg-type]
             logger.info(
                 "Loaded evolution state: %d cycles, %d fitness targets",
                 len(self._cycles),

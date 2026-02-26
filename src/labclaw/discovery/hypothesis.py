@@ -348,7 +348,8 @@ class LLMHypothesisGenerator:
         pattern_ids = [p.pattern_id for p in hypothesis_input.patterns]
         hypotheses: list[HypothesisOutput] = []
 
-        for item in response.hypotheses[:20]:
+        typed_response = _LLMHypothesisResponse.model_validate(response.model_dump())
+        for item in typed_response.hypotheses[:20]:
             statement = item.statement.strip()
             experiments = [e.strip() for e in item.required_experiments if e.strip()]
             if not statement:
