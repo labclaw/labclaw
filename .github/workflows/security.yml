@@ -79,6 +79,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     if: github.event_name != 'pull_request'
+    continue-on-error: true  # GHAS required; free once repo is public
     permissions:
       actions: read
       contents: read
