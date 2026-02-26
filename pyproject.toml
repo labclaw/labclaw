@@ -80,7 +80,7 @@ docs = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/labclaw/labclaw"
+Homepage = "https://labclaw.org"
 Documentation = "https://labclaw.github.io/labclaw/"
 Repository = "https://github.com/labclaw/labclaw"
 Issues = "https://github.com/labclaw/labclaw/issues"

@@ -296,8 +296,7 @@ def show_landing() -> None:
     engine = _evolution_engine()
     history = engine.get_history()
     patterns_found = sum(
-        getattr(r, "patterns_found", 0)
-        for r in st.session_state.get("orchestrator_results", [])
+        getattr(r, "patterns_found", 0) for r in st.session_state.get("orchestrator_results", [])
     )
     hypotheses_gen = sum(
         getattr(r, "hypotheses_generated", 0)
@@ -589,12 +588,14 @@ def _run_discovery_pipeline(csv_path: Path, dataset_name: str) -> None:
         val_df = pd.DataFrame(val_rows)
         st.dataframe(
             val_df.style.apply(
-                lambda col: [
-                    f"color: {ACCENT}" if v else f"color: {TEXT_MUTED}"
-                    for v in val_df["Significant"]
-                ]
-                if col.name == "Significant"
-                else [""] * len(col),
+                lambda col: (
+                    [
+                        f"color: {ACCENT}" if v else f"color: {TEXT_MUTED}"
+                        for v in val_df["Significant"]
+                    ]
+                    if col.name == "Significant"
+                    else [""] * len(col)
+                ),
                 axis=0,
             ),
             use_container_width=True,
@@ -621,7 +622,7 @@ def _run_discovery_pipeline(csv_path: Path, dataset_name: str) -> None:
 def show_scientific_loop() -> None:
     st.markdown(
         '<div class="hero-header"><h1>Scientific Loop</h1>'
-        '<p>Run the full 7-step scientific method on your data and trace every finding.</p>'
+        "<p>Run the full 7-step scientific method on your data and trace every finding.</p>"
         "</div>",
         unsafe_allow_html=True,
     )
@@ -920,7 +921,7 @@ def show_evolution() -> None:
 def show_memory() -> None:
     st.markdown(
         '<div class="hero-header"><h1>Memory</h1>'
-        '<p>LabClaw never forgets — every finding, hypothesis, and decision '
+        "<p>LabClaw never forgets — every finding, hypothesis, and decision "
         "is stored and searchable.</p>"
         "</div>",
         unsafe_allow_html=True,
@@ -985,9 +986,7 @@ def show_memory() -> None:
         st.plotly_chart(fig_tree, use_container_width=True)
 
         # Timeline
-        st.markdown(
-            '<div class="section-title">Discovery Timeline</div>', unsafe_allow_html=True
-        )
+        st.markdown('<div class="section-title">Discovery Timeline</div>', unsafe_allow_html=True)
         recent = sorted(nodes, key=lambda n: n.created_at, reverse=True)[:20]
         timeline_data = [
             {
@@ -1009,9 +1008,7 @@ def show_memory() -> None:
         )
 
     # Search
-    st.markdown(
-        '<div class="section-title">Search Knowledge Graph</div>', unsafe_allow_html=True
-    )
+    st.markdown('<div class="section-title">Search Knowledge Graph</div>', unsafe_allow_html=True)
     query = st.text_input("Search query", placeholder="e.g. neuron, session, hypothesis")
     if query:
         results = kg.search(query, limit=20)
@@ -1054,7 +1051,7 @@ def show_memory() -> None:
 def show_api() -> None:
     st.markdown(
         '<div class="hero-header"><h1>REST API</h1>'
-        '<p>LabClaw exposes a full REST API on port 18800 for programmatic access.</p>'
+        "<p>LabClaw exposes a full REST API on port 18800 for programmatic access.</p>"
         "</div>",
         unsafe_allow_html=True,
     )
@@ -1149,9 +1146,7 @@ def show_api() -> None:
         language="bash",
     )
 
-    st.markdown(
-        '<div class="section-title">Full API Documentation</div>', unsafe_allow_html=True
-    )
+    st.markdown('<div class="section-title">Full API Documentation</div>', unsafe_allow_html=True)
     st.info(
         "Interactive API docs (Swagger UI) are available at **http://localhost:18800/docs** "
         "when the LabClaw daemon is running."
@@ -1196,9 +1191,7 @@ def show_devices() -> None:
     st.subheader("Register Test Device")
     with st.form("register_device"):
         name = st.text_input("Name", value="Test Microscope")
-        device_type = st.selectbox(
-            "Type", ["microscope", "camera", "ephys_rig", "qpcr", "printer"]
-        )
+        device_type = st.selectbox("Type", ["microscope", "camera", "ephys_rig", "qpcr", "printer"])
         location = st.text_input("Location", value="Room 101")
         submitted = st.form_submit_button("Register")
         if submitted and name:

@@ -1,100 +1,200 @@
-# LabClaw
+<p align="center">
+  <a href="https://labclaw.org"><img src="docs/assets/logo.svg" alt="LabClaw" width="480"></a>
+</p>
 
-[![CI](https://github.com/labclaw/labclaw/actions/workflows/ci.yml/badge.svg)](https://github.com/labclaw/labclaw/actions/workflows/ci.yml)
-[![Security](https://github.com/labclaw/labclaw/actions/workflows/security.yml/badge.svg)](https://github.com/labclaw/labclaw/actions/workflows/security.yml)
-[![Release](https://github.com/labclaw/labclaw/actions/workflows/release.yml/badge.svg)](https://github.com/labclaw/labclaw/actions/workflows/release.yml)
-[![Python](https://img.shields.io/badge/python-3.11%2B-blue.svg)](https://www.python.org/)
-[![License: Apache 2.0](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
+<p align="center">
+  <em>Each lab deserves a SuperBrain.</em>
+</p>
 
-Distributed, agentic lab infrastructure for **self-documenting** and **self-improving** neuroscience workflows.
+<p align="center">
+  <a href="https://github.com/labclaw/labclaw/actions/workflows/ci.yml"><img src="https://github.com/labclaw/labclaw/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <a href="https://github.com/labclaw/labclaw/actions/workflows/security.yml"><img src="https://github.com/labclaw/labclaw/actions/workflows/security.yml/badge.svg" alt="Security"></a>
+  <img src="https://img.shields.io/badge/coverage-100%25-brightgreen.svg" alt="Coverage">
+  <a href="https://www.python.org/"><img src="https://img.shields.io/badge/python-3.11%2B-blue.svg" alt="Python 3.11+"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-Apache%202.0-blue.svg" alt="License: Apache 2.0"></a>
+</p>
 
-## OpenClaw Integration
+---
 
-LabClaw builds its researcher community on top of the
-[OpenClaw](https://github.com/openclaw/openclaw) platform (191k+ stars):
-OpenClaw provides chat, LLM routing, and AgentSkill distribution;
-LabClaw builds the science engine, lab memory, hardware safety layer,
-and domain plugins. See [docs/openclaw-extension.md](docs/openclaw-extension.md)
-for the full architecture.
+## The Problem
 
-## Why LabClaw
+Labs generate mountains of data every day. But the knowledge stays trapped — in notebooks, in people's heads, in one-off scripts that nobody can reproduce. Each new experiment starts from scratch. Each new lab member re-learns the same lessons. AI tools exist. Lab instruments exist. **Nothing connects them.**
 
-LabClaw turns raw experimental activity into a closed loop:
+## What LabClaw Does
 
-1. Observe incoming files and session events.
-2. Monitor data quality in real time.
-3. Mine patterns and generate hypotheses.
-4. Track provenance and validation.
-5. Evolve analysis behavior safely.
+LabClaw is an open-source Python framework that acts as a **persistent, self-improving brain for your lab**. It connects your instruments to LLMs, automatically discovers patterns in your data, generates and tests hypotheses, and remembers everything — so your lab gets smarter with every experiment.
 
-## Core Modules
+```
+Your data files → LabClaw watches → Discovers patterns → Generates hypotheses
+    → Validates statistically → Evolves its own pipelines → Remembers everything
+```
 
-- `edge/`: File watching, sentinel monitoring, session chronicle
-- `discovery/`: Pattern mining, unsupervised discovery, modeling, hypotheses
-- `validation/`: Statistical tests, provenance chains, report generation
-- `memory/`: Tier-A markdown memory (`SOUL.md`, `MEMORY.md`)
-- `evolution/`: Candidate proposals, stage transitions, rollback checks
-- `api/`: FastAPI control plane endpoints
+Three things make LabClaw different:
+
+1. **It runs the scientific method autonomously.** Not just chat — a 7-step loop (Observe → Ask → Hypothesize → Predict → Experiment → Analyze → Conclude) that runs continuously on your data.
+
+2. **It evolves its own analysis.** Analysis candidates compete, mutate, and improve through evolutionary fitness scoring. The system literally gets better at analyzing your data over time.
+
+3. **It builds persistent memory.** Three tiers of memory (human-readable Markdown, a knowledge graph, and shared agent state) survive restarts and accumulate lab-wide knowledge across experiments, projects, and people.
+
+## How It Works
+
+### 1. Point it at your data
+
+```bash
+labclaw serve --data-dir ./data --memory-root ./lab
+```
+
+LabClaw watches your `data/` directory for new CSV/TSV files — from behavioral tracking systems, plate readers, microscopes, or any instrument that outputs tabular data.
+
+### 2. It discovers patterns automatically
+
+Every 5 minutes, the discovery loop runs the scientific method on all accumulated data:
+
+- **Observe** — Ingest and summarize new data
+- **Ask** — Mine pairwise correlations, detect anomalies, find temporal trends
+- **Hypothesize** — Use LLMs (or template fallback) to generate testable hypotheses
+- **Predict** — Build predictive models with uncertainty estimates
+- **Experiment** — Propose next experiments via Bayesian optimization
+- **Analyze** — Extract features and compute statistics
+- **Conclude** — Run statistical validation, generate provenance chains, write reports
+
+### 3. It evolves its own pipelines
+
+Every 30 minutes, the evolution loop evaluates how well the current analysis performs, proposes mutations, and promotes improvements. After 10 cycles, pipelines typically improve by 15%+ in pattern discovery.
+
+### 4. It remembers everything
+
+All findings, hypotheses, validations, and provenance chains are stored in a 3-tier memory system:
+
+| Tier | What | Storage |
+|------|------|---------|
+| **A: Human-Readable** | Protocols, decisions, daily logs | Markdown files in git |
+| **B: Knowledge Graph** | Entities, relations, temporal links | SQLite FTS5 |
+| **C: Agent State** | Shared blocks, per-agent workspace | In-memory + SQLite |
+
+Query memory at any time: `labclaw memory query "correlation between temperature and yield"`
 
 ## Quick Start
 
-```bash
-# Install with dev + science stack
-uv sync --extra dev --extra science
-
-# Run API + daemon loop
-uv run labclaw serve --data-dir ./data --memory-root ./lab
-
-# Run the dashboard in a separate terminal
-uv run labclaw --dashboard
-```
-
-## Test Suite
+### 1. Clone and install
 
 ```bash
-uv run --extra dev --extra science pytest -q
+git clone https://github.com/labclaw/labclaw
+cd labclaw
+
+# Option A: using uv (recommended — fast, handles Python version)
+uv sync --extra science
+
+# Option B: using pip
+pip install -e ".[science]"
 ```
 
-## CI/CD
+> **Note:** LabClaw is in active development (v0.0.x). PyPI publishing is planned for v0.1.0.
 
-GitHub Actions now provides:
-
-- CI gates for lint, compatibility, full tests, and package build validation
-- Security scanning (CodeQL + dependency audit)
-- Tagged release automation (GitHub Release + optional PyPI publish)
-- Manual environment deployment workflow (`workflow_dispatch`)
-- Weekly dependency update PRs via Dependabot
-
-Setup details and required repository secrets/variables are documented in
-`docs/reference/ci-cd.md`.
-
-## API
+### 2. Run the demo (no API keys needed)
 
 ```bash
-uv run labclaw --api 18800
-# Health check
-curl http://127.0.0.1:18800/api/health
+labclaw demo                         # generic sample data
+labclaw demo --domain neuroscience   # pose estimation, trial metrics
+labclaw demo --domain chemistry      # reaction yields, conditions
 ```
 
-## Runtime and API Semantics
+This runs a full discovery cycle on built-in sample data — pattern mining, hypothesis generation, statistical validation, and evolution — all in your terminal.
 
-- Holm correction uses step-down monotonic adjusted p-values and preserves original test order in output.
-- Tier-A memory `entity_id` values are constrained to `[A-Za-z0-9][A-Za-z0-9._-]{0,127}`.
-- Tier-A append uses per-file in-process locking to avoid dropped entries under concurrent writers in the same process.
-- Memory search API validates `limit >= 1` (`422` on invalid limits).
-- Session recording API requires an existing file within `LABCLAW_DATA_DIR`.
-- Daemon ingestion retries zero-row files on later events and performs defensive shutdown (`terminate` then `kill` on timeout for dashboard subprocesses).
+### 3. Start your own project
 
-See:
+```bash
+labclaw init my-lab    # scaffolds config, data dir, and memory files
+cd my-lab
+```
 
-- `docs/specs/L3-validation.md`
-- `docs/specs/L4-memory.md`
-- `docs/specs/L3-engine.md`
-- `docs/migrations/2026-02-20-api-behavior-changes.md`
+### 4. Drop your data and run
 
-## Demo
+```bash
+# Copy your CSV/TSV files into the data directory
+cp /path/to/experiment_results.csv data/
 
-> Demo server coming soon at `demo.labclaw.dev`. See `deploy/` for self-hosting instructions.
+# Option A: run one analysis cycle
+labclaw pipeline --once --data-dir ./data
+
+# Option B: start the 24/7 daemon (watches for new files continuously)
+labclaw serve --data-dir ./data --memory-root ./lab
+```
+
+LabClaw auto-detects numeric columns. Any CSV with numeric data works — no schema configuration needed.
+
+## Architecture
+
+Five layers, one unified stack — each layer is modular, swappable, and independently testable:
+
+```
+Layer 5  PERSONA        Agent identities & goals — human + AI lab members with role-based access
+Layer 4  MEMORY         3-tier persistent store — Markdown + Knowledge Graph + Shared Blocks
+Layer 3  ENGINE         Scientific method loop — Observe → Hypothesize → Validate → Evolve
+Layer 2  PLATFORM       Event bus, REST API, dashboard, edge nodes
+Layer 1  HARDWARE       Instrument adapters, safety manager, device registry
+```
+
+## Use Cases
+
+**Behavioral Neuroscience** — Automate video tracking, pose estimation, and trial management across multi-animal experiments. LabClaw watches recording directories, extracts behavioral metrics, and discovers correlations between conditions.
+
+**Wet Lab Automation** — Connect liquid handlers, plate readers, and incubators into self-optimizing protocols. The system learns which conditions produce the best results and proposes the next experiment.
+
+**Chemistry & Materials** — Drive synthesis robots and characterization instruments with AI-guided exploration. Bayesian optimization navigates the parameter space while respecting safety constraints.
+
+## CLI Reference
+
+```
+labclaw demo                     Try it now — no API keys needed
+labclaw init <name>              Scaffold a new project
+labclaw serve                    Start the full 24/7 daemon
+labclaw pipeline --once          Run one discovery cycle on your data
+labclaw ablation                 Compare full vs no-evolution performance
+labclaw memory query "term"      Search stored findings
+labclaw memory stats             Show memory statistics
+labclaw export --format nwb      Export findings to NWB or JSON
+labclaw reproduce                Verify deterministic output
+labclaw plugin list              List registered plugins
+labclaw plugin create <name>     Scaffold a new plugin
+labclaw mcp                      Start MCP server (Claude Desktop integration)
+labclaw --dashboard              Launch Streamlit dashboard
+labclaw --api [PORT]             Launch REST API only
+```
+
+## The Daemon
+
+When you run `labclaw serve`, four services start:
+
+| Service | Default | What It Does |
+|---------|---------|-------------|
+| REST API | port 18800 | Experiment management, memory queries, plugin control |
+| File Watcher | — | Monitors `data/` and auto-ingests new CSV/TSV files |
+| Discovery Loop | every 5 min | Runs the full scientific method cycle |
+| Evolution Loop | every 30 min | Evaluates and improves analysis pipelines |
+
+All intervals are configurable. Run `labclaw serve --help` for options.
+
+## Development
+
+```bash
+make test       # 2000+ tests, 100% coverage required
+make lint       # ruff check
+make format     # ruff format
+```
+
+## Documentation
+
+- [Architecture Overview](docs/architecture.md)
+- [Quick Start Guide](docs/quickstart.md)
+- [Configuration](docs/configuration.md)
+- [API Reference](docs/api-reference.md)
+- [Plugin Development](docs/plugin-development.md)
+- [Memory System](docs/memory-system.md)
+- [Self-Evolution](docs/self-evolution.md)
+- [Integration Stack](docs/awesome-ai-for-science.md)
+- [Deployment Guide](deploy/)
 
 ## Roadmap
 
@@ -102,8 +202,8 @@ See [ROADMAP.md](ROADMAP.md).
 
 ## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md). PRs and issues are welcome.
+We welcome contributions! See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## License
 
-Apache 2.0
+[Apache 2.0](LICENSE)

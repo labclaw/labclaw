@@ -161,17 +161,13 @@ def test_correlation_session_ids_only_from_participating_rows() -> None:
     """session_ids must only include rows where BOTH columns had valid values (C1 fix)."""
     miner = PatternMiner()
     # Rows 0–9: both x and y present; rows 10–14: only x present (y missing)
-    data = [
-        {"session_id": f"valid_{i}", "x": float(i), "y": float(i) * 2.0} for i in range(10)
-    ] + [
+    data = [{"session_id": f"valid_{i}", "x": float(i), "y": float(i) * 2.0} for i in range(10)] + [
         {"session_id": f"missing_y_{i}", "x": float(i)} for i in range(5)
     ]
     patterns = miner.find_correlations(data, threshold=0.5)
     assert len(patterns) >= 1
     xy_pattern = next(
-        p
-        for p in patterns
-        if p.evidence.get("col_a") == "x" and p.evidence.get("col_b") == "y"
+        p for p in patterns if p.evidence.get("col_a") == "x" and p.evidence.get("col_b") == "y"
     )
     # Only 10 valid rows participated; session_ids should not include missing_y_* entries
     assert len(xy_pattern.session_ids) == 10
