@@ -6,7 +6,7 @@ import re
 from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from labclaw.api.deps import get_tier_a_backend
 from labclaw.memory.markdown import MemoryEntry, SearchResult, TierABackend
@@ -31,8 +31,8 @@ def _validate_entity_id_or_400(entity_id: str) -> None:
 
 
 class MemoryAppendRequest(BaseModel):
-    category: str
-    detail: str
+    category: str = Field(max_length=200)
+    detail: str = Field(max_length=10_000)
 
 
 # ---------------------------------------------------------------------------

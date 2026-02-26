@@ -6,7 +6,7 @@ import logging
 from typing import Any
 
 from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from labclaw.orchestrator.loop import CycleResult
 
@@ -21,7 +21,7 @@ _MAX_CYCLE_HISTORY = 1000
 class CycleRequest(BaseModel):
     """Request body for triggering a cycle."""
 
-    data_rows: list[dict[str, Any]] = []
+    data_rows: list[dict[str, Any]] = Field(default_factory=list, max_length=100_000)
 
 
 @router.post("/cycle", status_code=201)

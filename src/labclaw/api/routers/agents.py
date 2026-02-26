@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from labclaw.agents import (
     EXPERIMENT_DESIGNER_SYSTEM,
@@ -28,7 +28,7 @@ router = APIRouter()
 
 
 class ChatRequest(BaseModel):
-    message: str
+    message: str = Field(max_length=10_000)
 
 
 class ChatResponse(BaseModel):

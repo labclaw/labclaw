@@ -190,3 +190,11 @@ class TestSecurityHelpersCoverage:
     def test_enforce_request_security_exempt_path(self, monkeypatch: pytest.MonkeyPatch) -> None:
         monkeypatch.setenv("LABCLAW_RATE_LIMIT_ENABLED", "0")
         asyncio.run(deps.enforce_request_security(_request("/api/health")))
+
+    def test_env_bool_returns_default_when_env_var_absent(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """_env_bool returns the default value when the env var is not set (line 141)."""
+        monkeypatch.delenv("LABCLAW_API_AUTH_REQUIRED", raising=False)
+        assert deps._env_bool("LABCLAW_API_AUTH_REQUIRED", True) is True
+        assert deps._env_bool("LABCLAW_API_AUTH_REQUIRED", False) is False

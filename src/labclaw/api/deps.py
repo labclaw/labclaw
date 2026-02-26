@@ -6,6 +6,7 @@ shares the same in-memory state (registry, chronicle, etc.).
 
 from __future__ import annotations
 
+import hashlib
 import logging
 import os
 import secrets
@@ -141,21 +142,16 @@ def _env_bool(name: str, default: bool) -> bool:
     return raw.strip().lower() in {"1", "true", "yes", "on"}
 
 
-def _running_under_pytest() -> bool:
-    return "PYTEST_CURRENT_TEST" in os.environ
-
-
 def _auth_required() -> bool:
-    # Secure by default outside tests; tests can override with env.
-    return _env_bool("LABCLAW_API_AUTH_REQUIRED", not _running_under_pytest())
+    return _env_bool("LABCLAW_API_AUTH_REQUIRED", True)
 
 
 def _governance_required() -> bool:
-    return _env_bool("LABCLAW_GOVERNANCE_ENFORCE", not _running_under_pytest())
+    return _env_bool("LABCLAW_GOVERNANCE_ENFORCE", True)
 
 
 def _rate_limit_enabled() -> bool:
-    return _env_bool("LABCLAW_RATE_LIMIT_ENABLED", not _running_under_pytest())
+    return _env_bool("LABCLAW_RATE_LIMIT_ENABLED", True)
 
 
 @lru_cache
@@ -294,9 +290,12 @@ async def enforce_request_security(request: Request) -> None:
 
     if _governance_required():
         action = _map_action_from_request(request)
-        actor = request.headers.get("x-labclaw-actor", "api-client")
         presented = _extract_presented_token(request)
         role = _resolve_role_for_token(presented)
+        if presented:
+            actor = f"token-{hashlib.sha256(presented.encode()).hexdigest()[:8]}"
+        else:
+            actor = "anonymous"
         decision = get_governance_engine().check(
             action=action,
             actor=actor,
