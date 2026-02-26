@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 from collections import OrderedDict
 
 from fastapi import APIRouter, HTTPException
@@ -14,6 +15,7 @@ router = APIRouter()
 
 # In-process store (process-scoped; replaced by persistent store in v0.1.0)
 _chains: OrderedDict[str, ProvenanceChain] = OrderedDict()
+_chains_lock = asyncio.Lock()
 _MAX_CHAINS = 10_000
 
 
@@ -33,7 +35,7 @@ class ProvenanceRequest(BaseModel):
 
 
 @router.post("/", status_code=201)
-def create_provenance_chain(body: ProvenanceRequest) -> ProvenanceChain:
+async def create_provenance_chain(body: ProvenanceRequest) -> ProvenanceChain:
     """Register a provenance chain for a finding.
 
     Args:
@@ -58,11 +60,12 @@ def create_provenance_chain(body: ProvenanceRequest) -> ProvenanceChain:
         chain = tracker.build_chain(body.finding_id, steps)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail="Invalid provenance chain") from exc
-    if body.finding_id in _chains:
-        _chains.move_to_end(body.finding_id)
-    _chains[body.finding_id] = chain
-    while len(_chains) > _MAX_CHAINS:
-        _chains.popitem(last=False)
+    async with _chains_lock:
+        if body.finding_id in _chains:
+            _chains.move_to_end(body.finding_id)
+        _chains[body.finding_id] = chain
+        while len(_chains) > _MAX_CHAINS:
+            _chains.popitem(last=False)
     return chain
 
 

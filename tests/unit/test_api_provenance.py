@@ -21,13 +21,13 @@ client = TestClient(app)
 
 
 # ---------------------------------------------------------------------------
-# POST /api/v0/provenance/
+# POST /api/provenance/
 # ---------------------------------------------------------------------------
 
 
 def test_create_chain_returns_201() -> None:
     resp = client.post(
-        "/api/v0/provenance/",
+        "/api/provenance/",
         json={
             "finding_id": "find-001",
             "steps": [
@@ -45,7 +45,7 @@ def test_create_chain_returns_201() -> None:
 
 def test_create_chain_empty_steps_returns_400() -> None:
     resp = client.post(
-        "/api/v0/provenance/",
+        "/api/provenance/",
         json={"finding_id": "find-002", "steps": []},
     )
     assert resp.status_code == 400
@@ -53,26 +53,26 @@ def test_create_chain_empty_steps_returns_400() -> None:
 
 
 # ---------------------------------------------------------------------------
-# GET /api/v0/provenance/{finding_id}
+# GET /api/provenance/{finding_id}
 # ---------------------------------------------------------------------------
 
 
 def test_get_chain_returns_200() -> None:
     # Create first
     client.post(
-        "/api/v0/provenance/",
+        "/api/provenance/",
         json={
             "finding_id": "find-get",
             "steps": [{"node_id": "n1", "node_type": "obs", "description": "d"}],
         },
     )
-    resp = client.get("/api/v0/provenance/find-get")
+    resp = client.get("/api/provenance/find-get")
     assert resp.status_code == 200
     assert resp.json()["finding_id"] == "find-get"
 
 
 def test_get_chain_not_found_returns_404() -> None:
-    resp = client.get("/api/v0/provenance/no-such-finding")
+    resp = client.get("/api/provenance/no-such-finding")
     assert resp.status_code == 404
 
 
@@ -115,7 +115,7 @@ def test_chain_preserves_all_steps() -> None:
         {"node_id": f"n{i}", "node_type": "stage", "description": f"step {i}"} for i in range(5)
     ]
     resp = client.post(
-        "/api/v0/provenance/",
+        "/api/provenance/",
         json={"finding_id": "find-multi", "steps": steps},
     )
     assert resp.status_code == 201
@@ -128,14 +128,14 @@ def test_recreating_same_finding_id_updates_chain_in_place() -> None:
         "finding_id": "same-id",
         "steps": [{"node_id": "n1", "node_type": "obs", "description": "v1"}],
     }
-    resp1 = client.post("/api/v0/provenance/", json=payload)
+    resp1 = client.post("/api/provenance/", json=payload)
     assert resp1.status_code == 201
 
     payload["steps"] = [{"node_id": "n2", "node_type": "obs", "description": "v2"}]
-    resp2 = client.post("/api/v0/provenance/", json=payload)
+    resp2 = client.post("/api/provenance/", json=payload)
     assert resp2.status_code == 201
 
-    got = client.get("/api/v0/provenance/same-id")
+    got = client.get("/api/provenance/same-id")
     assert got.status_code == 200
     assert got.json()["steps"][0]["node_id"] == "n2"
 
@@ -153,7 +153,7 @@ def test_chain_store_evicts_oldest_when_capacity_exceeded(
         "finding_id": "new",
         "steps": [{"node_id": "n2", "node_type": "obs", "description": "new"}],
     }
-    assert client.post("/api/v0/provenance/", json=first).status_code == 201
-    assert client.post("/api/v0/provenance/", json=second).status_code == 201
-    assert client.get("/api/v0/provenance/old").status_code == 404
-    assert client.get("/api/v0/provenance/new").status_code == 200
+    assert client.post("/api/provenance/", json=first).status_code == 201
+    assert client.post("/api/provenance/", json=second).status_code == 201
+    assert client.get("/api/provenance/old").status_code == 404
+    assert client.get("/api/provenance/new").status_code == 200

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import logging
 from typing import Any
 
@@ -15,6 +16,7 @@ logger = logging.getLogger(__name__)
 
 # In-process cycle history (process-scoped; cleared on restart)
 _cycle_history: list[CycleResult] = []
+_cycle_history_lock = asyncio.Lock()
 _MAX_CYCLE_HISTORY = 1000
 
 
@@ -40,9 +42,10 @@ async def run_cycle(body: CycleRequest) -> CycleResult:
         logger.exception("Orchestrator cycle failed")
         raise HTTPException(status_code=500, detail="Internal server error") from exc
 
-    _cycle_history.append(result)
-    if len(_cycle_history) > _MAX_CYCLE_HISTORY:
-        del _cycle_history[0 : len(_cycle_history) - _MAX_CYCLE_HISTORY]
+    async with _cycle_history_lock:
+        _cycle_history.append(result)
+        if len(_cycle_history) > _MAX_CYCLE_HISTORY:
+            del _cycle_history[: len(_cycle_history) - _MAX_CYCLE_HISTORY]
     return result
 
 

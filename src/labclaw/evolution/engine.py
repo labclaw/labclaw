@@ -212,7 +212,7 @@ class EvolutionEngine:
         Emits ``evolution.cycle.advanced`` or ``evolution.cycle.rolled_back``.
         On promotion, also emits ``evolution.cycle.promoted``.
         """
-        cycle = self._get_cycle(cycle_id)
+        cycle = self.get_cycle(cycle_id)
 
         if cycle.stage == EvolutionStage.PROMOTED:
             raise ValueError(f"Cycle {cycle_id} already promoted")
@@ -275,7 +275,7 @@ class EvolutionEngine:
         Sets stage to ROLLED_BACK, records reason and completion time.
         Emits ``evolution.cycle.rolled_back``.
         """
-        cycle = self._get_cycle(cycle_id)
+        cycle = self.get_cycle(cycle_id)
 
         cycle.stage = EvolutionStage.ROLLED_BACK
         cycle.rollback_reason = reason
@@ -324,7 +324,7 @@ class EvolutionEngine:
         seconds) before it can advance.  For MVP this is generous — the daemon
         calls this each interval so a cycle will advance on the second tick.
         """
-        cycle = self._get_cycle(cycle_id)
+        cycle = self.get_cycle(cycle_id)
         elapsed = (datetime.now(UTC) - cycle.started_at).total_seconds()
         # Soak = at least 1 second (unit-test friendly) so that a brand-new
         # cycle created in the same tick is NOT immediately advanced.
@@ -419,11 +419,6 @@ class EvolutionEngine:
 
     # Private helpers
     # ------------------------------------------------------------------
-
-    def _get_cycle(self, cycle_id: str) -> EvolutionCycle:
-        if cycle_id not in self._cycles:
-            raise KeyError(f"Evolution cycle {cycle_id!r} not found")
-        return self._cycles[cycle_id]
 
     def _check_regression(
         self,

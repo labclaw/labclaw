@@ -28,6 +28,7 @@ class Layer(StrEnum):
     MEMORY = "memory"
     PERSONA = "persona"
     EVOLUTION = "evolution"
+    ORCHESTRATOR = "orchestrator"
 
 
 class DeviceStatus(StrEnum):
