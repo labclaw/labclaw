@@ -10,13 +10,13 @@ mine all variable pairs and time scales for statistically significant patterns.
 
 from __future__ import annotations
 
+import hashlib
 import logging
-import uuid
 from datetime import UTC, datetime
 from typing import Any
 
 import numpy as np
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 from scipy import stats as scipy_stats
 
 from labclaw.core.events import event_registry
@@ -27,10 +27,6 @@ logger = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
-
-
-def _uuid() -> str:
-    return str(uuid.uuid4())
 
 
 def _now() -> datetime:
@@ -54,13 +50,21 @@ class MiningConfig(BaseModel):
 class PatternRecord(BaseModel):
     """A single discovered pattern with evidence and provenance."""
 
-    pattern_id: str = Field(default_factory=_uuid)
+    pattern_id: str = Field(default="")
     pattern_type: str  # "correlation" | "anomaly" | "temporal" | "cluster"
     description: str
     evidence: dict[str, Any] = Field(default_factory=dict)
     confidence: float = 0.0
     session_ids: list[str] = Field(default_factory=list)
     discovered_at: datetime = Field(default_factory=_now)
+
+    @model_validator(mode="after")
+    def _set_pattern_id(self) -> PatternRecord:
+        """Assign a content-stable ID so the same pattern always gets the same ID."""
+        if not self.pattern_id:
+            key = f"{self.pattern_type}:{self.description}"
+            self.pattern_id = hashlib.sha1(key.encode()).hexdigest()[:8]  # noqa: S324
+        return self
 
 
 class MiningResult(BaseModel):
