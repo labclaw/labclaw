@@ -59,12 +59,40 @@ class SessionMemoryManager:
             _SQLiteFindingsStore(db_path) if db_path is not None else None
         )
         self._findings: list[dict[str, Any]] = []
+        self._total_stored_count: int = 0
+        self._loaded_count: int = 0
+        self._prior_stored_count: int = 0
+
+    @property
+    def _meta_path(self) -> Path:
+        return self._memory_root / _FINDINGS_ENTITY_ID / "META.json"
+
+    def _read_meta(self) -> int:
+        """Return persisted total_stored_count, or 0 if metadata file absent."""
+        if not self._meta_path.exists():
+            return 0
+        try:
+            data = json.loads(self._meta_path.read_text(encoding="utf-8"))
+            return int(data.get("total_stored_count", 0))
+        except (json.JSONDecodeError, ValueError):
+            return 0
+
+    def _write_meta(self) -> None:
+        """Persist total_stored_count to disk."""
+        self._meta_path.parent.mkdir(parents=True, exist_ok=True)
+        self._meta_path.write_text(
+            json.dumps({"total_stored_count": self._total_stored_count}),
+            encoding="utf-8",
+        )
 
     async def init(self) -> None:
         """Initialize backends and load existing findings from disk."""
         if self._tier_b is not None:
             await self._tier_b.init_db()
         self._findings = self._load_existing_findings()
+        self._prior_stored_count = self._read_meta()
+        self._total_stored_count = self._prior_stored_count
+        self._loaded_count = len(self._findings)
         event_registry.emit(
             "memory.session.initialized",
             payload={
@@ -149,6 +177,8 @@ class SessionMemoryManager:
             await self._tier_b.upsert_finding(finding)
 
         self._findings.append(finding)
+        self._total_stored_count += 1
+        self._write_meta()
 
         event_registry.emit(
             "memory.session.finding_stored",
@@ -186,17 +216,16 @@ class SessionMemoryManager:
         return [f for f in findings if q in json.dumps(f, default=str).lower()]
 
     def get_retrieval_rate(self) -> float:
-        """Compute fraction of stored findings that are currently retrievable.
+        """Compute fraction of previously stored findings retrieved on last init().
 
-        Compares the count loaded from disk during ``init()`` against total
-        in-memory list size.  Returns 1.0 when no findings have been stored.
+        ``_prior_stored_count`` is the count read from persisted META.json during
+        ``init()`` — it reflects findings written in *prior* sessions.
+        ``_loaded_count`` is the number actually loaded from disk during ``init()``.
+        Returns 1.0 when no findings existed before this session started.
         """
-        total = len(self._findings)
-        if total == 0:
+        if self._prior_stored_count == 0:
             return 1.0
-        # All findings in self._findings are retrievable (they were either
-        # loaded from disk or stored in this session and written to disk).
-        return 1.0
+        return self._loaded_count / self._prior_stored_count
 
     def is_known_pattern(self, pattern: dict[str, Any]) -> bool:
         """Return True if *pattern* matches any finding already stored.
