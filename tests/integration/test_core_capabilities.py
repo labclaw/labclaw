@@ -150,8 +150,8 @@ class TestCoreCapabilities:
             angle_vals,
             config=cfg,
         )
-        assert 0.0 <= stat_result.p_value <= 1.0, (
-            f"p_value must be in [0, 1], got {stat_result.p_value}"
+        assert stat_result.p_value < 0.05, (
+            f"Expected p < 0.05 for C1 DISCOVER, got p={stat_result.p_value:.6f}"
         )
 
     def test_c2_evolve_fitness_improvement(self, data_rows: list[dict[str, Any]]) -> None:
@@ -193,8 +193,8 @@ class TestCoreCapabilities:
             ablation_result.fitness_scores,
             config=cfg,
         )
-        assert 0.0 <= stat_result.p_value <= 1.0, (
-            f"Ablation p_value out of range: {stat_result.p_value}"
+        assert stat_result.p_value < 0.05, (
+            f"Expected p < 0.05 for C2 ablation, got p={stat_result.p_value:.6f}"
         )
 
     @pytest.mark.asyncio

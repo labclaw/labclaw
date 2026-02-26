@@ -227,5 +227,6 @@ def test_event_registry_subscribe_emit_race() -> None:
     t1.join()
     t2.join()
 
-    # Should complete without deadlock
-    assert received_count["value"] >= 0  # At least no crash
+    # Threads joined without deadlock; the counter must be a valid non-negative int
+    assert isinstance(received_count["value"], int)
+    assert received_count["value"] >= 0

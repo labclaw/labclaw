@@ -97,8 +97,9 @@ def _when_close_session_mgr(session_mgr_ctx: dict[str, Any]) -> None:
 
 @then("close completes without error")
 def _then_close_no_error(session_mgr_ctx: dict[str, Any]) -> None:
-    # If we reach this step, close() did not raise
-    assert True
+    # close() completed without exception; verify the manager is still accessible
+    mgr = session_mgr_ctx["mgr"]
+    assert mgr is not None, "Session memory manager must remain accessible after close"
 
 
 @then("the Tier B backend close method was called")

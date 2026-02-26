@@ -166,8 +166,22 @@ def check_at_least_n_patterns_found(cycle_result: CycleResult, count: int) -> No
 
 
 @then(parsers.parse("the pattern has a correlation coefficient above {threshold:f}"))
-def check_correlation_coefficient(cycle_result: CycleResult, threshold: float) -> None:
+def check_correlation_coefficient(
+    cycle_result: CycleResult, behavioral_data: list[dict[str, Any]], threshold: float
+) -> None:
     assert cycle_result.patterns_found > 0, "No patterns found to check correlation"
+    # Compute Pearson r between speed and distance from the fixture data
+    speeds = [row["speed"] for row in behavioral_data if "speed" in row]
+    distances = [row["distance"] for row in behavioral_data if "distance" in row]
+    n = len(speeds)
+    assert n >= 2, "Need at least 2 data points to compute correlation"
+    mean_s = sum(speeds) / n
+    mean_d = sum(distances) / n
+    cov = sum((s - mean_s) * (d - mean_d) for s, d in zip(speeds, distances)) / n
+    std_s = (sum((s - mean_s) ** 2 for s in speeds) / n) ** 0.5
+    std_d = (sum((d - mean_d) ** 2 for d in distances) / n) ** 0.5
+    r = cov / (std_s * std_d) if std_s > 0 and std_d > 0 else 0.0
+    assert abs(r) > threshold, f"|r| = {abs(r):.4f}, expected > {threshold}"
 
 
 @then(parsers.parse("only {n:d} LLM calls are made"))
