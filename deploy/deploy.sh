@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
 # deploy.sh — Deploy LabClaw to a remote server
-# Usage: bash deploy/deploy.sh
+# Usage: LABCLAW_REMOTE=my-server bash deploy/deploy.sh
+# Optional: LABCLAW_DOMAIN=demo.labclaw.io bash deploy/deploy.sh
 set -euo pipefail
 
 # ── Config ──────────────────────────────────────────────────────────────────
-REMOTE="${LABCLAW_REMOTE:-labclaw-server}"  # SSH alias (configure in ~/.ssh/config)
+REMOTE="${LABCLAW_REMOTE:?Set LABCLAW_REMOTE to SSH host (e.g. export LABCLAW_REMOTE=my-server)}"
 REMOTE_DIR="/opt/labclaw"
 LOCAL_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 REMOTE_IP=$(ssh "$REMOTE" 'hostname -I | awk "{print \$1}"')
@@ -181,6 +182,57 @@ echo ""
 echo "API:       http://localhost:18800/api/health"
 echo "Dashboard: http://localhost:18801"
 START
+
+# ── Step 7 (optional): Set up Caddy reverse proxy ─────────────────────────
+if [ -n "${LABCLAW_DOMAIN:-}" ]; then
+    echo "[7/7] Setting up Caddy reverse proxy for ${LABCLAW_DOMAIN}..."
+
+    # Upload Caddyfile with domain substituted
+    ssh "$REMOTE" "mkdir -p /etc/caddy"
+    sed "s/{\$LABCLAW_DOMAIN}/${LABCLAW_DOMAIN}/g" \
+        "${LOCAL_DIR}/deploy/Caddyfile" | ssh "$REMOTE" "cat > /etc/caddy/Caddyfile"
+
+    ssh "$REMOTE" bash -s <<'CADDY'
+set -euo pipefail
+
+# Install Caddy if not present
+if ! command -v caddy &>/dev/null; then
+    apt-get update -q
+    apt-get install -y -q debian-keyring debian-archive-keyring apt-transport-https curl
+    curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' \
+        | gpg --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg
+    curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt' \
+        | tee /etc/apt/sources.list.d/caddy-stable.list
+    apt-get update -q
+    apt-get install -y -q caddy
+    echo "Caddy installed"
+else
+    echo "Caddy already installed: $(caddy version)"
+fi
+
+# Allow HTTP/HTTPS through firewall
+if command -v ufw &>/dev/null; then
+    ufw allow 80/tcp
+    ufw allow 443/tcp
+    echo "Firewall: opened ports 80 and 443"
+fi
+
+# Enable and (re)start Caddy
+systemctl daemon-reload
+systemctl enable caddy
+systemctl restart caddy
+sleep 2
+systemctl status caddy --no-pager | head -10
+CADDY
+
+    echo ""
+    echo "  Caddy is running. TLS will be provisioned automatically."
+    echo "  API:       https://${LABCLAW_DOMAIN}/api/health"
+    echo "  Dashboard: https://${LABCLAW_DOMAIN}"
+else
+    echo "[7/7] LABCLAW_DOMAIN not set — skipping Caddy setup."
+    echo "  To enable TLS: re-run with LABCLAW_DOMAIN=your.domain.com"
+fi
 
 echo ""
 echo "╔══════════════════════════════════════════════════╗"

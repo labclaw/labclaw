@@ -181,12 +181,107 @@ The script:
 5. Initializes SOUL.md and MEMORY.md for the system entity.
 6. Installs and starts the systemd service.
 
-Customize the target by editing `deploy/deploy.sh`:
+Customize the target via environment variables:
 
 ```bash
-REMOTE="labclaw-server"          # SSH alias (or set LABCLAW_REMOTE env var)
-REMOTE_DIR="/opt/labclaw"        # Installation directory
+# Required: SSH host alias or user@host
+export LABCLAW_REMOTE=my-server
+
+# Optional: domain for automatic TLS (Caddy)
+export LABCLAW_DOMAIN=demo.labclaw.io
+
+bash deploy/deploy.sh
 ```
+
+---
+
+## Caddy Reverse Proxy (Automatic TLS)
+
+LabClaw services bind to `127.0.0.1` by default. Use Caddy as a reverse proxy to expose
+them over HTTPS with automatic certificate provisioning via Let's Encrypt.
+
+### Prerequisites
+
+- A domain name with an A record pointing to the server IP.
+- Ports 80 and 443 reachable from the internet (required by Let's Encrypt HTTP challenge).
+- The `LABCLAW_REMOTE` SSH alias configured.
+
+### Environment Variables
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `LABCLAW_REMOTE` | Yes | SSH host (alias or `user@host`) |
+| `LABCLAW_DOMAIN` | No | Domain for TLS — if set, Caddy is installed and configured |
+
+### Automatic Setup via Deploy Script
+
+Set `LABCLAW_DOMAIN` before running `deploy.sh` and Caddy is installed automatically:
+
+```bash
+export LABCLAW_REMOTE=my-server
+export LABCLAW_DOMAIN=demo.labclaw.io
+bash deploy/deploy.sh
+```
+
+The script:
+
+1. Installs Caddy from the official Cloudsmith apt repository.
+2. Writes `/etc/caddy/Caddyfile` with routes for `/api/*` and `/*`.
+3. Opens ports 80 and 443 in `ufw`.
+4. Enables and starts the `caddy` systemd service.
+
+### Manual Setup
+
+Install Caddy on the server, copy the Caddyfile, and start the service:
+
+```bash
+# Upload and apply the Caddyfile
+scp deploy/Caddyfile my-server:/etc/caddy/Caddyfile
+ssh my-server "systemctl restart caddy"
+```
+
+### Caddyfile Reference
+
+The `deploy/Caddyfile` uses `{$LABCLAW_DOMAIN}` as a placeholder. When deploying
+manually, replace it with your domain or export the variable before starting Caddy:
+
+```bash
+export LABCLAW_DOMAIN=demo.labclaw.io
+caddy run --config /etc/caddy/Caddyfile
+```
+
+Routing rules:
+
+| Path | Upstream | Notes |
+|------|----------|-------|
+| `/api/*` | `localhost:18800` | FastAPI REST API |
+| `/*` | `localhost:18801` | Streamlit dashboard |
+
+Security headers set by Caddy on every response:
+
+| Header | Value |
+|--------|-------|
+| `X-Frame-Options` | `DENY` |
+| `X-Content-Type-Options` | `nosniff` |
+| `Referrer-Policy` | `strict-origin-when-cross-origin` |
+| `Server` | (removed) |
+
+### Verify TLS
+
+After deployment, confirm the certificate is active:
+
+```bash
+curl -I https://demo.labclaw.io/api/health
+# Expect: HTTP/2 200
+```
+
+Check Caddy logs for certificate issuance:
+
+```bash
+ssh my-server "journalctl -u caddy -f"
+```
+
+Caddy renews certificates automatically before expiry — no cron job needed.
 
 ---
 
