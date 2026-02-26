@@ -75,9 +75,14 @@ class LabClawConfig(BaseModel):
     agents: AgentsConfig = AgentsConfig()
 
     def model_post_init(self, __context: Any) -> None:
+        cls = _get_llm_config_class()
         if self.llm is None:
-            cls = _get_llm_config_class()
             self.llm = cls()
+        elif isinstance(self.llm, dict):
+            self.llm = cls(**self.llm)
+        elif not isinstance(self.llm, cls):
+            # Mismatched BaseModel — convert via model_dump then re-validate
+            self.llm = cls(**self.llm.model_dump())
 
 
 def load_config(path: Path | None = None) -> LabClawConfig:

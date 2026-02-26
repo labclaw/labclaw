@@ -13,7 +13,9 @@ from labclaw.config import (
     EventsConfig,
     GraphConfig,
     LabClawConfig,
+    LLMConfigFallback,
     SystemConfig,
+    _get_llm_config_class,
     load_config,
 )
 
@@ -107,3 +109,51 @@ class TestNestedConfigModels:
         ac = AgentsConfig(default_model="gpt-4", max_tool_calls=50)
         assert ac.default_model == "gpt-4"
         assert ac.max_tool_calls == 50
+
+
+class TestLLMConfigNormalization:
+    """model_post_init must coerce dict / mismatched BaseModel → expected LLM type."""
+
+    def test_dict_llm_config_is_normalized(self):
+        """A plain dict under `llm` should be coerced to the LLM config class."""
+        cls = _get_llm_config_class()
+        raw = {"provider": "openai", "model": "gpt-4o", "api_key_env": "OPENAI_API_KEY"}
+        cfg = LabClawConfig(llm=raw)
+        assert isinstance(cfg.llm, cls)
+        assert cfg.llm.provider == "openai"
+        assert cfg.llm.model == "gpt-4o"
+
+    def test_mismatched_basemodel_is_normalized(self):
+        """A BaseModel that is not the expected LLM class is converted via model_dump."""
+        cls = _get_llm_config_class()
+        # LLMConfigFallback has the same fields as LLMConfig (or IS LLMConfig when
+        # llm.provider is available).  Using it as a "mismatched" source works in
+        # either case because we check `not isinstance(self.llm, cls)`.
+        fallback = LLMConfigFallback(provider="local", model="llama-3", api_key_env="NONE")
+        if isinstance(fallback, cls):
+            # When llm.provider is unavailable, cls IS LLMConfigFallback → no mismatch.
+            # Construct a genuinely mismatched model using another BaseModel subclass.
+            from pydantic import BaseModel as PydanticBaseModel
+
+            class _OtherModel(PydanticBaseModel):
+                provider: str = "local"
+                model: str = "llama-3"
+                api_key_env: str = "NONE"
+                temperature: float = 0.5
+                max_tokens: int = 512
+
+            mismatched = _OtherModel()
+        else:
+            mismatched = fallback
+
+        cfg = LabClawConfig(llm=mismatched)
+        assert isinstance(cfg.llm, cls)
+        assert cfg.llm.provider == "local"
+        assert cfg.llm.model == "llama-3"
+
+    def test_correct_model_passes_through_unchanged(self):
+        """An already-correct LLM config instance is kept as-is."""
+        cls = _get_llm_config_class()
+        correct = cls(provider="anthropic", model="claude-opus-4-6")
+        cfg = LabClawConfig(llm=correct)
+        assert cfg.llm is correct
