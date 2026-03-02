@@ -5,6 +5,7 @@ from __future__ import annotations
 import csv
 import threading
 from pathlib import Path
+from unittest.mock import patch
 
 import pytest
 
@@ -218,3 +219,18 @@ def test_concurrent_ingest_same_file(tmp_path: Path) -> None:
     # OR both complete sequentially with the second getting 0 from the offset
     assert sum(results) == 10
     assert acc.total_rows == 10
+
+
+def test_ingest_file_exception_returns_zero(tmp_path: Path) -> None:
+    """When load_file raises, ingest_file returns 0 and releases the lock."""
+    acc = DataAccumulator()
+    csv_path = tmp_path / "boom.csv"
+    csv_path.write_text("a,b\n1,2\n", encoding="utf-8")
+
+    with patch("labclaw.daemon.load_file", side_effect=RuntimeError("parse error")):
+        result = acc.ingest_file(csv_path)
+
+    assert result == 0
+    assert acc.total_rows == 0
+    # Lock released — file not stuck in _files_in_progress
+    assert str(csv_path) not in acc._files_in_progress
