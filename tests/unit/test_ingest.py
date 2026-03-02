@@ -376,6 +376,15 @@ class TestNwb:
         p.write_bytes(b"not nwb data")
         assert _load_nwb(p) == []
 
+    def test_nwb_valid_h5_but_not_nwb_returns_empty(self, tmp_path: Path) -> None:
+        """NWBHDF5IO constructor succeeds but read() fails on non-NWB HDF5."""
+        pytest.importorskip("pynwb")
+        h5py = pytest.importorskip("h5py")
+        p = tmp_path / "not_nwb.nwb"
+        with h5py.File(p, "w") as f:
+            f.create_dataset("random_data", data=np.zeros(10))
+        assert _load_nwb(p) == []
+
     def test_nwb_with_behavior_position(self, tmp_path: Path) -> None:
         pynwb = pytest.importorskip("pynwb")
         p = tmp_path / "behavior.nwb"
@@ -492,7 +501,7 @@ class TestExtractNwbSpatialSeries:
         rows = _extract_nwb_spatial_series(pos)
         assert len(rows) == 2
         assert rows[0]["time_sec"] == pytest.approx(0.0)
-        assert rows[1]["time_sec"] == pytest.approx(30.0)
+        assert rows[1]["time_sec"] == pytest.approx(1.0 / 30.0)
 
     def test_generic_timeseries_2d(self) -> None:
         pynwb = pytest.importorskip("pynwb")

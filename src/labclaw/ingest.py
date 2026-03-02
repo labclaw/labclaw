@@ -19,6 +19,8 @@ from typing import Any
 
 logger = logging.getLogger(__name__)
 
+_DEFAULT_FPS = 30.0
+
 
 def load_file(path: Path) -> list[dict[str, Any]]:
     """Load any supported file into flat rows. Auto-detects by extension + content."""
@@ -98,7 +100,9 @@ def _load_sam_h5(path: Path, f: Any) -> list[dict[str, Any]]:
 
     rows: list[dict[str, Any]] = []
     for frame_idx in range(n_frames):
-        time_sec = float(timestamps[frame_idx]) if timestamps is not None else frame_idx / 30.0
+        time_sec = (
+            float(timestamps[frame_idx]) if timestamps is not None else frame_idx / _DEFAULT_FPS
+        )
         for animal_idx in range(n_animals):
             rows.append(
                 {
@@ -138,16 +142,16 @@ def _load_dlc_h5(path: Path) -> list[dict[str, Any]]:
 
     if n_levels >= 4:
         # Multi-animal: (scorer, individual, bodypart, coord)
+        individuals = df.columns.get_level_values(1).unique()
+        scorer = df.columns.get_level_values(0)[0]
+        bodyparts = df.columns.get_level_values(2).unique()
         for frame_idx in range(len(df)):
-            individuals = df.columns.get_level_values(1).unique()
             for individual in individuals:
                 row: dict[str, Any] = {
                     "frame": frame_idx,
                     "animal_id": str(individual),
                 }
                 sub = df.iloc[frame_idx]
-                scorer = df.columns.get_level_values(0)[0]
-                bodyparts = df.columns.get_level_values(2).unique()
                 for bp in bodyparts:
                     for coord in ("x", "y", "likelihood"):
                         try:
@@ -158,11 +162,11 @@ def _load_dlc_h5(path: Path) -> list[dict[str, Any]]:
                 rows.append(row)
     elif n_levels == 3:
         # Single-animal: (scorer, bodypart, coord)
+        scorer = df.columns.get_level_values(0)[0]
+        bodyparts = df.columns.get_level_values(1).unique()
         for frame_idx in range(len(df)):
             row = {"frame": frame_idx, "animal_id": "single"}
             sub = df.iloc[frame_idx]
-            scorer = df.columns.get_level_values(0)[0]
-            bodyparts = df.columns.get_level_values(1).unique()
             for bp in bodyparts:
                 for coord in ("x", "y", "likelihood"):
                     try:
@@ -192,13 +196,14 @@ def _load_nwb(path: Path) -> list[dict[str, Any]]:
 
     try:
         io = pynwb.NWBHDF5IO(str(path), "r")
-        nwb = io.read()
     except Exception:
         logger.warning("Could not open NWB file: %s", path)
         return []
 
     rows: list[dict[str, Any]] = []
     try:
+        nwb = io.read()
+
         if "behavior" in nwb.processing:
             behavior = nwb.processing["behavior"]
             for container_name in behavior.data_interfaces:
@@ -210,6 +215,8 @@ def _load_nwb(path: Path) -> list[dict[str, Any]]:
             for acq_name in nwb.acquisition:
                 acq = nwb.acquisition[acq_name]
                 rows.extend(_extract_nwb_spatial_series(acq))
+    except Exception:
+        logger.warning("Could not read NWB file: %s", path)
     finally:
         io.close()
 
@@ -237,7 +244,7 @@ def _extract_nwb_spatial_series(container: Any) -> list[dict[str, Any]]:
                 row: dict[str, Any] = {
                     "time_sec": float(timestamps[i])
                     if timestamps is not None
-                    else i * ss.rate
+                    else i / ss.rate
                     if hasattr(ss, "rate") and ss.rate
                     else float(i),
                 }

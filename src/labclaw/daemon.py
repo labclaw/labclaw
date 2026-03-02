@@ -311,7 +311,7 @@ class LabClawDaemon:
         """Ingest any data files already present in data_dir."""
         count = 0
         for path in sorted(self.data_dir.rglob("*")):
-            if path.is_file() and path.suffix.lower() in (".csv", ".tsv", ".txt"):
+            if path.is_file():
                 rows = self._accumulator.ingest_file(path)
                 if rows > 0:
                     count += 1
