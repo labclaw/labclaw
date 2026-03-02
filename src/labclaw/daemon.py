@@ -75,10 +75,14 @@ class DataAccumulator:
             self._files_in_progress.add(str_path)
 
         try:
+            # Non-append formats (H5/NWB) return the full dataset every time.
+            # Skip re-ingestion if already processed (offset == -1 sentinel).
+            if not is_append_only(path) and previous_offset == -1:
+                return 0
+
             new_rows = load_file(path)
 
             # Offset-based dedup only applies to append-only formats (CSV/TSV).
-            # H5/NWB always return the complete dataset, so skip offset slicing.
             if is_append_only(path):
                 if len(new_rows) < previous_offset:
                     logger.info(
@@ -94,6 +98,8 @@ class DataAccumulator:
                 if new_rows:
                     if is_append_only(path):
                         self._file_row_offsets[str_path] = previous_offset + len(new_rows)
+                    else:
+                        self._file_row_offsets[str_path] = -1
                     self._rows.extend(new_rows)
                     total_rows = len(self._rows)
 

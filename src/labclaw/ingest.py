@@ -135,7 +135,7 @@ def _load_dlc_h5(path: Path) -> list[dict[str, Any]]:
     try:
         df = pd.read_hdf(path)
     except Exception:
-        logger.warning("Could not read HDF5 as DLC format: %s", path)
+        logger.warning("Could not read HDF5 as DLC format: %s", path, exc_info=True)
         return []
 
     if not isinstance(df.columns, pd.MultiIndex):
@@ -205,7 +205,7 @@ def _load_nwb(path: Path) -> list[dict[str, Any]]:
     try:
         io = pynwb.NWBHDF5IO(str(path), "r")
     except Exception:
-        logger.warning("Could not open NWB file: %s", path)
+        logger.warning("Could not open NWB file: %s", path, exc_info=True)
         return []
 
     rows: list[dict[str, Any]] = []

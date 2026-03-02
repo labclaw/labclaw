@@ -236,8 +236,8 @@ def test_ingest_file_exception_returns_zero(tmp_path: Path) -> None:
     assert str(csv_path) not in acc._files_in_progress
 
 
-def test_h5_reingest_returns_all_rows(tmp_path: Path) -> None:
-    """H5/NWB files always return the complete dataset; re-ingest should not be offset-sliced."""
+def test_h5_ingest_then_skip_reingest(tmp_path: Path) -> None:
+    """H5/NWB files are ingested once; re-ingest is skipped via sentinel."""
     acc = DataAccumulator()
     h5_path = tmp_path / "data.h5"
     h5_path.write_bytes(b"fake")  # content doesn't matter, we mock load_file
@@ -246,9 +246,10 @@ def test_h5_reingest_returns_all_rows(tmp_path: Path) -> None:
     with patch("labclaw.daemon.load_file", return_value=fake_rows):
         first = acc.ingest_file(h5_path)
     assert first == 5
+    assert acc.files_processed == 1
 
-    # Re-ingest the same H5 file — should get all 5 rows again (no offset slicing)
+    # Re-ingest the same H5 file — should be skipped (sentinel dedup)
     with patch("labclaw.daemon.load_file", return_value=fake_rows):
         second = acc.ingest_file(h5_path)
-    assert second == 5
-    assert acc.total_rows == 10
+    assert second == 0
+    assert acc.total_rows == 5  # no duplicates
