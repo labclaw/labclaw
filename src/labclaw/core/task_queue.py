@@ -362,7 +362,11 @@ class TaskRunner:
         """Execute a single task with retry logic."""
         await self._queue.update_status(task.task_id, TaskStatus.RUNNING)
 
-        success, result, error = await self._executor.execute(task)
+        try:
+            success, result, error = await self._executor.execute(task)
+        except Exception:
+            logger.exception("Executor raised for task %s", task.task_id)
+            success, result, error = False, {}, f"executor exception: {task.task_id}"
 
         if success:
             await self._queue.update_status(task.task_id, TaskStatus.COMPLETED, result=result)

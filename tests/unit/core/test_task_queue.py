@@ -359,6 +359,11 @@ class _FailExecutor:
         return False, {}, "execution failed"
 
 
+class _RaisingExecutor:
+    async def execute(self, task: TaskItem) -> tuple[bool, dict[str, Any], str | None]:
+        raise RuntimeError("executor blew up")
+
+
 class TestTaskRunner:
     @pytest.mark.asyncio
     async def test_runner_processes_task(self) -> None:
@@ -410,6 +415,30 @@ class TestTaskRunner:
             assert runner._running is True
             await runner.stop()
             assert runner._running is False
+        finally:
+            await q.close()
+
+    @pytest.mark.asyncio
+    async def test_runner_survives_executor_exception(self) -> None:
+        q = TaskQueue()
+        await q.init_db()
+        try:
+            await q.enqueue(TaskItem(name="will-raise", max_retries=1))
+            await q.enqueue(TaskItem(name="should-run"))
+
+            runner = TaskRunner(
+                q, _RaisingExecutor(), poll_interval=0.01, backoff_base=0.01, max_backoff=0.02
+            )
+            await runner.start()
+            await asyncio.sleep(0.3)
+            await runner.stop()
+
+            raised = await q.get_task((await q.list_tasks())[0].task_id)
+            assert raised is not None
+            assert raised.status == TaskStatus.FAILED
+            assert raised.error is not None
+            # Runner stayed alive — second task was also attempted
+            assert runner._running is False  # stopped cleanly
         finally:
             await q.close()
 
