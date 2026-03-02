@@ -13,4 +13,4 @@ router = APIRouter()
 def list_events(
     registry=Depends(get_event_registry),  # noqa: ANN001
 ) -> list[str]:
-    return registry.list_events()
+    return registry.list_events()  # type: ignore[no-any-return]

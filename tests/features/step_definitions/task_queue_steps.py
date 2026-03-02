@@ -36,10 +36,11 @@ class _EventCapture:
 
 
 @given("an initialized task queue", target_fixture="tq_ctx")
-def initialized_queue() -> dict[str, Any]:
+def initialized_queue() -> Any:
     q = TaskQueue()
     _run_async(q.init_db())
-    return {"queue": q, "task_id": None}
+    yield {"queue": q, "task_id": None}
+    _run_async(q.close())
 
 
 @given(
@@ -68,12 +69,14 @@ def completed_task(tq_ctx: dict[str, Any], name: str) -> dict[str, Any]:
 
 
 @given("an initialized task queue with event capture", target_fixture="tq_ctx")
-def queue_with_capture() -> dict[str, Any]:
+def queue_with_capture() -> Any:
     q = TaskQueue()
     _run_async(q.init_db())
     cap = _EventCapture()
     event_registry.subscribe("infra.task_queue.enqueued", cap)
-    return {"queue": q, "task_id": None, "capture": cap}
+    yield {"queue": q, "task_id": None, "capture": cap}
+    event_registry.unsubscribe("infra.task_queue.enqueued", cap)
+    _run_async(q.close())
 
 
 @given(

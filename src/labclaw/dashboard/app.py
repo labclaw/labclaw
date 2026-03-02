@@ -233,19 +233,19 @@ def _inject_css() -> None:
 def _device_registry() -> DeviceRegistry:
     if "device_registry" not in st.session_state:
         st.session_state.device_registry = DeviceRegistry()
-    return st.session_state.device_registry  # type: ignore[return-value]
+    return st.session_state.device_registry  # type: ignore[return-value,no-any-return]
 
 
 def _session_chronicle() -> SessionChronicle:
     if "session_chronicle" not in st.session_state:
         st.session_state.session_chronicle = SessionChronicle()
-    return st.session_state.session_chronicle  # type: ignore[return-value]
+    return st.session_state.session_chronicle  # type: ignore[return-value,no-any-return]
 
 
 def _evolution_engine() -> EvolutionEngine:
     if "evolution_engine" not in st.session_state:
         st.session_state.evolution_engine = EvolutionEngine()
-    return st.session_state.evolution_engine  # type: ignore[return-value]
+    return st.session_state.evolution_engine  # type: ignore[return-value,no-any-return]
 
 
 # ---------------------------------------------------------------------------

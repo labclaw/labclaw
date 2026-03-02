@@ -170,9 +170,7 @@ class TaskQueue:
             status=TaskStatus(row["status"]),
             priority=row["priority"],
             created_at=datetime.fromisoformat(row["created_at"]),
-            started_at=(
-                datetime.fromisoformat(row["started_at"]) if row["started_at"] else None
-            ),
+            started_at=(datetime.fromisoformat(row["started_at"]) if row["started_at"] else None),
             completed_at=(
                 datetime.fromisoformat(row["completed_at"]) if row["completed_at"] else None
             ),
@@ -261,7 +259,7 @@ class TaskQueue:
                 status.value,
                 started_at.isoformat() if started_at else None,
                 completed_at.isoformat() if completed_at else None,
-                json.dumps(result) if result else None,
+                json.dumps(result) if result is not None else None,
                 error,
                 retry_count,
                 task_id,
@@ -276,7 +274,7 @@ class TaskQueue:
                 payload={"task_id": task_id, "name": task.name},
             )
 
-        return (await self.get_task(task_id))  # type: ignore[return-value]
+        return await self.get_task(task_id)  # type: ignore[return-value]
 
     async def get_task(self, task_id: str) -> TaskItem | None:
         """Get a task by ID. Returns None if not found."""
@@ -367,16 +365,12 @@ class TaskRunner:
         success, result, error = await self._executor.execute(task)
 
         if success:
-            await self._queue.update_status(
-                task.task_id, TaskStatus.COMPLETED, result=result
-            )
+            await self._queue.update_status(task.task_id, TaskStatus.COMPLETED, result=result)
         else:
-            updated = await self._queue.update_status(
-                task.task_id, TaskStatus.FAILED, error=error
-            )
+            updated = await self._queue.update_status(task.task_id, TaskStatus.FAILED, error=error)
             if updated.retry_count < updated.max_retries:
                 backoff = min(
-                    self._backoff_base ** updated.retry_count,
+                    self._backoff_base**updated.retry_count,
                     self._max_backoff,
                 )
                 await asyncio.sleep(backoff)

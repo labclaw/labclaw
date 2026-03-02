@@ -41,8 +41,11 @@ class TestTrigger:
 
     def test_custom_values(self) -> None:
         t = Trigger(
-            name="custom", event_pattern="memory.*.*", condition="payload.get('size') > 100",
-            cooldown_seconds=30.0, action="analyze-data",
+            name="custom",
+            event_pattern="memory.*.*",
+            condition="payload.get('size') > 100",
+            cooldown_seconds=30.0,
+            action="analyze-data",
         )
         assert t.cooldown_seconds == 30.0
         assert t.action == "analyze-data"
@@ -214,6 +217,7 @@ class TestProactiveEngineTriggers:
 
         def handler(e):  # type: ignore[no-untyped-def]
             captured.append(e.event_name.full)
+
         event_registry.subscribe("infra.proactive.trigger_fired", handler)
         try:
             engine.on_event(_make_event())
@@ -327,6 +331,7 @@ class TestProactiveEngineCommitments:
 
         def handler(e):  # type: ignore[no-untyped-def]
             captured.append(e.event_name.full)
+
         event_registry.subscribe("infra.proactive.commitment_overdue", handler)
         try:
             engine.check_commitments()

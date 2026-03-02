@@ -255,6 +255,21 @@ class TestLiteLLMProviderCompleteStructured:
         assert m.call_args[1]["api_key"] == "sk-structured-key"
 
     @pytest.mark.asyncio
+    async def test_structured_with_fallbacks(self) -> None:
+        p = LiteLLMProvider(model="gpt-4o", fallback_models=["gpt-4o-mini"])
+
+        mock_msg = MagicMock()
+        mock_msg.content = json.dumps({"answer": "fb", "score": 0.5})
+        mock_choice = MagicMock()
+        mock_choice.message = mock_msg
+        mock_response = MagicMock()
+        mock_response.choices = [mock_choice]
+
+        with patch("litellm.acompletion", new_callable=AsyncMock, return_value=mock_response) as m:
+            await p.complete_structured("test", response_model=DummyResponse)
+        assert m.call_args[1]["fallbacks"] == [{"model": "gpt-4o-mini"}]
+
+    @pytest.mark.asyncio
     async def test_structured_none_content_returns_defaults(self) -> None:
         p = LiteLLMProvider()
 

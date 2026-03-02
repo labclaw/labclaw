@@ -47,7 +47,7 @@ class OpenAIProvider:
 
         resp = await self._client.chat.completions.create(
             model=self._model,
-            messages=messages,
+            messages=messages,  # type: ignore[arg-type]
             temperature=temperature,
             max_tokens=max_tokens,
         )
@@ -79,7 +79,7 @@ class OpenAIProvider:
             messages.append({"role": "system", "content": system})
         messages.append({"role": "user", "content": prompt})
 
-        resp = await self._client.chat.completions.create(
+        resp = await self._client.chat.completions.create(  # type: ignore[call-overload]
             model=self._model,
             messages=messages,
             temperature=temperature,

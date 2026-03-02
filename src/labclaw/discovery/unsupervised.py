@@ -317,7 +317,7 @@ class ClusterDiscovery:
         if not result.labels:
             return 0.0
         n = len(result.labels)
-        counts = {}
+        counts: dict[int, int] = {}
         for label in result.labels:
             counts[label] = counts.get(label, 0) + 1
 
@@ -328,7 +328,7 @@ class ClusterDiscovery:
         min_size = min(counts.values())
         size_penalty = 0.0 if min_size >= 2 else 0.5
 
-        return min(max(balance_score - size_penalty, 0.0), 1.0)
+        return min(max(balance_score - size_penalty, 0.0), 1.0)  # type: ignore[no-any-return]
 
     @staticmethod
     def _extract_features(

@@ -46,7 +46,7 @@ class LocalProvider:
             payload["system"] = system
         resp = await self._client.post("/api/generate", json=payload)
         resp.raise_for_status()
-        return resp.json()["response"]
+        return resp.json()["response"]  # type: ignore[no-any-return]
 
     async def complete_structured(
         self,

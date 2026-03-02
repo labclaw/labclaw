@@ -103,6 +103,8 @@ class LiteLLMProvider:
         }
         if self._api_key:
             kwargs["api_key"] = self._api_key
+        if self._fallback_models:
+            kwargs["fallbacks"] = [{"model": m} for m in self._fallback_models]
 
         response = await litellm.acompletion(**kwargs)
         text = response.choices[0].message.content or "{}"

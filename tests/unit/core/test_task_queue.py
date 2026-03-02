@@ -58,9 +58,7 @@ class TestScheduleItem:
 class TestTaskExecutorProtocol:
     def test_runtime_checkable(self) -> None:
         class MyExecutor:
-            async def execute(
-                self, task: TaskItem
-            ) -> tuple[bool, dict[str, Any], str | None]:
+            async def execute(self, task: TaskItem) -> tuple[bool, dict[str, Any], str | None]:
                 return True, {}, None
 
         assert isinstance(MyExecutor(), TaskExecutor)
@@ -211,9 +209,7 @@ class TestTaskQueue:
         try:
             task = TaskItem(name="fail-me")
             await q.enqueue(task)
-            updated = await q.update_status(
-                task.task_id, TaskStatus.FAILED, error="bad input"
-            )
+            updated = await q.update_status(task.task_id, TaskStatus.FAILED, error="bad input")
             assert updated.status == TaskStatus.FAILED
             assert updated.retry_count == 1
             assert updated.error == "bad input"
@@ -287,6 +283,7 @@ class TestTaskQueue:
 
         def handler(e):  # type: ignore[no-untyped-def]
             captured.append(e.event_name.full)
+
         event_registry.subscribe("infra.task_queue.enqueued", handler)
         try:
             await q.enqueue(TaskItem(name="event-test"))
@@ -315,6 +312,21 @@ class TestTaskQueue:
             task = await q.dequeue()
             assert task is not None
             assert task.name == "file-test"
+        finally:
+            await q.close()
+
+    @pytest.mark.asyncio
+    async def test_update_status_empty_dict_result(self) -> None:
+        q = TaskQueue()
+        await q.init_db()
+        try:
+            task = TaskItem(name="empty-result")
+            await q.enqueue(task)
+            updated = await q.update_status(task.task_id, TaskStatus.COMPLETED, result={})
+            assert updated.result == {}
+            found = await q.get_task(task.task_id)
+            assert found is not None
+            assert found.result == {}
         finally:
             await q.close()
 

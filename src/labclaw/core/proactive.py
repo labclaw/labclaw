@@ -138,7 +138,7 @@ class ProactiveEngine:
 
             if self._task_queue and trigger.action:
                 task = TaskItem(name=trigger.action, args={"trigger_id": trigger.trigger_id})
-                asyncio.get_event_loop().create_task(self._task_queue.enqueue(task))
+                asyncio.get_running_loop().create_task(self._task_queue.enqueue(task))
 
             event_registry.emit(
                 "infra.proactive.trigger_fired",
@@ -244,7 +244,7 @@ class ProactiveEngine:
                 "event_name": event.event_name.full,
                 "source_layer": str(event.source_layer),
             }
-            return bool(eval(condition, safe_globals, safe_locals))  # noqa: S307
+            return bool(eval(condition, safe_globals, safe_locals))  # noqa: S307  # nosec B307
         except Exception:
             logger.warning("Condition evaluation failed: %r", condition, exc_info=True)
             return False

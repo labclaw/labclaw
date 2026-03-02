@@ -71,9 +71,7 @@ def add_cooldown_trigger(
 
 
 @given(
-    parsers.parse(
-        'a trigger "{name}" matching "{pattern}" with condition "{condition}"'
-    ),
+    parsers.parse('a trigger "{name}" matching "{pattern}" with condition "{condition}"'),
     target_fixture="pe_ctx",
 )
 def add_conditional_trigger(
@@ -101,9 +99,7 @@ def add_commitment(pe_ctx: dict[str, Any], description: str) -> dict[str, Any]:
     parsers.parse('a commitment "{description}" due {hours:d} hour ago'),
     target_fixture="pe_ctx",
 )
-def add_overdue_commitment(
-    pe_ctx: dict[str, Any], description: str, hours: int
-) -> dict[str, Any]:
+def add_overdue_commitment(pe_ctx: dict[str, Any], description: str, hours: int) -> dict[str, Any]:
     past = datetime.now(UTC) - timedelta(hours=hours)
     c = Commitment(description=description, due_at=past)
     cid = pe_ctx["engine"].add_commitment(c)
@@ -115,9 +111,7 @@ def add_overdue_commitment(
     parsers.parse('a commitment "{description}" due in {hours:d} hours'),
     target_fixture="pe_ctx",
 )
-def add_future_commitment(
-    pe_ctx: dict[str, Any], description: str, hours: int
-) -> dict[str, Any]:
+def add_future_commitment(pe_ctx: dict[str, Any], description: str, hours: int) -> dict[str, Any]:
     future = datetime.now(UTC) + timedelta(hours=hours)
     c = Commitment(description=description, due_at=future)
     cid = pe_ctx["engine"].add_commitment(c)
