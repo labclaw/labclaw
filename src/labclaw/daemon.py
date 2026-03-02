@@ -10,7 +10,6 @@ Usage:
 from __future__ import annotations
 
 import argparse
-import csv
 import logging
 import signal
 import subprocess
@@ -35,6 +34,7 @@ from labclaw.core.events import event_registry
 from labclaw.core.schemas import EvolutionTarget, LabEvent
 from labclaw.discovery.mining import MiningConfig
 from labclaw.edge.watcher import EdgeWatcher
+from labclaw.ingest import is_append_only, load_file
 from labclaw.memory.markdown import MemoryEntry
 
 logger = logging.getLogger("labclaw")
@@ -65,12 +65,8 @@ class DataAccumulator:
         self._lock = threading.Lock()
 
     def ingest_file(self, path: Path) -> int:
-        """Parse a CSV/TSV file and add rows. Returns number of rows added."""
+        """Parse a data file and add rows. Returns number of rows added."""
         str_path = str(path)
-
-        if path.suffix.lower() not in (".csv", ".tsv", ".txt"):
-            logger.debug("Skipping non-tabular file: %s", path)
-            return 0
 
         with self._lock:
             if str_path in self._files_in_progress:
@@ -79,35 +75,31 @@ class DataAccumulator:
             self._files_in_progress.add(str_path)
 
         try:
-            delimiter = "\t" if path.suffix.lower() == ".tsv" else ","
-            with path.open(newline="") as f:
-                reader = csv.DictReader(f, delimiter=delimiter)
-                new_rows: list[dict[str, Any]] = []
-                for row in reader:
-                    parsed: dict[str, Any] = {}
-                    for k, v in row.items():
-                        if k is None:
-                            continue
-                        try:
-                            parsed[k] = float(v)
-                        except (ValueError, TypeError):
-                            parsed[k] = v
-                    if parsed:
-                        new_rows.append(parsed)
+            # Non-append formats (H5/NWB) return the full dataset every time.
+            # Skip re-ingestion if already processed (offset == -1 sentinel).
+            if not is_append_only(path) and previous_offset == -1:
+                return 0
 
-            if len(new_rows) < previous_offset:
-                logger.info(
-                    "File %s appears truncated; resetting ingest cursor (%d -> 0)",
-                    path,
-                    previous_offset,
-                )
-                previous_offset = 0
-            new_rows = new_rows[previous_offset:]
+            new_rows = load_file(path)
+
+            # Offset-based dedup only applies to append-only formats (CSV/TSV).
+            if is_append_only(path):
+                if len(new_rows) < previous_offset:
+                    logger.info(
+                        "File %s appears truncated; resetting ingest cursor (%d -> 0)",
+                        path,
+                        previous_offset,
+                    )
+                    previous_offset = 0
+                new_rows = new_rows[previous_offset:]
 
             with self._lock:
                 total_rows = len(self._rows)
                 if new_rows:
-                    self._file_row_offsets[str_path] = previous_offset + len(new_rows)
+                    if is_append_only(path):
+                        self._file_row_offsets[str_path] = previous_offset + len(new_rows)
+                    else:
+                        self._file_row_offsets[str_path] = -1
                     self._rows.extend(new_rows)
                     total_rows = len(self._rows)
 
@@ -329,7 +321,7 @@ class LabClawDaemon:
         """Ingest any data files already present in data_dir."""
         count = 0
         for path in sorted(self.data_dir.rglob("*")):
-            if path.is_file() and path.suffix.lower() in (".csv", ".tsv", ".txt"):
+            if path.is_file():
                 rows = self._accumulator.ingest_file(path)
                 if rows > 0:
                     count += 1

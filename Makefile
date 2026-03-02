@@ -29,7 +29,7 @@ install:
 	uv sync --frozen
 
 dev-install:
-	uv sync --extra dev --extra science --frozen
+	uv sync --extra dev --extra science --extra ingest --extra nwb --frozen
 
 coverage-html:
 	uv run pytest --cov=labclaw --cov-report=html -q
