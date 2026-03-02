@@ -10,7 +10,6 @@ Usage:
 from __future__ import annotations
 
 import argparse
-import csv
 import logging
 import signal
 import subprocess
@@ -35,6 +34,7 @@ from labclaw.core.events import event_registry
 from labclaw.core.schemas import EvolutionTarget, LabEvent
 from labclaw.discovery.mining import MiningConfig
 from labclaw.edge.watcher import EdgeWatcher
+from labclaw.ingest import load_file
 from labclaw.memory.markdown import MemoryEntry
 
 logger = logging.getLogger("labclaw")
@@ -65,12 +65,8 @@ class DataAccumulator:
         self._lock = threading.Lock()
 
     def ingest_file(self, path: Path) -> int:
-        """Parse a CSV/TSV file and add rows. Returns number of rows added."""
+        """Parse a data file and add rows. Returns number of rows added."""
         str_path = str(path)
-
-        if path.suffix.lower() not in (".csv", ".tsv", ".txt"):
-            logger.debug("Skipping non-tabular file: %s", path)
-            return 0
 
         with self._lock:
             if str_path in self._files_in_progress:
@@ -79,21 +75,7 @@ class DataAccumulator:
             self._files_in_progress.add(str_path)
 
         try:
-            delimiter = "\t" if path.suffix.lower() == ".tsv" else ","
-            with path.open(newline="") as f:
-                reader = csv.DictReader(f, delimiter=delimiter)
-                new_rows: list[dict[str, Any]] = []
-                for row in reader:
-                    parsed: dict[str, Any] = {}
-                    for k, v in row.items():
-                        if k is None:
-                            continue
-                        try:
-                            parsed[k] = float(v)
-                        except (ValueError, TypeError):
-                            parsed[k] = v
-                    if parsed:
-                        new_rows.append(parsed)
+            new_rows = load_file(path)
 
             if len(new_rows) < previous_offset:
                 logger.info(
