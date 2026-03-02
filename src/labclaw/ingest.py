@@ -146,12 +146,12 @@ def _load_dlc_h5(path: Path) -> list[dict[str, Any]]:
         scorer = df.columns.get_level_values(0)[0]
         bodyparts = df.columns.get_level_values(2).unique()
         for frame_idx in range(len(df)):
+            sub = df.iloc[frame_idx]
             for individual in individuals:
                 row: dict[str, Any] = {
                     "frame": frame_idx,
                     "animal_id": str(individual),
                 }
-                sub = df.iloc[frame_idx]
                 for bp in bodyparts:
                     for coord in ("x", "y", "likelihood"):
                         try:
@@ -216,7 +216,7 @@ def _load_nwb(path: Path) -> list[dict[str, Any]]:
                 acq = nwb.acquisition[acq_name]
                 rows.extend(_extract_nwb_spatial_series(acq))
     except Exception:
-        logger.warning("Could not read NWB file: %s", path)
+        logger.warning("Could not read NWB file: %s", path, exc_info=True)
     finally:
         io.close()
 
