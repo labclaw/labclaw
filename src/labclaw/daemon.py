@@ -34,7 +34,7 @@ from labclaw.core.events import event_registry
 from labclaw.core.schemas import EvolutionTarget, LabEvent
 from labclaw.discovery.mining import MiningConfig
 from labclaw.edge.watcher import EdgeWatcher
-from labclaw.ingest import load_file
+from labclaw.ingest import is_append_only, load_file
 from labclaw.memory.markdown import MemoryEntry
 
 logger = logging.getLogger("labclaw")
@@ -77,19 +77,23 @@ class DataAccumulator:
         try:
             new_rows = load_file(path)
 
-            if len(new_rows) < previous_offset:
-                logger.info(
-                    "File %s appears truncated; resetting ingest cursor (%d -> 0)",
-                    path,
-                    previous_offset,
-                )
-                previous_offset = 0
-            new_rows = new_rows[previous_offset:]
+            # Offset-based dedup only applies to append-only formats (CSV/TSV).
+            # H5/NWB always return the complete dataset, so skip offset slicing.
+            if is_append_only(path):
+                if len(new_rows) < previous_offset:
+                    logger.info(
+                        "File %s appears truncated; resetting ingest cursor (%d -> 0)",
+                        path,
+                        previous_offset,
+                    )
+                    previous_offset = 0
+                new_rows = new_rows[previous_offset:]
 
             with self._lock:
                 total_rows = len(self._rows)
                 if new_rows:
-                    self._file_row_offsets[str_path] = previous_offset + len(new_rows)
+                    if is_append_only(path):
+                        self._file_row_offsets[str_path] = previous_offset + len(new_rows)
                     self._rows.extend(new_rows)
                     total_rows = len(self._rows)
 

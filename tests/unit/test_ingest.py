@@ -18,6 +18,7 @@ from labclaw.ingest import (
     _load_h5,
     _load_nwb,
     _load_sam_h5,
+    is_append_only,
     load_file,
 )
 
@@ -95,6 +96,23 @@ def test_load_file_nwb_extension(tmp_path: Path) -> None:
         rows = load_file(p)
     mock.assert_called_once_with(p)
     assert rows == [{"a": 1}]
+
+
+# ---------------------------------------------------------------------------
+# is_append_only
+# ---------------------------------------------------------------------------
+
+
+def test_is_append_only_csv() -> None:
+    assert is_append_only(Path("data.csv")) is True
+    assert is_append_only(Path("data.tsv")) is True
+    assert is_append_only(Path("data.txt")) is True
+
+
+def test_is_append_only_non_append() -> None:
+    assert is_append_only(Path("data.h5")) is False
+    assert is_append_only(Path("data.nwb")) is False
+    assert is_append_only(Path("data.json")) is False
 
 
 # ---------------------------------------------------------------------------
@@ -410,6 +428,8 @@ class TestNwb:
 
         rows = _load_nwb(p)
         assert len(rows) == 3
+        assert rows[0]["frame"] == 0
+        assert rows[0]["animal_id"] == "position"
         assert rows[0]["x"] == 1.0
         assert rows[0]["y"] == 2.0
         assert rows[0]["time_sec"] == 0.0
@@ -473,6 +493,8 @@ class TestExtractNwbSpatialSeries:
         pos = pynwb.behavior.Position(spatial_series=ss)
         rows = _extract_nwb_spatial_series(pos)
         assert len(rows) == 2
+        assert rows[0]["frame"] == 0
+        assert rows[0]["animal_id"] == "pos1d"
         assert rows[0]["x"] == 1.0
         assert "y" not in rows[0]
 
@@ -487,6 +509,8 @@ class TestExtractNwbSpatialSeries:
         pos = pynwb.behavior.Position(spatial_series=ss)
         rows = _extract_nwb_spatial_series(pos)
         assert len(rows) == 2
+        assert rows[0]["frame"] == 0
+        assert rows[0]["animal_id"] == "pos3d"
         assert rows[0]["z"] == 3.0
 
     def test_position_no_timestamps_uses_rate(self) -> None:
@@ -500,6 +524,8 @@ class TestExtractNwbSpatialSeries:
         pos = pynwb.behavior.Position(spatial_series=ss)
         rows = _extract_nwb_spatial_series(pos)
         assert len(rows) == 2
+        assert rows[0]["frame"] == 0
+        assert rows[0]["animal_id"] == "pos_rate"
         assert rows[0]["time_sec"] == pytest.approx(0.0)
         assert rows[1]["time_sec"] == pytest.approx(1.0 / 30.0)
 

@@ -234,3 +234,21 @@ def test_ingest_file_exception_returns_zero(tmp_path: Path) -> None:
     assert acc.total_rows == 0
     # Lock released — file not stuck in _files_in_progress
     assert str(csv_path) not in acc._files_in_progress
+
+
+def test_h5_reingest_returns_all_rows(tmp_path: Path) -> None:
+    """H5/NWB files always return the complete dataset; re-ingest should not be offset-sliced."""
+    acc = DataAccumulator()
+    h5_path = tmp_path / "data.h5"
+    h5_path.write_bytes(b"fake")  # content doesn't matter, we mock load_file
+
+    fake_rows = [{"frame": i, "x": float(i)} for i in range(5)]
+    with patch("labclaw.daemon.load_file", return_value=fake_rows):
+        first = acc.ingest_file(h5_path)
+    assert first == 5
+
+    # Re-ingest the same H5 file — should get all 5 rows again (no offset slicing)
+    with patch("labclaw.daemon.load_file", return_value=fake_rows):
+        second = acc.ingest_file(h5_path)
+    assert second == 5
+    assert acc.total_rows == 10

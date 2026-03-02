@@ -21,6 +21,14 @@ logger = logging.getLogger(__name__)
 
 _DEFAULT_FPS = 30.0
 
+# CSV/TSV/TXT files grow by appending rows; H5/NWB always return the complete dataset.
+_APPEND_ONLY_EXTENSIONS = frozenset((".csv", ".tsv", ".txt"))
+
+
+def is_append_only(path: Path) -> bool:
+    """Return True if the file format supports incremental (append-only) ingestion."""
+    return path.suffix.lower() in _APPEND_ONLY_EXTENSIONS
+
 
 def load_file(path: Path) -> list[dict[str, Any]]:
     """Load any supported file into flat rows. Auto-detects by extension + content."""
@@ -242,11 +250,13 @@ def _extract_nwb_spatial_series(container: Any) -> list[dict[str, Any]]:
 
             for i in range(len(data)):
                 row: dict[str, Any] = {
+                    "frame": i,
                     "time_sec": float(timestamps[i])
                     if timestamps is not None
                     else i / ss.rate
                     if hasattr(ss, "rate") and ss.rate
                     else float(i),
+                    "animal_id": str(ss_name),
                 }
                 if data.ndim == 1:
                     row["x"] = float(data[i])
