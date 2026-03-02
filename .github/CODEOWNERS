@@ -1,0 +1,5 @@
+# Default: all changes require review
+* @labclaw/core-team
+
+# CI/CD changes require extra care
+.github/ @labclaw/core-team
