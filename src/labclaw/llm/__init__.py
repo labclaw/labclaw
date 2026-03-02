@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from labclaw.llm.provider import LLMConfig, LLMProvider
 from labclaw.llm.providers.anthropic import AnthropicProvider
+from labclaw.llm.providers.litellm_provider import LiteLLMProvider
 from labclaw.llm.providers.local import LocalProvider
 from labclaw.llm.providers.openai import OpenAIProvider
 
@@ -11,6 +12,7 @@ __all__ = [
     "AnthropicProvider",
     "LLMConfig",
     "LLMProvider",
+    "LiteLLMProvider",
     "LocalProvider",
     "OpenAIProvider",
     "get_llm_provider",
@@ -20,6 +22,7 @@ _PROVIDERS: dict[str, type] = {
     "anthropic": AnthropicProvider,
     "openai": OpenAIProvider,
     "local": LocalProvider,
+    "litellm": LiteLLMProvider,
 }
 
 
