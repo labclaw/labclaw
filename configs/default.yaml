@@ -29,6 +29,25 @@ llm:
   max_tokens: 2048
   fallback_provider: local
 
+proactive:
+  enabled: true
+  commitment_check_interval: 60
+  default_cooldown: 5.0
+
+scheduling:
+  task_db_path: data/tasks.db
+  poll_interval: 1.0
+  backoff_base: 2.0
+  max_backoff: 60.0
+
+litellm:
+  model: gpt-4o
+  fallback_models:
+    - claude-sonnet-4-6
+    - gpt-4o-mini
+  timeout: 30
+  num_retries: 2
+
 agents:
   default_model: claude-sonnet-4-6
   max_tool_calls: 20

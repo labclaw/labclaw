@@ -236,6 +236,7 @@ def test_ingest_file_exception_returns_zero(tmp_path: Path) -> None:
     assert str(csv_path) not in acc._files_in_progress
 
 
+
 def test_h5_ingest_then_skip_reingest(tmp_path: Path) -> None:
     """H5/NWB files are ingested once; re-ingest is skipped via sentinel."""
     acc = DataAccumulator()
