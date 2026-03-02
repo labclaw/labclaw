@@ -41,6 +41,29 @@ jobs:
       - name: Ruff format check
         run: uv run ruff format --check src/ tests/
 
+  typecheck:
+    name: typecheck
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+
+      - name: Setup uv
+        uses: astral-sh/setup-uv@a2a8b00df0aa22a77a33ee5f956c2128661fabeb # v7
+        with:
+          enable-cache: true
+
+      - name: Set up Python
+        run: uv python install 3.12
+
+      - name: Sync dependencies
+        run: uv sync --extra dev --extra science --frozen
+
+      - name: Mypy type check
+        run: uv run mypy src/labclaw/
+
   test:
     name: test (py${{ matrix.python-version }})
     runs-on: ubuntu-latest
@@ -87,6 +110,7 @@ jobs:
     timeout-minutes: 15
     needs:
       - lint
+      - typecheck
       - test
 
     steps:
