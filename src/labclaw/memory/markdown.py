@@ -17,7 +17,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-import yaml
+import yaml  # type: ignore[import-untyped]
 from pydantic import BaseModel
 
 from labclaw.core.events import event_registry

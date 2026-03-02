@@ -69,7 +69,7 @@ class AnthropicProvider:
                 "input_schema": schema,
             }
         ]
-        msg = await self._client.messages.create(
+        msg = await self._client.messages.create(  # type: ignore[call-overload]
             model=self._model,
             max_tokens=2048,
             temperature=temperature,

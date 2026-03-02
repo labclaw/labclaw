@@ -90,7 +90,7 @@ class PluginLoader:
         Each subdirectory must contain an ``__init__.py`` with a
         ``create_plugin()`` factory function.
         """
-        plugins_found = []
+        plugins_found: list[str] = []
         if not _env_bool("LABCLAW_ENABLE_LOCAL_PLUGINS", _running_under_pytest()):
             logger.info("Local plugins are disabled")
             return plugins_found

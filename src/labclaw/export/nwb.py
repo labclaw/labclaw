@@ -56,7 +56,7 @@ class NWBExporter:
             Resolved path to the written file.
         """
         import pynwb
-        from dateutil.parser import parse as parse_dt
+        from dateutil.parser import parse as parse_dt  # type: ignore[import-untyped]
 
         session_id = session_data.get("session_id", str(uuid.uuid4()))
         session_start_raw = session_data.get("session_start_time", _now_iso())

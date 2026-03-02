@@ -149,7 +149,7 @@ def _predict_pure(
     intercept: float,
 ) -> list[float]:
     """Predict using linear model coefficients."""
-    return (np.array(X) @ np.array(coefficients) + intercept).tolist()
+    return (np.array(X) @ np.array(coefficients) + intercept).tolist()  # type: ignore[no-any-return]
 
 
 def _r_squared(y_true: list[float], y_pred: list[float]) -> float:

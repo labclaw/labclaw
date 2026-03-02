@@ -44,7 +44,7 @@ class StateRecovery:
         if not self._state_file.exists():
             return None
         try:
-            return json.loads(self._state_file.read_text())
+            return json.loads(self._state_file.read_text())  # type: ignore[no-any-return]
         except (json.JSONDecodeError, OSError):
             logger.warning(
                 "State file %s is corrupt or unreadable; starting fresh",

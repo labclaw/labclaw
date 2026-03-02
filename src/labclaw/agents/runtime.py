@@ -153,7 +153,7 @@ class AgentRuntime:
                     "persona.agent.response_generated",
                     payload={"response_length": len(llm_response)},
                 )
-                return llm_response
+                return llm_response  # type: ignore[no-any-return]
 
             # Execute tool calls and feed results back
             self._message_history.append({"role": "assistant", "content": llm_response})

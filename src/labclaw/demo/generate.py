@@ -243,8 +243,8 @@ def _generate_chemistry() -> list[dict[str, Any]]:
     # -- Random exploration (remaining rows to reach 150) --
     remaining = 150 - len(rows)
     for _ in range(remaining):
-        temp = float(rng.integers(35, 100))
-        pres = float(rng.choice([100, 150, 200, 250, 300]))
+        temp = int(rng.integers(35, 100))
+        pres = int(rng.choice([100, 150, 200, 250, 300]))
         cat = float(rng.integers(5, 61))
         solvent = str(rng.choice(solvents))
 
