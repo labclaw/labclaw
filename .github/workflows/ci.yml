@@ -63,7 +63,7 @@ jobs:
         run: uv python install ${{ matrix.python-version }}
 
       - name: Sync dependencies
-        run: uv sync --extra dev --extra science --frozen
+        run: uv sync --extra dev --extra science --extra ingest --extra nwb --frozen
 
       - name: Run tests with coverage
         run: >
