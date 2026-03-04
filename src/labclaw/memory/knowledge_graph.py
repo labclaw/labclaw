@@ -15,6 +15,7 @@ from __future__ import annotations
 import logging
 import uuid
 from datetime import UTC, datetime
+from pathlib import Path
 from typing import Any
 
 from pydantic import BaseModel, Field
@@ -464,7 +465,7 @@ def create_tier_b_backend(
     """
     if in_memory:
         return TierBBackend()
-    return SQLiteTierBBackend(db_path or "data/knowledge_graph.db")
+    return SQLiteTierBBackend(Path(db_path or "data/knowledge_graph.db"))
 
 
 __all__ = [

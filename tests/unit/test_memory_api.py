@@ -339,9 +339,10 @@ class TestKGNeighborsEndpoint:
 
             node = GraphNode(node_id="center", node_type="experiment")
             neighbor = GraphNode(node_id="nb1", node_type="finding")
+            mock_edge = MagicMock()
             mock_kg = MagicMock()
             mock_kg.get_node.return_value = node
-            mock_kg.get_neighbors.return_value = [neighbor]
+            mock_kg.get_neighbors.return_value = [(neighbor, mock_edge)]
 
             with patch(
                 "labclaw.memory.knowledge_graph.TierBBackend",
@@ -421,7 +422,8 @@ class TestKGNeighborsEndpoint:
             from labclaw.core.graph import GraphNode
 
             node = GraphNode(node_id="c2", node_type="exp")
-            neighbors = [GraphNode(node_id=f"nb{i}", node_type="x") for i in range(5)]
+            mock_edge = MagicMock()
+            neighbors = [(GraphNode(node_id=f"nb{i}", node_type="x"), mock_edge) for i in range(5)]
             mock_kg = MagicMock()
             mock_kg.get_node.return_value = node
             mock_kg.get_neighbors.return_value = neighbors

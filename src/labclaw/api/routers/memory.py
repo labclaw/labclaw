@@ -174,4 +174,4 @@ async def get_kg_neighbors(
         relation=relation or None,
         direction=direction,
     )
-    return [n.model_dump(mode="json") for n in neighbors[:limit]]
+    return [n.model_dump(mode="json") for n, _edge in neighbors[:limit]]

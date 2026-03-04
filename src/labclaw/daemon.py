@@ -536,7 +536,11 @@ class LabClawDaemon:
 
         # Gather sentinel rules from domain plugins
         try:
-            domain_plugins = plugin_registry.get_by_type("domain")
+            from typing import cast
+
+            from labclaw.plugins.base import DomainPlugin
+
+            domain_plugins = cast(list[DomainPlugin], plugin_registry.get_by_type("domain"))
             all_rules: list[dict] = []
             for dp in domain_plugins:
                 all_rules.extend(dp.get_sentinel_rules())

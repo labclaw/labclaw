@@ -665,7 +665,7 @@ class ExperimentStep:
                     ).result()
             else:
                 result = asyncio.run(self._llm_provider.complete(prompt, system=system))
-            rationale = result.strip()[:1000]
+            rationale: str = str(result).strip()[:1000]
             logger.info("ExperimentStep: LLM rationale produced %d chars", len(rationale))
             return rationale
         except Exception:
@@ -967,7 +967,7 @@ class ConcludeStep:
                     ).result()
             else:
                 result = asyncio.run(self._llm_provider.complete(prompt, system=system))
-            synthesis = result.strip()[:2000]
+            synthesis: str = str(result).strip()[:2000]
             logger.info("ConcludeStep: LLM synthesis produced %d chars", len(synthesis))
             return synthesis
         except Exception:
