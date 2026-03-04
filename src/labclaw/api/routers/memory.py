@@ -146,11 +146,10 @@ async def list_kg_nodes(
     from labclaw.memory.knowledge_graph import KGQueryFilter, TierBBackend
 
     kg = TierBBackend()
-    filt = KGQueryFilter()
-    if node_type:
-        filt = KGQueryFilter(node_type=node_type)
-    if label:
-        filt = KGQueryFilter(node_type=node_type or None, tags=[label])
+    filt = KGQueryFilter(
+        node_type=node_type or None,
+        tags=[label] if label else [],
+    )
     nodes = kg.query_nodes(filt)
     return [n.model_dump(mode="json") for n in nodes[:limit]]
 

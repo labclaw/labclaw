@@ -19,6 +19,29 @@ from typing import Any, Protocol, runtime_checkable
 
 from pydantic import BaseModel, Field
 
+
+def _sync_llm_complete(provider: Any, prompt: str, system: str) -> str:
+    """Call an async LLM provider from sync context. Handles event-loop bridging."""
+    import asyncio
+
+    try:
+        loop = asyncio.get_running_loop()
+    except RuntimeError:
+        loop = None
+
+    if loop and loop.is_running():
+        import concurrent.futures
+
+        with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
+            result = pool.submit(
+                asyncio.run,
+                provider.complete(prompt, system=system),
+            ).result()
+    else:
+        result = asyncio.run(provider.complete(prompt, system=system))
+    return str(result).strip()
+
+
 logger = logging.getLogger(__name__)
 
 
@@ -647,25 +670,8 @@ class ExperimentStep:
             "You are a scientific advisor evaluating experiment proposals. Be concise and specific."
         )
 
-        import asyncio
-
         try:
-            loop = asyncio.get_running_loop()
-        except RuntimeError:
-            loop = None
-
-        try:
-            if loop and loop.is_running():
-                import concurrent.futures
-
-                with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
-                    result = pool.submit(
-                        asyncio.run,
-                        self._llm_provider.complete(prompt, system=system),
-                    ).result()
-            else:
-                result = asyncio.run(self._llm_provider.complete(prompt, system=system))
-            rationale: str = str(result).strip()[:1000]
+            rationale = _sync_llm_complete(self._llm_provider, prompt, system)[:1000]
             logger.info("ExperimentStep: LLM rationale produced %d chars", len(rationale))
             return rationale
         except Exception:
@@ -949,25 +955,8 @@ class ConcludeStep:
             "Write clear, concise conclusions grounded in the evidence."
         )
 
-        import asyncio
-
         try:
-            loop = asyncio.get_running_loop()
-        except RuntimeError:
-            loop = None
-
-        try:
-            if loop and loop.is_running():
-                import concurrent.futures
-
-                with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
-                    result = pool.submit(
-                        asyncio.run,
-                        self._llm_provider.complete(prompt, system=system),
-                    ).result()
-            else:
-                result = asyncio.run(self._llm_provider.complete(prompt, system=system))
-            synthesis: str = str(result).strip()[:2000]
+            synthesis = _sync_llm_complete(self._llm_provider, prompt, system)[:2000]
             logger.info("ConcludeStep: LLM synthesis produced %d chars", len(synthesis))
             return synthesis
         except Exception:
