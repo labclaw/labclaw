@@ -45,6 +45,48 @@ class AgentsConfig(BaseModel):
     max_tool_calls: int = 20
 
 
+class OrchestratorConfig(BaseModel):
+    """Configuration for the scientific method loop."""
+
+    max_llm_calls: int = 50
+    seed: int | None = None
+    skip_steps: list[str] = []
+
+
+class MemoryConfig(BaseModel):
+    """Configuration for the 3-tier memory system."""
+
+    tier_a_root: str = "lab"
+    tier_b_db_path: str = "data/knowledge_graph.db"
+    embedding_model: str = "all-MiniLM-L6-v2"
+
+
+class ProactiveConfig(BaseModel):
+    """Configuration for the proactive engine."""
+
+    enabled: bool = True
+    commitment_check_interval: int = 60
+    default_cooldown: float = 5.0
+
+
+class SchedulingConfig(BaseModel):
+    """Configuration for the task scheduler."""
+
+    task_db_path: str = "data/tasks.db"
+    poll_interval: float = 1.0
+    backoff_base: float = 2.0
+    max_backoff: float = 60.0
+
+
+class LiteLLMConfig(BaseModel):
+    """Configuration for the LiteLLM routing layer."""
+
+    model: str = "gpt-4o"
+    fallback_models: list[str] = ["claude-sonnet-4-6", "gpt-4o-mini"]
+    timeout: int = 30
+    num_retries: int = 2
+
+
 class LLMConfigFallback(BaseModel):
     """Standalone LLM config used when llm package is not yet available."""
 
@@ -73,6 +115,11 @@ class LabClawConfig(BaseModel):
     api: APIConfig = APIConfig()
     edge: EdgeConfig = EdgeConfig()
     agents: AgentsConfig = AgentsConfig()
+    orchestrator: OrchestratorConfig = OrchestratorConfig()
+    memory: MemoryConfig = MemoryConfig()
+    proactive: ProactiveConfig = ProactiveConfig()
+    scheduling: SchedulingConfig = SchedulingConfig()
+    litellm: LiteLLMConfig = LiteLLMConfig()
 
     def model_post_init(self, __context: Any) -> None:
         cls = _get_llm_config_class()
