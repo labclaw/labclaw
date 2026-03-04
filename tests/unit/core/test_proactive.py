@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 from datetime import UTC, datetime, timedelta
+from unittest.mock import patch
 
 import pytest
 
@@ -434,6 +435,21 @@ class TestProactiveEngineLifecycle:
         overdue = engine.list_commitments(status=CommitmentStatus.OVERDUE)
         assert len(overdue) == 1
         assert overdue[0].description == "overdue-loop"
+
+    @pytest.mark.asyncio
+    async def test_commitment_loop_exits_when_running_cleared(self) -> None:
+        """The check loop exits via break when _running is cleared during sleep."""
+        bus = EventBus(registry=EventRegistry())
+        engine = ProactiveEngine(event_bus=bus, commitment_check_interval=0.01)
+        engine._running = True
+
+        async def _set_not_running(*_args: object, **_kwargs: object) -> None:
+            engine._running = False
+
+        # Patch sleep so after the first sleep, _running becomes False
+        with patch("labclaw.core.proactive.asyncio.sleep", side_effect=_set_not_running):
+            await engine._commitment_check_loop()
+        # Loop exited via break — if it didn't, it would loop forever
 
     def test_on_event_no_loop_logs_warning(self) -> None:
         """Trigger with action should not crash when no event loop is running."""
