@@ -90,6 +90,63 @@ class TestRunDiscovery:
 # ---------------------------------------------------------------------------
 
 
+# ---------------------------------------------------------------------------
+# _collect_plugin_contributions
+# ---------------------------------------------------------------------------
+
+
+class TestCollectPluginContributions:
+    def test_no_domain_plugins_returns_none_sentinel(self, tmp_path: Path) -> None:
+        daemon = _make_daemon(tmp_path)
+        with patch("labclaw.plugins.registry.plugin_registry") as mock_reg:
+            mock_reg.get_by_type.return_value = []
+            sentinel, templates = daemon._collect_plugin_contributions()
+            assert sentinel is None
+            assert templates == []
+
+    def test_domain_plugin_sentinel_rules_translated(self, tmp_path: Path) -> None:
+        daemon = _make_daemon(tmp_path)
+        mock_plugin = MagicMock()
+        mock_plugin.get_sentinel_rules.return_value = [
+            {"metric": "row_count", "operator": "<", "threshold": 5.0},
+        ]
+        mock_plugin.get_hypothesis_templates.return_value = []
+
+        with patch("labclaw.plugins.registry.plugin_registry") as mock_reg:
+            mock_reg.get_by_type.return_value = [mock_plugin]
+            sentinel, templates = daemon._collect_plugin_contributions()
+            assert sentinel is not None
+            assert len(sentinel._rules) == 1
+
+    def test_domain_plugin_hypothesis_templates_collected(self, tmp_path: Path) -> None:
+        daemon = _make_daemon(tmp_path)
+        mock_plugin = MagicMock()
+        mock_plugin.get_sentinel_rules.return_value = []
+        mock_plugin.get_hypothesis_templates.return_value = [
+            {"statement": "Test hypothesis", "confidence": 0.7},
+        ]
+
+        with patch("labclaw.plugins.registry.plugin_registry") as mock_reg:
+            mock_reg.get_by_type.return_value = [mock_plugin]
+            sentinel, templates = daemon._collect_plugin_contributions()
+            assert sentinel is None  # no sentinel rules
+            assert len(templates) == 1
+            assert templates[0]["statement"] == "Test hypothesis"
+
+    def test_plugin_error_does_not_crash(self, tmp_path: Path) -> None:
+        daemon = _make_daemon(tmp_path)
+        with patch("labclaw.plugins.registry.plugin_registry") as mock_reg:
+            mock_reg.get_by_type.side_effect = RuntimeError("registry broken")
+            sentinel, templates = daemon._collect_plugin_contributions()
+            assert sentinel is None
+            assert templates == []
+
+
+# ---------------------------------------------------------------------------
+# _run_evolution
+# ---------------------------------------------------------------------------
+
+
 class TestRunEvolution:
     def test_skips_when_too_few_rows(self, tmp_path: Path) -> None:
         daemon = _make_daemon(tmp_path)

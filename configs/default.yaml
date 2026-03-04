@@ -48,6 +48,16 @@ litellm:
   timeout: 30
   num_retries: 2
 
+orchestrator:
+  max_llm_calls: 50
+  seed: null
+  skip_steps: []
+
+memory:
+  tier_a_root: lab
+  tier_b_db_path: data/knowledge_graph.db
+  embedding_model: all-MiniLM-L6-v2
+
 agents:
   default_model: claude-sonnet-4-6
   max_tool_calls: 20

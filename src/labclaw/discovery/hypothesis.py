@@ -92,7 +92,13 @@ class HypothesisGenerator:
 
     Spec: docs/specs/L3-discovery.md
     MVP implementation — no LLM calls.
+
+    When *plugin_templates* are provided, domain-specific templates are used
+    in addition to built-in ones.
     """
+
+    def __init__(self, plugin_templates: list[dict] | None = None) -> None:
+        self._plugin_templates = plugin_templates or []
 
     def generate(self, hypothesis_input: HypothesisInput) -> list[HypothesisOutput]:
         """Generate hypotheses from discovered patterns.
@@ -120,9 +126,34 @@ class HypothesisGenerator:
                     },
                 )
 
+        # Generate from plugin templates
+        for tmpl in self._plugin_templates:
+            hyp = self._from_plugin_template(tmpl, hypothesis_input.patterns)
+            if hyp is not None:
+                hypotheses.append(hyp)
+
         # Sort by confidence descending
         hypotheses.sort(key=lambda h: h.confidence, reverse=True)
         return hypotheses
+
+    @staticmethod
+    def _from_plugin_template(
+        template: dict, patterns: list[PatternRecord]
+    ) -> HypothesisOutput | None:
+        """Generate a hypothesis from a plugin-provided template."""
+        statement = template.get("statement", "")
+        if not statement:
+            return None
+        # Substitute {pattern_count} placeholder if present
+        statement = statement.replace("{pattern_count}", str(len(patterns)))
+        return HypothesisOutput(
+            statement=statement,
+            testable=template.get("testable", True),
+            confidence=template.get("confidence", 0.5),
+            required_experiments=template.get("required_experiments", []),
+            resource_estimate=template.get("resource_estimate", ""),
+            patterns_used=[p.pattern_id for p in patterns[:5]],
+        )
 
     @staticmethod
     def _format_past_findings(context_findings: list[dict]) -> str:

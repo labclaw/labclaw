@@ -1,9 +1,10 @@
-"""Memory (Tier A) endpoints — SOUL.md / MEMORY.md read, append, search."""
+"""Memory endpoints — Tier A (SOUL/MEMORY.md) + Tier B (KG) + findings."""
 
 from __future__ import annotations
 
 import re
 from datetime import UTC, datetime
+from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
@@ -102,3 +103,75 @@ def append_memory(
     )
     backend.append_memory(entity_id, entry)
     return {"entity_id": entity_id, "category": body.category, "status": "appended"}
+
+
+# ---------------------------------------------------------------------------
+# Findings (Tier A+B) endpoints
+# ---------------------------------------------------------------------------
+
+
+@router.get("/findings")
+async def list_findings(
+    q: str = "",
+    limit: int = Query(default=50, ge=1, le=500),
+) -> list[dict[str, Any]]:
+    """List stored findings. Reads from SessionMemoryManager if available,
+    otherwise falls back to Tier A markdown parsing."""
+    from labclaw.api.deps import _default_memory_root
+
+    root = _default_memory_root()
+    from labclaw.memory.session_memory import SessionMemoryManager
+
+    mgr = SessionMemoryManager(memory_root=root)
+    await mgr.init()
+    try:
+        findings = await mgr.retrieve_findings(query=q)
+    finally:
+        await mgr.close()
+    return findings[:limit]
+
+
+# ---------------------------------------------------------------------------
+# Knowledge Graph (Tier B) endpoints
+# ---------------------------------------------------------------------------
+
+
+@router.get("/kg/nodes")
+async def list_kg_nodes(
+    node_type: str = "",
+    label: str = "",
+    limit: int = Query(default=50, ge=1, le=500),
+) -> list[dict[str, Any]]:
+    """List nodes in the knowledge graph with optional type/label filtering."""
+    from labclaw.memory.knowledge_graph import KGQueryFilter, TierBBackend
+
+    kg = TierBBackend()
+    filt = KGQueryFilter()
+    if node_type:
+        filt = KGQueryFilter(node_type=node_type)
+    if label:
+        filt = KGQueryFilter(node_type=node_type or None, tags=[label])
+    nodes = kg.query_nodes(filt)
+    return [n.model_dump(mode="json") for n in nodes[:limit]]
+
+
+@router.get("/kg/neighbors/{node_id}")
+async def get_kg_neighbors(
+    node_id: str,
+    relation: str = "",
+    direction: str = "outgoing",
+    limit: int = Query(default=50, ge=1, le=500),
+) -> list[dict[str, Any]]:
+    """Get neighbor nodes for a given node in the knowledge graph."""
+    from labclaw.memory.knowledge_graph import TierBBackend
+
+    kg = TierBBackend()
+    node = kg.get_node(node_id)
+    if node is None:
+        raise HTTPException(status_code=404, detail=f"Node {node_id!r} not found")
+    neighbors = kg.get_neighbors(
+        node_id,
+        relation=relation or None,
+        direction=direction,
+    )
+    return [n.model_dump(mode="json") for n, _edge in neighbors[:limit]]

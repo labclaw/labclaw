@@ -15,6 +15,7 @@ from __future__ import annotations
 import logging
 import uuid
 from datetime import UTC, datetime
+from pathlib import Path
 from typing import Any
 
 from pydantic import BaseModel, Field
@@ -451,10 +452,27 @@ class TierBBackend:
 
 from labclaw.memory.sqlite_backend import SQLiteTierBBackend  # noqa: E402
 
+
+def create_tier_b_backend(
+    db_path: str | None = None,
+    *,
+    in_memory: bool = False,
+) -> TierBBackend | SQLiteTierBBackend:
+    """Factory: create the appropriate KG backend.
+
+    By default uses SQLiteTierBBackend for persistence across restarts.
+    Set ``in_memory=True`` to use the lightweight in-memory backend (tests).
+    """
+    if in_memory:
+        return TierBBackend()
+    return SQLiteTierBBackend(Path(db_path or "data/knowledge_graph.db"))
+
+
 __all__ = [
     "KGEdge",
     "KGQueryFilter",
     "KGSearchResult",
     "SQLiteTierBBackend",
     "TierBBackend",
+    "create_tier_b_backend",
 ]

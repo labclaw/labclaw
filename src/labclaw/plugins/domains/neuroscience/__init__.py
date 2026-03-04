@@ -1,12 +1,15 @@
-"""Neuroscience domain plugin — animal subjects, imaging sentinels, neuro hypotheses.
+"""Neuroscience domain & analysis plugins.
 
-Implements the :class:`~labclaw.plugins.base.DomainPlugin` protocol.
+Implements both :class:`~labclaw.plugins.base.DomainPlugin` and
+:class:`~labclaw.plugins.base.AnalysisPlugin` protocols.
 
 Provides
 --------
 - :class:`AnimalSampleNode` — subject node with species, genotype, sex, etc.
 - Sentinel rules — fluorescence baseline, behavioral metric bounds
 - Hypothesis templates — gene expression correlation, behaviour-neural coupling
+- Mining algorithms — neural-behavioral cross-correlation
+- Validators — session consistency check
 """
 
 from __future__ import annotations
@@ -15,7 +18,7 @@ from datetime import datetime
 from typing import Any
 
 from labclaw.core.graph import SampleNode
-from labclaw.plugins.base import DomainPlugin, PluginMetadata
+from labclaw.plugins.base import AnalysisPlugin, DomainPlugin, PluginMetadata
 
 # ---------------------------------------------------------------------------
 # Domain-specific sample node
@@ -158,4 +161,62 @@ class NeuroscienceDomainPlugin:
         ]
 
 
+# ---------------------------------------------------------------------------
+# Analysis plugin
+# ---------------------------------------------------------------------------
+
+
+class NeuroscienceAnalysisPlugin:
+    """Analysis plugin for neuroscience — mining algorithms and validators."""
+
+    metadata: PluginMetadata = PluginMetadata(
+        name="neuroscience-analysis",
+        version="1.0.0",
+        description="Neuroscience analysis: neural-behavioral mining, session consistency.",
+        author="labclaw-core",
+        plugin_type="analysis",
+    )
+
+    def get_mining_algorithms(self) -> list[dict[str, Any]]:
+        """Return neuroscience-specific mining algorithm descriptors."""
+        return [
+            {
+                "name": "neural_behavioral_correlation",
+                "description": (
+                    "Cross-correlate neural activity columns with behavioral "
+                    "metric columns to discover activity-behavior coupling."
+                ),
+                "input_columns": {
+                    "neural": ["firing_rate", "calcium_signal", "lfp_power"],
+                    "behavioral": ["running_speed", "task_accuracy", "lick_rate"],
+                },
+                "parameters": {
+                    "min_correlation": 0.3,
+                    "p_value_threshold": 0.05,
+                    "lag_range_ms": [-500, 500],
+                },
+                "output_pattern_type": "correlation",
+            },
+        ]
+
+    def get_validators(self) -> list[dict[str, Any]]:
+        """Return neuroscience-specific validator descriptors."""
+        return [
+            {
+                "name": "session_consistency",
+                "description": (
+                    "Check that key metrics remain consistent across sessions "
+                    "within the same animal. Flags sessions with >3 SD deviation."
+                ),
+                "metrics": ["baseline_fluorescence", "task_accuracy", "trial_count"],
+                "parameters": {
+                    "z_threshold": 3.0,
+                    "min_sessions": 3,
+                    "group_by": "animal_id",
+                },
+            },
+        ]
+
+
 assert isinstance(NeuroscienceDomainPlugin(), DomainPlugin)  # protocol check
+assert isinstance(NeuroscienceAnalysisPlugin(), AnalysisPlugin)  # protocol check

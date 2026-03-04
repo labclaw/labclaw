@@ -155,8 +155,9 @@ class TestDiscoveryHypothesizeEndpoint:
         from labclaw.api.deps import get_hypothesis_generator
         from labclaw.discovery.hypothesis import HypothesisGenerator
 
-        # Override the dependency so we don't need a real LLM provider
-        app.dependency_overrides[get_hypothesis_generator] = HypothesisGenerator
+        # Override the dependency with a lambda to avoid FastAPI inspecting
+        # HypothesisGenerator.__init__ params (plugin_templates) as body params
+        app.dependency_overrides[get_hypothesis_generator] = lambda: HypothesisGenerator()
         try:
             async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
                 resp = await c.post(
