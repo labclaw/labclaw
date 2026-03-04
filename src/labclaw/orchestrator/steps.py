@@ -83,9 +83,16 @@ class ScientificStep(Protocol):
 
 
 class ObserveStep:
-    """Takes data_rows from context. If empty, skips. Runs basic QC."""
+    """Takes data_rows from context. If empty, skips. Runs basic QC.
+
+    When *sentinel* is provided, plugin sentinel rules are evaluated after
+    basic QC.  Alerts are stored in ``context.metadata["sentinel_alerts"]``.
+    """
 
     name = StepName.OBSERVE
+
+    def __init__(self, sentinel: Any | None = None) -> None:
+        self._sentinel = sentinel
 
     async def run(self, context: StepContext) -> StepResult:
         t0 = time.monotonic()
@@ -132,17 +139,58 @@ class ObserveStep:
                 "outputs": [f"{row_count} rows, {len(all_keys)} columns"],
                 "timestamp": datetime.now(UTC).isoformat(),
             }
+            # Sentinel checks: evaluate plugin rules against data quality metrics
+            sentinel_alerts: list[dict[str, Any]] = []
+            if self._sentinel is not None:
+                try:
+                    from labclaw.core.schemas import QualityMetric
+
+                    metrics = [
+                        QualityMetric(name="row_count", value=float(row_count)),
+                        QualityMetric(
+                            name="null_rate",
+                            value=(
+                                sum(null_counts.values()) / (row_count * len(all_keys))
+                                if all_keys and row_count > 0
+                                else 0.0
+                            ),
+                        ),
+                        QualityMetric(name="numeric_column_count", value=float(len(numeric_cols))),
+                    ]
+                    for metric in metrics:
+                        alerts = self._sentinel.check_metric(metric)
+                        for alert in alerts:
+                            sentinel_alerts.append(
+                                {
+                                    "rule": alert.rule_name,
+                                    "metric": alert.metric.name,
+                                    "value": alert.metric.value,
+                                    "level": alert.level.value,
+                                    "message": alert.message,
+                                }
+                            )
+                    if sentinel_alerts:
+                        logger.warning(
+                            "ObserveStep: %d sentinel alerts raised", len(sentinel_alerts)
+                        )
+                except Exception:
+                    logger.warning("ObserveStep: sentinel check failed")
+
+            meta_update: dict[str, Any] = {
+                **context.metadata,
+                "data_stats": {
+                    "row_count": row_count,
+                    "columns": sorted(all_keys),
+                    "numeric_columns": numeric_cols,
+                    "null_counts": null_counts,
+                },
+            }
+            if sentinel_alerts:
+                meta_update["sentinel_alerts"] = sentinel_alerts
+
             ctx = context.model_copy(
                 update={
-                    "metadata": {
-                        **context.metadata,
-                        "data_stats": {
-                            "row_count": row_count,
-                            "columns": sorted(all_keys),
-                            "numeric_columns": numeric_cols,
-                            "null_counts": null_counts,
-                        },
-                    },
+                    "metadata": meta_update,
                     "provenance_steps": [*context.provenance_steps, prov_entry],
                 }
             )
@@ -170,9 +218,16 @@ class ObserveStep:
 
 
 class AskStep:
-    """Uses PatternMiner to mine patterns from data_rows. Skips if < 10 rows."""
+    """Uses PatternMiner to mine patterns from data_rows.
+
+    When *session_memory* is provided, known findings are used to
+    deduplicate patterns via PatternDeduplicator.  Skips if < 10 rows.
+    """
 
     name = StepName.ASK
+
+    def __init__(self, session_memory: Any | None = None) -> None:
+        self._session_memory = session_memory
 
     async def run(self, context: StepContext) -> StepResult:
         t0 = time.monotonic()
@@ -191,23 +246,51 @@ class AskStep:
 
             miner = PatternMiner()
             result = miner.mine(context.data_rows, MiningConfig())
+            patterns = result.patterns
+
+            # Deduplicate against known findings
+            if self._session_memory is not None and patterns:
+                try:
+                    from labclaw.memory.dedup import PatternDeduplicator
+
+                    known_findings = await self._session_memory.retrieve_findings()
+                    dedup = PatternDeduplicator(known_findings)
+                    original_count = len(patterns)
+                    # Convert PatternRecord → dedup-compatible dicts
+                    pattern_dicts = [
+                        {
+                            "column_a": getattr(p, "evidence", {}).get("col_a"),
+                            "column_b": getattr(p, "evidence", {}).get("col_b"),
+                            "pattern_type": getattr(p, "pattern_type", None),
+                        }
+                        for p in patterns
+                    ]
+                    unique_dicts = dedup.deduplicate(pattern_dicts)
+                    # Map back to original PatternRecord objects
+                    unique_set = {id(d) for d in unique_dicts}
+                    patterns = [p for p, d in zip(patterns, pattern_dicts) if id(d) in unique_set]
+                    deduped = original_count - len(patterns)
+                    if deduped > 0:
+                        logger.info("AskStep: deduplicated %d known patterns", deduped)
+                except Exception:
+                    logger.warning("AskStep: deduplication failed, keeping all patterns")
 
             prov_entry: dict[str, Any] = {
                 "step": self.name.value,
                 "node_id": str(uuid.uuid4()),
                 "node_type": "pattern_mining",
                 "inputs": [f"{len(context.data_rows)} rows"],
-                "outputs": [f"{len(result.patterns)} patterns"],
+                "outputs": [f"{len(patterns)} patterns"],
                 "timestamp": datetime.now(UTC).isoformat(),
             }
             ctx = context.model_copy(
                 update={
-                    "patterns": result.patterns,
+                    "patterns": patterns,
                     "provenance_steps": [*context.provenance_steps, prov_entry],
                 }
             )
 
-            logger.info("AskStep: found %d patterns", len(result.patterns))
+            logger.info("AskStep: found %d patterns", len(patterns))
             return StepResult(
                 step=self.name,
                 success=True,
@@ -227,14 +310,24 @@ class AskStep:
 class HypothesizeStep:
     """Uses HypothesisGenerator (or LLMHypothesisGenerator if available).
 
+    When *session_memory* is provided, past findings are queried and fed
+    into HypothesisInput.context_findings so the generator can build on them.
     Skips if no patterns.
     """
 
     name = StepName.HYPOTHESIZE
 
-    def __init__(self, llm_provider: Any | None = None, max_llm_calls: int = 50) -> None:
+    def __init__(
+        self,
+        llm_provider: Any | None = None,
+        max_llm_calls: int = 50,
+        session_memory: Any | None = None,
+        plugin_templates: list[dict] | None = None,
+    ) -> None:
         self._llm_provider = llm_provider
         self._max_llm_calls = max_llm_calls
+        self._session_memory = session_memory
+        self._plugin_templates = plugin_templates or []
 
     async def run(self, context: StepContext) -> StepResult:
         t0 = time.monotonic()
@@ -254,7 +347,9 @@ class HypothesizeStep:
                 HypothesisInput,
             )
 
-            generator: Any = HypothesisGenerator()
+            generator: Any = HypothesisGenerator(
+                plugin_templates=self._plugin_templates,
+            )
 
             # Use LLM-backed generator if provider is available
             if self._llm_provider is not None:
@@ -269,7 +364,18 @@ class HypothesizeStep:
                 except (ImportError, AttributeError):
                     pass  # Fall back to template-based generator
 
-            hyp_input = HypothesisInput(patterns=context.patterns)
+            # Query past findings from session memory
+            context_findings: list[dict] = []
+            if self._session_memory is not None:
+                try:
+                    context_findings = await self._session_memory.retrieve_findings()
+                except Exception:
+                    logger.warning("HypothesizeStep: failed to retrieve past findings")
+
+            hyp_input = HypothesisInput(
+                patterns=context.patterns,
+                context_findings=context_findings,
+            )
             hypotheses = generator.generate(hyp_input)
 
             prov_entry: dict[str, Any] = {
@@ -394,9 +500,19 @@ class PredictStep:
 
 
 class ExperimentStep:
-    """Wraps BayesianOptimizer — proposes next experiment parameters (read-only for v0.0.2)."""
+    """Wraps BayesianOptimizer — proposes next experiment parameters.
+
+    When *llm_provider* is supplied, Bayesian proposals are evaluated by the
+    LLM against domain knowledge and past findings.  The LLM can annotate
+    proposals with scientific rationale.  Bayesian math is never replaced.
+    """
 
     name = StepName.EXPERIMENT
+
+    def __init__(self, llm_provider: Any | None = None, max_llm_calls: int = 50) -> None:
+        self._llm_provider = llm_provider
+        self._max_llm_calls = max_llm_calls
+        self._llm_call_count = 0
 
     async def run(self, context: StepContext) -> StepResult:
         t0 = time.monotonic()
@@ -450,6 +566,20 @@ class ExperimentStep:
             optimizer = BayesianOptimizer(space)
             proposals = optimizer.suggest(n=1)
 
+            # LLM evaluation: annotate proposals with scientific rationale
+            proposal_dicts = [
+                {
+                    "proposal_id": p.proposal_id,
+                    "parameters": p.parameters,
+                    "iteration": p.iteration,
+                }
+                for p in proposals
+            ]
+            llm_rationale = self._evaluate_with_llm(proposal_dicts, context)
+            if llm_rationale:
+                for pd in proposal_dicts:
+                    pd["llm_rationale"] = llm_rationale
+
             prov_entry: dict[str, Any] = {
                 "step": self.name.value,
                 "node_id": str(uuid.uuid4()),
@@ -460,14 +590,7 @@ class ExperimentStep:
             }
             ctx = context.model_copy(
                 update={
-                    "proposals": [
-                        {
-                            "proposal_id": p.proposal_id,
-                            "parameters": p.parameters,
-                            "iteration": p.iteration,
-                        }
-                        for p in proposals
-                    ],
+                    "proposals": proposal_dicts,
                     "provenance_steps": [*context.provenance_steps, prov_entry],
                 }
             )
@@ -487,6 +610,67 @@ class ExperimentStep:
                 context=context,
                 duration_seconds=time.monotonic() - t0,
             )
+
+    def _evaluate_with_llm(self, proposals: list[dict[str, Any]], context: StepContext) -> str:
+        """Ask LLM to evaluate Bayesian proposals. Returns rationale or empty string."""
+        if self._llm_provider is None:
+            return ""
+        if self._llm_call_count >= self._max_llm_calls:
+            logger.info(
+                "ExperimentStep LLM cost guard (calls=%d >= max=%d): skipping evaluation",
+                self._llm_call_count,
+                self._max_llm_calls,
+            )
+            return ""
+
+        self._llm_call_count += 1
+
+        import json as _json
+
+        findings_ctx = "\n".join(f"- {f}" for f in context.findings) if context.findings else "None"
+        hypotheses_ctx = (
+            "\n".join(f"- {getattr(h, 'statement', str(h))}" for h in context.hypotheses[:5])
+            if context.hypotheses
+            else "None"
+        )
+        proposals_text = _json.dumps(proposals, default=str, indent=2)
+
+        prompt = (
+            "Evaluate the following experiment proposals from a Bayesian optimizer.\n\n"
+            f"Current hypotheses:\n{hypotheses_ctx}\n\n"
+            f"Current findings:\n{findings_ctx}\n\n"
+            f"Proposals:\n{proposals_text}\n\n"
+            "Provide a brief scientific rationale (2-3 sentences) for whether these "
+            "proposals are well-targeted given the hypotheses and findings."
+        )
+        system = (
+            "You are a scientific advisor evaluating experiment proposals. Be concise and specific."
+        )
+
+        import asyncio
+
+        try:
+            loop = asyncio.get_running_loop()
+        except RuntimeError:
+            loop = None
+
+        try:
+            if loop and loop.is_running():
+                import concurrent.futures
+
+                with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
+                    result = pool.submit(
+                        asyncio.run,
+                        self._llm_provider.complete(prompt, system=system),
+                    ).result()
+            else:
+                result = asyncio.run(self._llm_provider.complete(prompt, system=system))
+            rationale = result.strip()[:1000]
+            logger.info("ExperimentStep: LLM rationale produced %d chars", len(rationale))
+            return rationale
+        except Exception:
+            logger.warning("ExperimentStep: LLM evaluation failed, using raw proposals")
+            return ""
 
 
 class AnalyzeStep:
@@ -582,13 +766,27 @@ class AnalyzeStep:
 
 
 class ConcludeStep:
-    """Generates finding summaries. Logs to Tier A memory."""
+    """Generates finding summaries. Logs to Tier A memory.
+
+    When *llm_provider* is supplied, deterministic template findings are first
+    produced then passed to the LLM for a richer natural-language synthesis.
+    If the LLM call fails or cost-guard fires, template findings are used as-is.
+    """
 
     name = StepName.CONCLUDE
 
-    def __init__(self, memory_root: Path | None = None, entity_id: str = "lab") -> None:
+    def __init__(
+        self,
+        memory_root: Path | None = None,
+        entity_id: str = "lab",
+        llm_provider: Any | None = None,
+        max_llm_calls: int = 50,
+    ) -> None:
         self._memory_root = memory_root
         self._entity_id = entity_id
+        self._llm_provider = llm_provider
+        self._max_llm_calls = max_llm_calls
+        self._llm_call_count = 0
 
     async def run(self, context: StepContext) -> StepResult:
         t0 = time.monotonic()
@@ -638,6 +836,11 @@ class ConcludeStep:
 
             if not findings:
                 findings.append("No notable findings in this cycle.")
+
+            # LLM synthesis: enrich template findings with natural language
+            llm_synthesis = self._synthesize_with_llm(findings, context)
+            if llm_synthesis:
+                findings.append(f"LLM synthesis: {llm_synthesis}")
 
             # Build a ProvenanceChain for each finding
             from labclaw.validation.provenance import ProvenanceTracker
@@ -717,3 +920,56 @@ class ConcludeStep:
                 context=context,
                 duration_seconds=time.monotonic() - t0,
             )
+
+    def _synthesize_with_llm(self, findings: list[str], context: StepContext) -> str:
+        """Call LLM to synthesize template findings into natural language.
+
+        Returns empty string if LLM is unavailable, cost-guard fires, or call fails.
+        """
+        if self._llm_provider is None:
+            return ""
+        if self._llm_call_count >= self._max_llm_calls:
+            logger.info(
+                "ConcludeStep LLM cost guard (calls=%d >= max=%d): skipping synthesis",
+                self._llm_call_count,
+                self._max_llm_calls,
+            )
+            return ""
+
+        self._llm_call_count += 1
+
+        prompt = (
+            "Synthesize the following scientific findings from one discovery cycle "
+            "into a brief, coherent narrative paragraph (3-5 sentences). "
+            "Be specific and reference the data.\n\n"
+            "Findings:\n" + "\n".join(f"- {f}" for f in findings)
+        )
+        system = (
+            "You are a scientific assistant summarizing discovery cycle results. "
+            "Write clear, concise conclusions grounded in the evidence."
+        )
+
+        import asyncio
+
+        try:
+            loop = asyncio.get_running_loop()
+        except RuntimeError:
+            loop = None
+
+        try:
+            if loop and loop.is_running():
+                import concurrent.futures
+
+                with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
+                    result = pool.submit(
+                        asyncio.run,
+                        self._llm_provider.complete(prompt, system=system),
+                    ).result()
+            else:
+                result = asyncio.run(self._llm_provider.complete(prompt, system=system))
+            synthesis = result.strip()[:2000]
+            logger.info("ConcludeStep: LLM synthesis produced %d chars", len(synthesis))
+            return synthesis
+        except Exception:
+            logger.warning("ConcludeStep: LLM synthesis failed, using template findings only")
+            return ""
