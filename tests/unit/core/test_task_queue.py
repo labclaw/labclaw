@@ -343,6 +343,29 @@ class TestTaskQueue:
         finally:
             await q.close()
 
+    @pytest.mark.asyncio
+    async def test_pending_resets_stale_timestamps(self) -> None:
+        q = TaskQueue()
+        await q.init_db()
+        try:
+            task = TaskItem(name="retry-reset")
+            await q.enqueue(task)
+            await q.update_status(task.task_id, TaskStatus.RUNNING)
+            await q.update_status(task.task_id, TaskStatus.FAILED, error="oops")
+            failed = await q.get_task(task.task_id)
+            assert failed is not None
+            assert failed.started_at is not None
+            assert failed.completed_at is not None
+            assert failed.error == "oops"
+
+            retried = await q.update_status(task.task_id, TaskStatus.PENDING)
+            assert retried.started_at is None
+            assert retried.completed_at is None
+            assert retried.error is None
+            assert retried.status == TaskStatus.PENDING
+        finally:
+            await q.close()
+
 
 # ---------------------------------------------------------------------------
 # TaskRunner

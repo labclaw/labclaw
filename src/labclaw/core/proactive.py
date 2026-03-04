@@ -87,9 +87,12 @@ class ProactiveEngine:
         self,
         event_bus: EventBus,
         task_queue: TaskQueue | None = None,
+        *,
+        commitment_check_interval: float = 60.0,
     ) -> None:
         self._event_bus = event_bus
         self._task_queue = task_queue
+        self._commitment_check_interval = commitment_check_interval
         self._triggers: dict[str, Trigger] = {}
         self._commitments: dict[str, Commitment] = {}
         self._last_fired: dict[str, datetime] = {}
@@ -138,7 +141,12 @@ class ProactiveEngine:
 
             if self._task_queue and trigger.action:
                 task = TaskItem(name=trigger.action, args={"trigger_id": trigger.trigger_id})
-                asyncio.get_running_loop().create_task(self._task_queue.enqueue(task))
+                try:
+                    asyncio.get_running_loop().create_task(self._task_queue.enqueue(task))
+                except RuntimeError:
+                    logger.warning(
+                        "No running event loop — cannot enqueue action %r", trigger.action
+                    )
 
             event_registry.emit(
                 "infra.proactive.trigger_fired",
@@ -204,6 +212,7 @@ class ProactiveEngine:
         """Start the proactive engine — subscribe to event bus."""
         self._running = True
         self._event_bus.subscribe("*", self._handle_event)
+        self._check_task = asyncio.create_task(self._commitment_check_loop())
 
     async def stop(self) -> None:
         """Stop the proactive engine — unsubscribe from event bus."""
@@ -219,6 +228,14 @@ class ProactiveEngine:
             except asyncio.CancelledError:
                 pass
             self._check_task = None
+
+    async def _commitment_check_loop(self) -> None:
+        """Periodically check for overdue commitments."""
+        while self._running:
+            await asyncio.sleep(self._commitment_check_interval)
+            if not self._running:
+                break
+            self.check_commitments()
 
     # ------------------------------------------------------------------
     # Internal helpers

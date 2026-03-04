@@ -245,7 +245,11 @@ class TaskQueue:
         completed_at = task.completed_at
         retry_count = task.retry_count
 
-        if status == TaskStatus.RUNNING:
+        if status == TaskStatus.PENDING:
+            started_at = None
+            completed_at = None
+            error = None
+        elif status == TaskStatus.RUNNING:
             started_at = now
         elif status in (TaskStatus.COMPLETED, TaskStatus.FAILED, TaskStatus.CANCELLED):
             completed_at = now

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 from datetime import UTC, datetime, timedelta
+from unittest.mock import patch
 
 import pytest
 
@@ -416,7 +417,50 @@ class TestProactiveEngineLifecycle:
         bus = EventBus(registry=EventRegistry())
         engine = ProactiveEngine(event_bus=bus)
         await engine.start()
-        # Simulate a running check task
-        engine._check_task = asyncio.create_task(asyncio.sleep(100))
+        assert engine._check_task is not None
         await engine.stop()
         assert engine._check_task is None
+
+    @pytest.mark.asyncio
+    async def test_start_creates_commitment_check_loop(self) -> None:
+        bus = EventBus(registry=EventRegistry())
+        engine = ProactiveEngine(event_bus=bus, commitment_check_interval=0.05)
+        past = datetime.now(UTC) - timedelta(hours=1)
+        engine.add_commitment(Commitment(description="overdue-loop", due_at=past))
+
+        await engine.start()
+        await asyncio.sleep(0.15)
+        await engine.stop()
+
+        overdue = engine.list_commitments(status=CommitmentStatus.OVERDUE)
+        assert len(overdue) == 1
+        assert overdue[0].description == "overdue-loop"
+
+    @pytest.mark.asyncio
+    async def test_commitment_loop_exits_when_running_cleared(self) -> None:
+        """The check loop exits via break when _running is cleared during sleep."""
+        bus = EventBus(registry=EventRegistry())
+        engine = ProactiveEngine(event_bus=bus, commitment_check_interval=0.01)
+        engine._running = True
+
+        async def _set_not_running(*_args: object, **_kwargs: object) -> None:
+            engine._running = False
+
+        # Patch sleep so after the first sleep, _running becomes False
+        with patch("labclaw.core.proactive.asyncio.sleep", side_effect=_set_not_running):
+            await engine._commitment_check_loop()
+        # Loop exited via break — if it didn't, it would loop forever
+
+    def test_on_event_no_loop_logs_warning(self) -> None:
+        """Trigger with action should not crash when no event loop is running."""
+        from labclaw.core.task_queue import TaskQueue
+
+        bus = EventBus(registry=EventRegistry())
+        q = TaskQueue()
+        engine = ProactiveEngine(event_bus=bus, task_queue=q)
+        t = Trigger(name="no-loop", event_pattern="*", action="do-stuff")
+        engine.register_trigger(t)
+
+        event = _make_event()
+        fired = engine.on_event(event)
+        assert t.trigger_id in fired
