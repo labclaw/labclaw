@@ -293,7 +293,7 @@ def _pipeline_cmd(args: list[str]) -> None:
     if args and args[0] in ("-h", "--help"):
         print(
             "Usage: labclaw pipeline --once --data-dir PATH "
-            "[--memory-root PATH] [--seed INT] [--max-llm-calls N]"
+            "[--memory-root PATH] [--seed INT] [--max-llm-calls N] [--llm | --no-llm]"
         )
         print()
         print("Options:")
@@ -302,6 +302,8 @@ def _pipeline_cmd(args: list[str]) -> None:
         print("  --memory-root PATH  Memory root for Tier A logging (optional)")
         print("  --seed INT          Random seed for reproducibility (optional)")
         print("  --max-llm-calls N   Max LLM calls before template fallback (default: 50)")
+        print("  --llm               Enable LLM for all steps (default: off)")
+        print("  --no-llm            Disable LLM, use template fallback for all steps")
         return
 
     if not args:
@@ -315,6 +317,7 @@ def _pipeline_cmd(args: list[str]) -> None:
     memory_root: Path | None = None
     seed: int | None = None
     max_llm_calls: int = 50
+    use_llm: bool = False
 
     i = 0
     while i < len(args):
@@ -330,6 +333,12 @@ def _pipeline_cmd(args: list[str]) -> None:
         elif args[i] == "--max-llm-calls" and i + 1 < len(args):
             max_llm_calls = int(args[i + 1])
             i += 2
+        elif args[i] == "--llm":
+            use_llm = True
+            i += 1
+        elif args[i] == "--no-llm":
+            use_llm = False
+            i += 1
         else:
             i += 1
 
@@ -373,13 +382,29 @@ def _pipeline_cmd(args: list[str]) -> None:
         ScientificStep,
     )
 
-    conclude = ConcludeStep(memory_root=memory_root)
+    llm_provider = None
+    if use_llm:
+        try:
+            from labclaw.config import load_config
+
+            cfg = load_config()
+            from labclaw.llm.providers.litellm_provider import LiteLLMProvider
+
+            llm_provider = LiteLLMProvider(model=cfg.llm.model)
+        except Exception:
+            pass  # Fall back to template-only mode
+
+    conclude = ConcludeStep(
+        memory_root=memory_root,
+        llm_provider=llm_provider,
+        max_llm_calls=max_llm_calls,
+    )
     steps: list[ScientificStep] = [
         ObserveStep(),
         AskStep(),
-        HypothesizeStep(llm_provider=None, max_llm_calls=max_llm_calls),
+        HypothesizeStep(llm_provider=llm_provider, max_llm_calls=max_llm_calls),
         PredictStep(),
-        ExperimentStep(),
+        ExperimentStep(llm_provider=llm_provider, max_llm_calls=max_llm_calls),
         AnalyzeStep(),
         conclude,
     ]
