@@ -226,3 +226,67 @@ def test_main_dispatches_pipeline_cmd() -> None:
         cli_mod.main()
 
     mock_pipeline.assert_called_once_with(["--once"])
+
+
+# ---------------------------------------------------------------------------
+# --llm / --no-llm flag
+# ---------------------------------------------------------------------------
+
+
+def test_pipeline_no_llm_flag(data_dir: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    """--no-llm should run all steps in template-only mode (no LLM synthesis)."""
+    with patch.object(
+        sys,
+        "argv",
+        [
+            "labclaw",
+            "pipeline",
+            "--once",
+            "--data-dir",
+            str(data_dir),
+            "--no-llm",
+        ],
+    ):
+        main()
+    out = capsys.readouterr().out
+    result = json.loads(out)
+    assert result["success"] is True
+    # No LLM synthesis in findings
+    findings = result.get("findings", [])
+    assert not any("LLM synthesis:" in f for f in findings)
+
+
+def test_pipeline_llm_flag_without_provider(
+    data_dir: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """--llm flag when LLM provider import fails should fall back to template-only."""
+    with (
+        patch.object(
+            sys,
+            "argv",
+            [
+                "labclaw",
+                "pipeline",
+                "--once",
+                "--data-dir",
+                str(data_dir),
+                "--llm",
+            ],
+        ),
+        patch(
+            "labclaw.llm.providers.litellm_provider.LiteLLMProvider",
+            side_effect=ImportError("no litellm"),
+        ),
+    ):
+        main()
+    out = capsys.readouterr().out
+    result = json.loads(out)
+    assert result["success"] is True
+
+
+def test_pipeline_help_shows_llm_flags(capsys: pytest.CaptureFixture[str]) -> None:
+    with patch.object(sys, "argv", ["labclaw", "pipeline", "--help"]):
+        main()
+    out = capsys.readouterr().out
+    assert "--llm" in out
+    assert "--no-llm" in out

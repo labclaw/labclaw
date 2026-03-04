@@ -1,7 +1,11 @@
 from __future__ import annotations
 
-from labclaw.plugins.base import DomainPlugin
-from labclaw.plugins.domains.neuroscience import AnimalSampleNode, NeuroscienceDomainPlugin
+from labclaw.plugins.base import AnalysisPlugin, DomainPlugin
+from labclaw.plugins.domains.neuroscience import (
+    AnimalSampleNode,
+    NeuroscienceAnalysisPlugin,
+    NeuroscienceDomainPlugin,
+)
 
 # ---------------------------------------------------------------------------
 # AnimalSampleNode
@@ -81,3 +85,36 @@ def test_get_hypothesis_templates_each_has_required_keys() -> None:
 
 def test_plugin_is_instance_of_domain_plugin_protocol() -> None:
     assert isinstance(NeuroscienceDomainPlugin(), DomainPlugin)
+
+
+# ---------------------------------------------------------------------------
+# NeuroscienceAnalysisPlugin
+# ---------------------------------------------------------------------------
+
+
+def test_analysis_plugin_metadata() -> None:
+    plugin = NeuroscienceAnalysisPlugin()
+    assert plugin.metadata.name == "neuroscience-analysis"
+    assert plugin.metadata.plugin_type == "analysis"
+
+
+def test_analysis_plugin_mining_algorithms() -> None:
+    algorithms = NeuroscienceAnalysisPlugin().get_mining_algorithms()
+    assert len(algorithms) == 1
+    algo = algorithms[0]
+    assert algo["name"] == "neural_behavioral_correlation"
+    assert "input_columns" in algo
+    assert "parameters" in algo
+
+
+def test_analysis_plugin_validators() -> None:
+    validators = NeuroscienceAnalysisPlugin().get_validators()
+    assert len(validators) == 1
+    validator = validators[0]
+    assert validator["name"] == "session_consistency"
+    assert "metrics" in validator
+    assert "parameters" in validator
+
+
+def test_analysis_plugin_is_instance_of_analysis_protocol() -> None:
+    assert isinstance(NeuroscienceAnalysisPlugin(), AnalysisPlugin)

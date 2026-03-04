@@ -13,7 +13,12 @@ from labclaw.config import (
     EventsConfig,
     GraphConfig,
     LabClawConfig,
+    LiteLLMConfig,
     LLMConfigFallback,
+    MemoryConfig,
+    OrchestratorConfig,
+    ProactiveConfig,
+    SchedulingConfig,
     SystemConfig,
     _get_llm_config_class,
     load_config,
@@ -64,6 +69,25 @@ class TestLoadConfig:
         config = load_config()
         assert isinstance(config, LabClawConfig)
 
+    def test_yaml_with_orchestrator_and_memory(self, tmp_path: Path):
+        """Orchestrator and memory sections are properly loaded from YAML."""
+        cfg_data = {
+            "orchestrator": {"max_llm_calls": 100, "seed": 42, "skip_steps": ["predict"]},
+            "memory": {"tier_a_root": "/tmp/mem", "tier_b_db_path": "/tmp/kg.db"},
+            "proactive": {"enabled": False},
+            "scheduling": {"poll_interval": 5.0},
+            "litellm": {"model": "gpt-4o-mini", "timeout": 60},
+        }
+        cfg_file = tmp_path / "config.yaml"
+        cfg_file.write_text(yaml.dump(cfg_data))
+        config = load_config(cfg_file)
+        assert config.orchestrator.max_llm_calls == 100
+        assert config.orchestrator.seed == 42
+        assert config.memory.tier_a_root == "/tmp/mem"
+        assert config.proactive.enabled is False
+        assert config.scheduling.poll_interval == 5.0
+        assert config.litellm.model == "gpt-4o-mini"
+
 
 class TestLabClawConfigDefaults:
     def test_default_values(self):
@@ -76,6 +100,15 @@ class TestLabClawConfigDefaults:
         assert config.api.port == 8000
         assert config.edge.watch_paths == []
         assert config.agents.default_model == "claude-sonnet-4-6"
+        assert config.orchestrator.max_llm_calls == 50
+        assert config.orchestrator.seed is None
+        assert config.orchestrator.skip_steps == []
+        assert config.memory.tier_a_root == "lab"
+        assert config.memory.tier_b_db_path == "data/knowledge_graph.db"
+        assert config.memory.embedding_model == "all-MiniLM-L6-v2"
+        assert config.proactive.enabled is True
+        assert config.scheduling.task_db_path == "data/tasks.db"
+        assert config.litellm.model == "gpt-4o"
 
 
 class TestNestedConfigModels:
@@ -109,6 +142,37 @@ class TestNestedConfigModels:
         ac = AgentsConfig(default_model="gpt-4", max_tool_calls=50)
         assert ac.default_model == "gpt-4"
         assert ac.max_tool_calls == 50
+
+    def test_orchestrator_config(self):
+        oc = OrchestratorConfig(max_llm_calls=100, seed=42, skip_steps=["predict"])
+        assert oc.max_llm_calls == 100
+        assert oc.seed == 42
+        assert oc.skip_steps == ["predict"]
+
+    def test_memory_config(self):
+        mc = MemoryConfig(tier_a_root="/data/memory", tier_b_db_path="/data/kg.db")
+        assert mc.tier_a_root == "/data/memory"
+        assert mc.tier_b_db_path == "/data/kg.db"
+        assert mc.embedding_model == "all-MiniLM-L6-v2"
+
+    def test_proactive_config(self):
+        pc = ProactiveConfig(enabled=False, commitment_check_interval=120)
+        assert pc.enabled is False
+        assert pc.commitment_check_interval == 120
+        assert pc.default_cooldown == 5.0
+
+    def test_scheduling_config(self):
+        sc = SchedulingConfig(poll_interval=2.0, max_backoff=120.0)
+        assert sc.poll_interval == 2.0
+        assert sc.max_backoff == 120.0
+        assert sc.backoff_base == 2.0
+
+    def test_litellm_config(self):
+        lc = LiteLLMConfig(model="gpt-4o-mini", timeout=60)
+        assert lc.model == "gpt-4o-mini"
+        assert lc.timeout == 60
+        assert lc.num_retries == 2
+        assert lc.fallback_models == ["claude-sonnet-4-6", "gpt-4o-mini"]
 
 
 class TestLLMConfigNormalization:

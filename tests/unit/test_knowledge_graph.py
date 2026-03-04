@@ -412,3 +412,29 @@ def test_node_count_and_edge_count() -> None:
     assert backend.edge_count == 1
     backend.remove_edge(edge.edge_id)
     assert backend.edge_count == 0
+
+
+# ---------------------------------------------------------------------------
+# Factory: create_tier_b_backend
+# ---------------------------------------------------------------------------
+
+
+def test_create_tier_b_backend_in_memory():
+    from labclaw.memory.knowledge_graph import create_tier_b_backend
+
+    b = create_tier_b_backend(in_memory=True)
+    assert isinstance(b, TierBBackend)
+
+
+def test_create_tier_b_backend_sqlite():
+    from labclaw.memory.knowledge_graph import SQLiteTierBBackend, create_tier_b_backend
+
+    b = create_tier_b_backend(db_path="/tmp/test_kg.db")
+    assert isinstance(b, SQLiteTierBBackend)
+
+
+def test_create_tier_b_backend_default():
+    from labclaw.memory.knowledge_graph import SQLiteTierBBackend, create_tier_b_backend
+
+    b = create_tier_b_backend()
+    assert isinstance(b, SQLiteTierBBackend)

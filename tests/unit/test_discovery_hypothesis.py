@@ -153,6 +153,40 @@ def test_generate_multiple_patterns_sorted_by_confidence() -> None:
 # ---------------------------------------------------------------------------
 
 
+# ---------------------------------------------------------------------------
+# Plugin templates
+# ---------------------------------------------------------------------------
+
+
+def test_plugin_template_generates_hypothesis() -> None:
+    """A valid plugin template produces a hypothesis."""
+    templates = [{"statement": "Domain hyp with {pattern_count} patterns", "confidence": 0.75}]
+    gen = HypothesisGenerator(plugin_templates=templates)
+    pattern = _make_pattern(
+        "correlation",
+        evidence={"col_a": "x", "col_b": "y", "r": 0.5},
+        confidence=0.5,
+    )
+    results = gen.generate(HypothesisInput(patterns=[pattern]))
+    # 1 from correlation + 1 from plugin template
+    assert len(results) == 2
+    statements = [h.statement for h in results]
+    assert any("Domain hyp with 1 patterns" in s for s in statements)
+
+
+def test_plugin_template_empty_statement_skipped() -> None:
+    """A plugin template with empty statement is skipped."""
+    templates = [{"statement": "", "confidence": 0.5}]
+    gen = HypothesisGenerator(plugin_templates=templates)
+    results = gen.generate(HypothesisInput(patterns=[]))
+    assert results == []
+
+
+# ---------------------------------------------------------------------------
+# Schema defaults
+# ---------------------------------------------------------------------------
+
+
 def test_hypothesis_output_default_fields() -> None:
     """HypothesisOutput has a non-empty hypothesis_id and status=PROPOSED by default."""
     hyp = HypothesisOutput(statement="Test hypothesis.")
