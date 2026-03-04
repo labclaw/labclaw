@@ -371,11 +371,18 @@ class LabClawDaemon:
             )
 
             llm = get_llm_provider()
+
+            # Collect plugin contributions
+            sentinel, plugin_templates = self._collect_plugin_contributions()
+
             loop = ScientificLoop(
                 steps=[
-                    ObserveStep(),
+                    ObserveStep(sentinel=sentinel),
                     AskStep(),
-                    HypothesizeStep(llm_provider=llm),
+                    HypothesizeStep(
+                        llm_provider=llm,
+                        plugin_templates=plugin_templates,
+                    ),
                     PredictStep(),
                     ExperimentStep(),
                     AnalyzeStep(),
@@ -512,6 +519,43 @@ class LabClawDaemon:
             backend.append_memory(entity_id, entry)
         except Exception:
             logger.warning("Failed to write memory entry: %s/%s", entity_id, category)
+
+    # -----------------------------------------------------------------------
+    # Plugin contributions
+    # -----------------------------------------------------------------------
+
+    def _collect_plugin_contributions(self) -> tuple[Any, list[dict]]:
+        """Collect sentinel rules and hypothesis templates from loaded plugins.
+
+        Returns (sentinel_or_None, plugin_hypothesis_templates).
+        """
+        from labclaw.plugins.registry import plugin_registry
+
+        sentinel = None
+        plugin_templates: list[dict] = []
+
+        # Gather sentinel rules from domain plugins
+        try:
+            domain_plugins = plugin_registry.get_by_type("domain")
+            all_rules: list[dict] = []
+            for dp in domain_plugins:
+                all_rules.extend(dp.get_sentinel_rules())
+
+            if all_rules:
+                from labclaw.edge.sentinel import Sentinel
+                from labclaw.plugins.sentinel import translate_sentinel_rules
+
+                alert_rules = translate_sentinel_rules(all_rules, plugin_name="domain-plugins")
+                if alert_rules:
+                    sentinel = Sentinel(rules=alert_rules)
+
+            # Gather hypothesis templates from domain plugins
+            for dp in domain_plugins:
+                plugin_templates.extend(dp.get_hypothesis_templates())
+        except Exception:
+            logger.warning("Failed to collect plugin contributions", exc_info=True)
+
+        return sentinel, plugin_templates
 
     # -----------------------------------------------------------------------
     # Dashboard
