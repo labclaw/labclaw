@@ -207,15 +207,36 @@ class TaskQueue:
         return task.task_id
 
     async def dequeue(self) -> TaskItem | None:
-        """Get the highest-priority pending task. Returns None if empty."""
+        """Atomically claim the highest-priority pending task for execution."""
         db = self._db_or_raise()
+        now = datetime.now(UTC).isoformat()
         async with db.execute(
-            "SELECT * FROM tasks WHERE status = ? ORDER BY priority DESC, created_at ASC LIMIT 1",
-            (TaskStatus.PENDING.value,),
+            """
+            UPDATE tasks
+            SET status = ?, started_at = ?, completed_at = NULL, error = NULL
+            WHERE task_id = (
+                SELECT task_id
+                FROM tasks
+                WHERE status = ?
+                ORDER BY priority DESC, created_at ASC
+                LIMIT 1
+            )
+            RETURNING *
+            """,
+            (
+                TaskStatus.RUNNING.value,
+                now,
+                TaskStatus.PENDING.value,
+            ),
         ) as cur:
             row = await cur.fetchone()
+        await db.commit()
         if row is None:
             return None
+        event_registry.emit(
+            "infra.task_queue.started",
+            payload={"task_id": row["task_id"], "name": row["name"]},
+        )
         return self._row_to_task(row)
 
     async def update_status(
@@ -356,8 +377,6 @@ class TaskRunner:
 
     async def _execute_task(self, task: TaskItem) -> None:
         """Execute a single task with retry logic."""
-        await self._queue.update_status(task.task_id, TaskStatus.RUNNING)
-
         try:
             success, result, error = await self._executor.execute(task)
         except Exception:

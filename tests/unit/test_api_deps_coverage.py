@@ -10,6 +10,7 @@ import pytest
 from starlette.requests import Request
 
 import labclaw.api.deps as deps
+import labclaw.api.routers.memory as memory_router
 
 # ---------------------------------------------------------------------------
 # Helpers: always reset singletons between tests
@@ -140,6 +141,11 @@ def _request(
 
 
 class TestSecurityHelpersCoverage:
+    def test_reset_all_resets_memory_router_kg_flag(self) -> None:
+        memory_router._kg_initialized = True
+        deps.reset_all()
+        assert memory_router._kg_initialized is False
+
     def test_get_latest_patterns_non_empty(self) -> None:
         from labclaw.discovery.mining import MiningConfig
 

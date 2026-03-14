@@ -95,6 +95,7 @@ class TestTaskQueue:
             assert dequeued is not None
             assert dequeued.task_id == task_id
             assert dequeued.name == "my-task"
+            assert dequeued.status == TaskStatus.RUNNING
         finally:
             await q.close()
 
@@ -119,6 +120,24 @@ class TestTaskQueue:
             first = await q.dequeue()
             assert first is not None
             assert first.name == "high"
+            assert first.status == TaskStatus.RUNNING
+        finally:
+            await q.close()
+
+    @pytest.mark.asyncio
+    async def test_concurrent_dequeue_claims_task_once(self) -> None:
+        q = TaskQueue()
+        await q.init_db()
+        try:
+            await q.enqueue(TaskItem(name="claim-once"))
+
+            first, second = await asyncio.gather(q.dequeue(), q.dequeue())
+            claimed = [task for task in (first, second) if task is not None]
+
+            assert len(claimed) == 1
+            assert claimed[0].name == "claim-once"
+            assert claimed[0].status == TaskStatus.RUNNING
+            assert claimed[0].started_at is not None
         finally:
             await q.close()
 

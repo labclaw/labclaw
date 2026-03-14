@@ -10,7 +10,9 @@ MEMORY.md is append-only with timestamped entries.
 
 from __future__ import annotations
 
+import contextlib
 import logging
+import os
 import re
 import threading
 from datetime import datetime
@@ -23,6 +25,16 @@ from pydantic import BaseModel
 from labclaw.core.events import event_registry
 
 logger = logging.getLogger(__name__)
+
+try:
+    import fcntl
+except ImportError:  # pragma: no cover - Windows
+    fcntl = None  # type: ignore[assignment]
+
+try:
+    import msvcrt
+except ImportError:  # pragma: no cover - POSIX
+    msvcrt = None  # type: ignore[assignment]
 
 # ---------------------------------------------------------------------------
 # Register events at module import time
@@ -123,6 +135,27 @@ def _render_memory_entry(entry: MemoryEntry) -> str:
     """Render a single memory entry as a markdown section."""
     ts = entry.timestamp.isoformat()
     return f"## {ts}\n\n**Category:** {entry.category}\n\n{entry.detail}\n"
+
+
+@contextlib.contextmanager
+def _process_file_lock(path: Path):
+    """Serialize writers across processes using a sidecar lock file."""
+    lock_path = path.with_name(f"{path.name}.lock")
+    lock_path.parent.mkdir(parents=True, exist_ok=True)
+    with lock_path.open("a+b") as lock_file:
+        if fcntl is not None:  # pragma: no branch - POSIX path in CI/dev
+            fcntl.flock(lock_file.fileno(), fcntl.LOCK_EX)
+        elif msvcrt is not None:  # pragma: no cover - Windows
+            lock_file.seek(0)
+            msvcrt.locking(lock_file.fileno(), msvcrt.LK_LOCK, 1)
+        try:
+            yield
+        finally:
+            if fcntl is not None:  # pragma: no branch - POSIX path in CI/dev
+                fcntl.flock(lock_file.fileno(), fcntl.LOCK_UN)
+            elif msvcrt is not None:  # pragma: no cover - Windows
+                lock_file.seek(0)
+                msvcrt.locking(lock_file.fileno(), msvcrt.LK_UNLCK, 1)
 
 
 # ---------------------------------------------------------------------------
@@ -229,18 +262,23 @@ class TierABackend:
         # Serialize read/modify/write per file across all backend instances
         # in this process to avoid dropping entries under concurrent writers.
         with lock:
-            path.parent.mkdir(parents=True, exist_ok=True)
-            rendered = _render_memory_entry(entry)
+            with _process_file_lock(path):
+                path.parent.mkdir(parents=True, exist_ok=True)
+                rendered = _render_memory_entry(entry)
 
-            if path.exists():
-                existing = path.read_text(encoding="utf-8")
-                if existing and not existing.endswith("\n"):
-                    existing += "\n"
-                new_text = existing + "\n" + rendered
-            else:
-                new_text = rendered
+                if path.exists():
+                    existing = path.read_text(encoding="utf-8")
+                    if existing and not existing.endswith("\n"):
+                        existing += "\n"
+                    new_text = existing + "\n" + rendered
+                else:
+                    new_text = rendered
 
-            path.write_text(new_text, encoding="utf-8")
+                tmp_path = path.with_name(
+                    f".{path.name}.{os.getpid()}.{threading.get_ident()}.tmp"
+                )
+                tmp_path.write_text(new_text, encoding="utf-8")
+                tmp_path.replace(path)
 
         event_registry.emit(
             "memory.tier_a.updated",
