@@ -274,9 +274,7 @@ class TierABackend:
                 else:
                     new_text = rendered
 
-                tmp_path = path.with_name(
-                    f".{path.name}.{os.getpid()}.{threading.get_ident()}.tmp"
-                )
+                tmp_path = path.with_name(f".{path.name}.{os.getpid()}.{threading.get_ident()}.tmp")
                 tmp_path.write_text(new_text, encoding="utf-8")
                 tmp_path.replace(path)
 

@@ -993,13 +993,17 @@ def test_sentinel_check_metric_equal() -> None:
         level=QualityLevel.WARNING,
     )
     sentinel = Sentinel(rules=[rule])
-    metric = QualityMetric(name="speed", value=0.0, level=QualityLevel.GOOD, timestamp=datetime.now(UTC))
+    metric = QualityMetric(
+        name="speed", value=0.0, level=QualityLevel.GOOD, timestamp=datetime.now(UTC)
+    )
     alerts = sentinel.check_metric(metric)
     assert len(alerts) == 1
     assert alerts[0].rule_name == "exact_zero"
 
     # Non-matching value should not fire
-    metric2 = QualityMetric(name="speed", value=1.0, level=QualityLevel.GOOD, timestamp=datetime.now(UTC))
+    metric2 = QualityMetric(
+        name="speed", value=1.0, level=QualityLevel.GOOD, timestamp=datetime.now(UTC)
+    )
     assert sentinel.check_metric(metric2) == []
 
 
@@ -1016,12 +1020,16 @@ def test_sentinel_check_metric_not_equal() -> None:
         level=QualityLevel.WARNING,
     )
     sentinel = Sentinel(rules=[rule])
-    metric = QualityMetric(name="speed", value=5.0, level=QualityLevel.GOOD, timestamp=datetime.now(UTC))
+    metric = QualityMetric(
+        name="speed", value=5.0, level=QualityLevel.GOOD, timestamp=datetime.now(UTC)
+    )
     alerts = sentinel.check_metric(metric)
     assert len(alerts) == 1
 
     # Matching value should not fire
-    metric2 = QualityMetric(name="speed", value=0.0, level=QualityLevel.GOOD, timestamp=datetime.now(UTC))
+    metric2 = QualityMetric(
+        name="speed", value=0.0, level=QualityLevel.GOOD, timestamp=datetime.now(UTC)
+    )
     assert sentinel.check_metric(metric2) == []
 
 

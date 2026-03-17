@@ -207,7 +207,9 @@ class TestAnalyzeStepExceptionHandler:
     @pytest.mark.asyncio
     async def test_exception_returns_failure(self) -> None:
         """StatisticalValidator init raises, handler catches it."""
-        ctx = StepContext(patterns=[{"pattern_type": "correlation", "description": "test", "pattern_id": "p1"}])
+        ctx = StepContext(
+            patterns=[{"pattern_type": "correlation", "description": "test", "pattern_id": "p1"}]
+        )
 
         with patch(
             "labclaw.validation.statistics.StatisticalValidator",
