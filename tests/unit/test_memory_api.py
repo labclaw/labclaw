@@ -229,10 +229,13 @@ class TestKGNodesEndpoint:
             mock_kg = AsyncMock()
             mock_kg.query_nodes.return_value = [node]
 
-            with patch(
-                "labclaw.api.routers.memory.get_tier_b_backend",
-                return_value=mock_kg,
-            ), patch("labclaw.api.routers.memory._kg_initialized", True):
+            with (
+                patch(
+                    "labclaw.api.routers.memory.get_tier_b_backend",
+                    return_value=mock_kg,
+                ),
+                patch("labclaw.api.routers.memory._kg_initialized", True),
+            ):
                 async with AsyncClient(
                     transport=ASGITransport(app=app), base_url="http://test"
                 ) as c:
@@ -255,10 +258,13 @@ class TestKGNodesEndpoint:
             mock_kg = AsyncMock()
             mock_kg.query_nodes.return_value = [GraphNode(node_id="n2", node_type="finding")]
 
-            with patch(
-                "labclaw.api.routers.memory.get_tier_b_backend",
-                return_value=mock_kg,
-            ), patch("labclaw.api.routers.memory._kg_initialized", True):
+            with (
+                patch(
+                    "labclaw.api.routers.memory.get_tier_b_backend",
+                    return_value=mock_kg,
+                ),
+                patch("labclaw.api.routers.memory._kg_initialized", True),
+            ):
                 async with AsyncClient(
                     transport=ASGITransport(app=app), base_url="http://test"
                 ) as c:
@@ -282,10 +288,13 @@ class TestKGNodesEndpoint:
             mock_kg = AsyncMock()
             mock_kg.query_nodes.return_value = [GraphNode(node_id="n3", node_type="hypothesis")]
 
-            with patch(
-                "labclaw.api.routers.memory.get_tier_b_backend",
-                return_value=mock_kg,
-            ), patch("labclaw.api.routers.memory._kg_initialized", True):
+            with (
+                patch(
+                    "labclaw.api.routers.memory.get_tier_b_backend",
+                    return_value=mock_kg,
+                ),
+                patch("labclaw.api.routers.memory._kg_initialized", True),
+            ):
                 async with AsyncClient(
                     transport=ASGITransport(app=app), base_url="http://test"
                 ) as c:
@@ -309,10 +318,13 @@ class TestKGNodesEndpoint:
             mock_kg = AsyncMock()
             mock_kg.query_nodes.return_value = nodes
 
-            with patch(
-                "labclaw.api.routers.memory.get_tier_b_backend",
-                return_value=mock_kg,
-            ), patch("labclaw.api.routers.memory._kg_initialized", True):
+            with (
+                patch(
+                    "labclaw.api.routers.memory.get_tier_b_backend",
+                    return_value=mock_kg,
+                ),
+                patch("labclaw.api.routers.memory._kg_initialized", True),
+            ):
                 async with AsyncClient(
                     transport=ASGITransport(app=app), base_url="http://test"
                 ) as c:
@@ -344,10 +356,13 @@ class TestKGNeighborsEndpoint:
             mock_kg.get_node.return_value = node
             mock_kg.get_neighbors.return_value = [(neighbor, mock_edge)]
 
-            with patch(
-                "labclaw.api.routers.memory.get_tier_b_backend",
-                return_value=mock_kg,
-            ), patch("labclaw.api.routers.memory._kg_initialized", True):
+            with (
+                patch(
+                    "labclaw.api.routers.memory.get_tier_b_backend",
+                    return_value=mock_kg,
+                ),
+                patch("labclaw.api.routers.memory._kg_initialized", True),
+            ):
                 async with AsyncClient(
                     transport=ASGITransport(app=app), base_url="http://test"
                 ) as c:
@@ -374,10 +389,13 @@ class TestKGNeighborsEndpoint:
             mock_kg.get_node.return_value = GraphNode(node_id="c1", node_type="exp")
             mock_kg.get_neighbors.return_value = []
 
-            with patch(
-                "labclaw.api.routers.memory.get_tier_b_backend",
-                return_value=mock_kg,
-            ), patch("labclaw.api.routers.memory._kg_initialized", True):
+            with (
+                patch(
+                    "labclaw.api.routers.memory.get_tier_b_backend",
+                    return_value=mock_kg,
+                ),
+                patch("labclaw.api.routers.memory._kg_initialized", True),
+            ):
                 async with AsyncClient(
                     transport=ASGITransport(app=app), base_url="http://test"
                 ) as c:
@@ -400,10 +418,13 @@ class TestKGNeighborsEndpoint:
             mock_kg = AsyncMock()
             mock_kg.get_node.return_value = None
 
-            with patch(
-                "labclaw.api.routers.memory.get_tier_b_backend",
-                return_value=mock_kg,
-            ), patch("labclaw.api.routers.memory._kg_initialized", True):
+            with (
+                patch(
+                    "labclaw.api.routers.memory.get_tier_b_backend",
+                    return_value=mock_kg,
+                ),
+                patch("labclaw.api.routers.memory._kg_initialized", True),
+            ):
                 async with AsyncClient(
                     transport=ASGITransport(app=app), base_url="http://test"
                 ) as c:
@@ -411,6 +432,31 @@ class TestKGNeighborsEndpoint:
 
             assert resp.status_code == 404
             assert "nonexistent" in resp.json()["detail"]
+        finally:
+            reset_all()
+
+    @pytest.mark.asyncio
+    async def test_get_neighbors_node_key_error_returns_404(self) -> None:
+        """GET /api/memory/kg/neighbors/{id} returns 404 when get_node raises KeyError."""
+        reset_all()
+        try:
+            mock_kg = AsyncMock()
+            mock_kg.get_node.side_effect = KeyError("no-such-node")
+
+            with (
+                patch(
+                    "labclaw.api.routers.memory.get_tier_b_backend",
+                    return_value=mock_kg,
+                ),
+                patch("labclaw.api.routers.memory._kg_initialized", True),
+            ):
+                async with AsyncClient(
+                    transport=ASGITransport(app=app), base_url="http://test"
+                ) as c:
+                    resp = await c.get("/api/memory/kg/neighbors/no-such-node")
+
+            assert resp.status_code == 404
+            assert "no-such-node" in resp.json()["detail"]
         finally:
             reset_all()
 
@@ -428,10 +474,13 @@ class TestKGNeighborsEndpoint:
             mock_kg.get_node.return_value = node
             mock_kg.get_neighbors.return_value = neighbors
 
-            with patch(
-                "labclaw.api.routers.memory.get_tier_b_backend",
-                return_value=mock_kg,
-            ), patch("labclaw.api.routers.memory._kg_initialized", True):
+            with (
+                patch(
+                    "labclaw.api.routers.memory.get_tier_b_backend",
+                    return_value=mock_kg,
+                ),
+                patch("labclaw.api.routers.memory._kg_initialized", True),
+            ):
                 async with AsyncClient(
                     transport=ASGITransport(app=app), base_url="http://test"
                 ) as c:

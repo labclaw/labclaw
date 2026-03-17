@@ -801,7 +801,9 @@ class TestConcludeStep:
         mock_llm.complete = mock_complete
         step = ConcludeStep(llm_provider=mock_llm)
         # Call the private method directly from sync context (no event loop)
-        synthesis = step._synthesize_with_llm(["Found 2 patterns"], StepContext(patterns=[{"pattern_type": "test"}]))
+        synthesis = step._synthesize_with_llm(
+            ["Found 2 patterns"], StepContext(patterns=[{"pattern_type": "test"}])
+        )
         assert "Direct sync synthesis" in synthesis
 
     @pytest.mark.asyncio
@@ -854,9 +856,7 @@ class TestConcludeStep:
         assert result.success is True
         # All 5 patterns should have dedup keys persisted
         stored = mock_memory.store_finding.call_args_list
-        pattern_types = [
-            call[0][0].get("pattern_type") for call in stored
-        ]
+        pattern_types = [call[0][0].get("pattern_type") for call in stored]
         assert pattern_types.count("correlation") >= 5
 
     @pytest.mark.asyncio
@@ -867,6 +867,25 @@ class TestConcludeStep:
         mock_memory = AsyncMock()
         mock_memory.store_finding.side_effect = RuntimeError("memory error")
         ctx = StepContext(patterns=[{"pattern_type": "test"}])
+        step = ConcludeStep(session_memory=mock_memory)
+        result = await step.run(ctx)
+        assert result.success is True
+
+    @pytest.mark.asyncio
+    async def test_session_memory_extra_pattern_dedup_failure(self):
+        """When store_finding raises for extra patterns beyond findings, step succeeds."""
+        from unittest.mock import AsyncMock
+
+        mock_memory = AsyncMock()
+        mock_memory.store_finding.side_effect = RuntimeError("dedup persist error")
+        # Two patterns but only one finding will be generated, so
+        # the second pattern triggers the dedup-key persistence loop.
+        ctx = StepContext(
+            patterns=[
+                {"pattern_type": "correlation", "description": "p1"},
+                {"pattern_type": "anomaly", "description": "p2"},
+            ]
+        )
         step = ConcludeStep(session_memory=mock_memory)
         result = await step.run(ctx)
         assert result.success is True

@@ -380,7 +380,7 @@ def reset_all() -> None:
         _rate_limit_window.clear()
     try:
         from labclaw.api.routers import memory as memory_router
-    except Exception:
+    except Exception:  # pragma: no cover
         logger.exception("Failed to reset memory router state")
     else:
         memory_router._kg_initialized = False

@@ -436,6 +436,51 @@ class TestDiscoveryLoop:
 
 
 # ---------------------------------------------------------------------------
+# Lines 384-406 — _run_discovery() inner async cycle
+# ---------------------------------------------------------------------------
+
+
+class TestRunDiscoveryInnerCycle:
+    def test_run_discovery_executes_cycle(self, tmp_path: Path) -> None:
+        """_run_discovery runs the inner async cycle and logs the result."""
+        from unittest.mock import AsyncMock
+
+        from labclaw.orchestrator.loop import CycleResult
+
+        daemon = _make_daemon(tmp_path)
+        # Populate the accumulator with enough rows
+        for i in range(15):
+            daemon._accumulator._rows.append({"x": float(i), "y": float(i * 2)})
+
+        fake_result = CycleResult(
+            patterns_found=3,
+            hypotheses_generated=1,
+            total_duration=0.5,
+            cycle_id="test-cycle-001",
+        )
+
+        mock_loop = MagicMock()
+        mock_loop.run_cycle = AsyncMock(return_value=fake_result)
+
+        mock_session = AsyncMock()
+
+        with (
+            patch("labclaw.api.deps.get_llm_provider", return_value=MagicMock()),
+            patch(
+                "labclaw.orchestrator.loop.ScientificLoop",
+                return_value=mock_loop,
+            ),
+            patch(
+                "labclaw.memory.session_memory.SessionMemoryManager",
+                return_value=mock_session,
+            ),
+        ):
+            daemon._run_discovery()
+
+        assert daemon._discovery_count == 1
+
+
+# ---------------------------------------------------------------------------
 # Lines 395-399 — _evolution_loop() thread target behaviour
 # ---------------------------------------------------------------------------
 
