@@ -359,7 +359,7 @@ class LabClawDaemon:
             import asyncio
 
             from labclaw.api.deps import get_llm_provider
-            from labclaw.orchestrator.loop import ScientificLoop
+            from labclaw.orchestrator.loop import CycleResult, ScientificLoop
             from labclaw.orchestrator.steps import (
                 AnalyzeStep,
                 AskStep,
@@ -380,7 +380,7 @@ class LabClawDaemon:
 
             session_memory = SessionMemoryManager(memory_root=self.memory_root)
 
-            async def _run_cycle() -> object:
+            async def _run_cycle() -> CycleResult:
                 await session_memory.init()
                 try:
                     sci_loop = ScientificLoop(

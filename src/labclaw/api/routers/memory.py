@@ -167,7 +167,7 @@ async def list_kg_nodes(
         node_type=node_type or None,
         tags=[label] if label else [],
     )
-    nodes = await kg.query_nodes(filt)
+    nodes = await kg.query_nodes(filt)  # type: ignore[misc]
     return [n.model_dump(mode="json") for n in nodes[:limit]]
 
 
@@ -182,12 +182,12 @@ async def get_kg_neighbors(
     kg = get_tier_b_backend()
     await _ensure_kg_initialized(kg)
     try:
-        node = await kg.get_node(node_id)
+        node = await kg.get_node(node_id)  # type: ignore[misc]
     except KeyError:
         node = None
     if node is None:
         raise HTTPException(status_code=404, detail=f"Node {node_id!r} not found")
-    neighbors = await kg.get_neighbors(
+    neighbors = await kg.get_neighbors(  # type: ignore[misc]
         node_id,
         relation=relation or None,
         direction=direction,
