@@ -206,18 +206,23 @@ class TestFileWatcherDriver:
 
     @pytest.mark.asyncio
     async def test_connect_and_disconnect(self, tmp_path: Path) -> None:
+        from unittest.mock import MagicMock, patch
+
         from labclaw.hardware.drivers.file_watcher import FileWatcherDriver
 
-        driver = FileWatcherDriver("fw-2", "watcher", tmp_path)
-        ok = await driver.connect()
-        assert ok is True
+        mock_obs = MagicMock()
+        mock_obs.is_alive.return_value = True
+        with patch("labclaw.hardware.drivers.file_watcher.Observer", return_value=mock_obs):
+            driver = FileWatcherDriver("fw-2", "watcher", tmp_path)
+            ok = await driver.connect()
+            assert ok is True
 
-        status = await driver.status()
-        assert status == DeviceStatus.ONLINE
+            status = await driver.status()
+            assert status == DeviceStatus.ONLINE
 
-        await driver.disconnect()
-        status = await driver.status()
-        assert status == DeviceStatus.OFFLINE
+            await driver.disconnect()
+            status = await driver.status()
+            assert status == DeviceStatus.OFFLINE
 
     @pytest.mark.asyncio
     async def test_connect_nonexistent_path(self, tmp_path: Path) -> None:

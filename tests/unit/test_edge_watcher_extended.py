@@ -1,15 +1,15 @@
 """Extended tests for src/labclaw/edge/watcher.py.
 
-Covers lines 68, 74-75, 105-106, 137, 140, 171-172, 176-177:
+Covers lines 68, 74-75, 105-106, 137, 140, 151-153, 159-162, 166-167:
   - FileDetectedHandler: directory events (ignored), OSError on stat, callback exception
   - EdgeWatcher: duplicate watch guard, non-directory watch guard,
-    get_detected_files, _on_file_detected aggregation
+    get_detected_files, _on_file_detected aggregation, stop_all, stop
 """
 
 from __future__ import annotations
 
 from pathlib import Path
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 import pytest
 from watchdog.events import (
@@ -24,6 +24,13 @@ from labclaw.edge.watcher import EdgeWatcher, FileDetectedHandler
 # Ensure the required event is registered for all tests in this module
 if not event_registry.is_registered("hardware.file.detected"):
     event_registry.register("hardware.file.detected")
+
+
+def _mock_observer() -> MagicMock:
+    """Return a mock Observer that avoids real inotify handles."""
+    mock = MagicMock()
+    mock.is_alive.return_value = True
+    return mock
 
 
 # ---------------------------------------------------------------------------
@@ -44,7 +51,6 @@ class TestFileDetectedHandlerEdgeCases:
         nonexistent = tmp_path / "ghost.csv"
         handler = FileDetectedHandler(device_id="rig-01")
         event = FileCreatedEvent(str(nonexistent))
-        # File does not exist, so stat() will raise OSError
         handler.on_created(event)
         detected = handler.detected_files
         assert len(detected) == 1
@@ -56,7 +62,6 @@ class TestFileDetectedHandlerEdgeCases:
         csv_path.write_text("a,b\n1,2\n", encoding="utf-8")
         handler = FileDetectedHandler(device_id="rig-01")
 
-        # Simulate a watchdog event where src_path is bytes
         event = MagicMock()
         event.is_directory = False
         event.src_path = str(csv_path).encode()
@@ -76,9 +81,7 @@ class TestFileDetectedHandlerEdgeCases:
 
         handler = FileDetectedHandler(device_id="rig-01", callbacks=[bad_callback])
         event = FileCreatedEvent(str(csv_path))
-        # Must not raise despite the callback error
         handler.on_created(event)
-        # File is still tracked
         assert len(handler.detected_files) == 1
 
     def test_multiple_callbacks_all_called(self, tmp_path: Path) -> None:
@@ -114,13 +117,14 @@ class TestFileDetectedHandlerEdgeCases:
 class TestEdgeWatcherEdgeCases:
     def test_duplicate_watch_raises(self, tmp_path: Path) -> None:
         """Registering the same device_id twice must raise ValueError."""
-        watcher = EdgeWatcher()
-        watcher.watch(tmp_path, device_id="rig-dup")
-        try:
-            with pytest.raises(ValueError, match="Already watching"):
-                watcher.watch(tmp_path, device_id="rig-dup")
-        finally:
-            watcher.stop_all()
+        with patch("labclaw.edge.watcher.Observer", side_effect=_mock_observer):
+            watcher = EdgeWatcher()
+            watcher.watch(tmp_path, device_id="rig-dup")
+            try:
+                with pytest.raises(ValueError, match="Already watching"):
+                    watcher.watch(tmp_path, device_id="rig-dup")
+            finally:
+                watcher.stop_all()
 
     def test_watch_nonexistent_path_raises(self, tmp_path: Path) -> None:
         """Watching a path that does not exist must raise FileNotFoundError."""
@@ -158,13 +162,32 @@ class TestEdgeWatcherEdgeCases:
         watcher.stop("never-registered")  # should not raise
 
     def test_stop_all_clears_all_watchers(self, tmp_path: Path) -> None:
+        """stop_all must stop all observers and clear internal state."""
         dir_a = tmp_path / "a"
         dir_b = tmp_path / "b"
         dir_a.mkdir()
         dir_b.mkdir()
-        watcher = EdgeWatcher()
-        watcher.watch(dir_a, device_id="rig-a")
-        watcher.watch(dir_b, device_id="rig-b")
-        watcher.stop_all()
+        with patch("labclaw.edge.watcher.Observer", side_effect=_mock_observer):
+            watcher = EdgeWatcher()
+            watcher.watch(dir_a, device_id="rig-a")
+            watcher.watch(dir_b, device_id="rig-b")
+            watcher.stop_all()
         assert watcher._observers == {}
         assert watcher._handlers == {}
+
+    def test_stop_single_watcher(self, tmp_path: Path) -> None:
+        """Stopping a single device must remove only that observer/handler."""
+        dir_a = tmp_path / "a"
+        dir_b = tmp_path / "b"
+        dir_a.mkdir()
+        dir_b.mkdir()
+        with patch("labclaw.edge.watcher.Observer", side_effect=_mock_observer):
+            watcher = EdgeWatcher()
+            watcher.watch(dir_a, device_id="rig-a")
+            watcher.watch(dir_b, device_id="rig-b")
+            watcher.stop("rig-a")
+        assert "rig-a" not in watcher._observers
+        assert "rig-a" not in watcher._handlers
+        assert "rig-b" in watcher._observers
+        assert "rig-b" in watcher._handlers
+        watcher.stop("rig-b")
