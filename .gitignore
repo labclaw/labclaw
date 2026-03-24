@@ -67,3 +67,6 @@ site/
 logs/
 .hypothesis/
 .claude/worktrees/
+
+# Internal design docs (not for public)
+.stitch/
