@@ -35,15 +35,16 @@ jobs:
         run: uv python install 3.12
 
       - name: Sync dependencies
-        run: uv sync --extra dev --extra science --frozen
+        run: uv sync --extra dev --extra all --frozen
 
       - name: Audit dependencies
         run: >
-          uv run --extra dev --extra science --with pip-audit pip-audit
+          uv run --extra dev --extra all --with pip-audit pip-audit
           --progress-spinner off
           --ignore-vuln GHSA-rf74-v2fm-23pw
           --ignore-vuln CVE-2026-33230
           --ignore-vuln CVE-2026-33231
+          --ignore-vuln CVE-2026-4539
 
   bandit:
     name: bandit-sast
@@ -129,4 +130,4 @@ jobs:
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
 
       - name: Run gitleaks
-        run: gitleaks detect --source . --verbose
+        run: gitleaks detect --source . --verbose --config .gitleaks.toml

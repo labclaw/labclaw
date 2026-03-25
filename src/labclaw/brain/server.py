@@ -118,7 +118,8 @@ async def _limit_request_body(request: Request, call_next: Any) -> Response:
     content_length = request.headers.get("content-length")
     if content_length and int(content_length) > _MAX_REQUEST_BODY:
         return JSONResponse(status_code=413, content={"detail": "Request body too large"})
-    return await call_next(request)
+    response: Response = await call_next(request)
+    return response
 
 
 # ---------------------------------------------------------------------------
@@ -153,32 +154,32 @@ async def get_health(request: Request) -> dict:
 
 @app.get("/brain/tools")
 @limiter.limit(_RATE_LIMIT)
-async def get_tools(request: Request, category: str = "") -> list:
+async def get_tools(request: Request, category: str = "") -> list[Any]:
     """List available tools, optionally filtered by category."""
     tools = await brain.list_tools(category=category)
-    result = [t.model_dump() for t in tools]
-    return _truncate_response(result)
+    result: list[Any] = [t.model_dump() for t in tools]
+    return _truncate_response(result)  # type: ignore[return-value]
 
 
 @app.post("/brain/execute", dependencies=[Depends(verify_api_key)])
 @limiter.limit(_RATE_LIMIT)
-async def post_execute(request: Request, body: ExecuteRequest) -> dict:
+async def post_execute(request: Request, body: ExecuteRequest) -> dict[Any, Any]:
     """Execute a scientific tool by name."""
     result = await brain.execute(body.tool_name, **body.arguments)
-    return _truncate_response(result.model_dump())
+    return _truncate_response(result.model_dump())  # type: ignore[return-value]
 
 
 @app.post("/brain/reason", dependencies=[Depends(verify_api_key)])
 @limiter.limit(_RATE_LIMIT)
-async def post_reason(request: Request, body: ReasonRequest) -> dict:
+async def post_reason(request: Request, body: ReasonRequest) -> dict[Any, Any]:
     """Life science domain reasoning."""
     result = await brain.reason(body.question, domain=body.domain, context=body.context)
-    return _truncate_response(result.model_dump())
+    return _truncate_response(result.model_dump())  # type: ignore[return-value]
 
 
 @app.post("/brain/write", dependencies=[Depends(verify_api_key)])
 @limiter.limit(_RATE_LIMIT)
-async def post_write(request: Request, body: WriteRequest) -> dict:
+async def post_write(request: Request, body: WriteRequest) -> dict[Any, Any]:
     """Generate a scientific writing section."""
     result = await brain.write(section=body.section, context=body.context)
-    return _truncate_response(result.model_dump())
+    return _truncate_response(result.model_dump())  # type: ignore[return-value]

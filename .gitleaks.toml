@@ -1,0 +1,8 @@
+# Gitleaks configuration for labclaw
+# Allowlist for documentation example/placeholder API keys
+
+[allowlist]
+paths = [
+    '''docs/tutorials/cloud-brain-guide\.md''',
+    '''docs/cloud-brain-user-guide\.md''',
+]

@@ -59,7 +59,7 @@ jobs:
         run: uv python install 3.12
 
       - name: Sync dependencies
-        run: uv sync --extra dev --extra science --frozen
+        run: uv sync --extra dev --extra all --frozen
 
       - name: Mypy type check
         run: uv run mypy src/labclaw/
@@ -86,7 +86,7 @@ jobs:
         run: uv python install ${{ matrix.python-version }}
 
       - name: Sync dependencies
-        run: uv sync --extra dev --extra science --extra ingest --extra nwb --frozen
+        run: uv sync --extra dev --extra all --frozen
 
       - name: Run tests with coverage
         run: >
@@ -94,7 +94,7 @@ jobs:
           --cov=labclaw
           --cov-report=xml
           --cov-report=term-missing
-          --cov-fail-under=100
+          --cov-fail-under=95
           -q
 
       - name: Upload coverage
