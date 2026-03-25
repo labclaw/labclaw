@@ -1,298 +1,58 @@
-"""LabClaw MCP Server — expose lab intelligence as MCP tools.
-
-Allows any MCP-compatible AI (Claude Desktop, etc.) to:
-- Query lab memory and findings
-- Run pattern mining on data
-- Generate hypotheses
-- Check evolution status
-- View device status
-"""
+"""LabClaw MCP Server — expose Cloud Brain as MCP tools for Claude Desktop."""
 
 from __future__ import annotations
 
 import json
-import logging
-from typing import Any
 
 from mcp.server.fastmcp import FastMCP
 
-logger = logging.getLogger(__name__)
+from labclaw.brain import execute, health, list_tools, reason, write
+
+mcp = FastMCP("labclaw", instructions="Cloud Brain — 2400+ scientific tools")
 
 
-def _get_pattern_miner():  # noqa: ANN202
-    from labclaw.api.deps import get_pattern_miner
-
-    return get_pattern_miner()
-
-
-def _get_hypothesis_generator():  # noqa: ANN202
-    from labclaw.api.deps import get_hypothesis_generator
-
-    return get_hypothesis_generator()
+@mcp.tool()
+async def labclaw_search_tools(query: str = "", category: str = "") -> str:
+    """Find available scientific tools by keyword or category."""
+    tools = await list_tools(category=category)
+    if query:
+        q = query.lower()
+        tools = [t for t in tools if q in t.name.lower() or q in t.description.lower()]
+    return json.dumps([t.model_dump() for t in tools], indent=2)
 
 
-def _get_evolution_engine():  # noqa: ANN202
-    from labclaw.api.deps import get_evolution_engine
-
-    return get_evolution_engine()
-
-
-def _get_device_registry():  # noqa: ANN202
-    from labclaw.api.deps import get_device_registry
-
-    return get_device_registry()
+@mcp.tool()
+async def labclaw_execute_tool(tool_name: str, arguments: str = "{}") -> str:
+    """Execute a scientific tool by name. Pass arguments as JSON string."""
+    args = json.loads(arguments) if isinstance(arguments, str) else arguments
+    result = await execute(tool_name, **args)
+    return json.dumps(result.model_dump(), indent=2)
 
 
-def _get_search_engine():  # noqa: ANN202
-    from labclaw.api.deps import get_tier_a_backend
-    from labclaw.memory.search import HybridSearchEngine
-
-    return HybridSearchEngine(tier_a=get_tier_a_backend())
-
-
-def _get_provenance_for_entity(entity_id: str) -> dict[str, Any] | None:
-    """Return provenance chain dict for an entity if available, else None."""
-    try:
-        from labclaw.api.routers.provenance import _chains
-
-        chain = _chains.get(entity_id)
-        if chain is None:
-            return None
-        return chain.model_dump(mode="json")
-    except Exception:
-        logger.debug("Could not look up provenance for %s", entity_id, exc_info=True)
-        return None
+@mcp.tool()
+async def labclaw_reason(question: str, domain: str = "general") -> str:
+    """Ask a life science domain question. Returns expert-level reasoning."""
+    result = await reason(question, domain=domain)
+    return result.data if result.success else f"Error: {result.error}"
 
 
-def create_server() -> FastMCP:
-    """Create and configure the LabClaw MCP server."""
-    mcp = FastMCP("labclaw")
+@mcp.tool()
+async def labclaw_write(section: str, context: str) -> str:
+    """Generate a scientific writing section (abstract, methods, results, discussion)."""
+    result = await write(section=section, context=context)
+    return result.data if result.success else f"Error: {result.error}"
 
-    @mcp.tool()
-    def discover(
-        min_sessions: int = 10,
-        correlation_threshold: float = 0.5,
-        anomaly_z_threshold: float = 2.0,
-    ) -> str:
-        """Run pattern mining on lab data.
 
-        Returns structured JSON with patterns and provenance metadata.
-
-        Args:
-            min_sessions: Minimum number of sessions required to mine patterns.
-            correlation_threshold: Minimum absolute correlation to report.
-            anomaly_z_threshold: Z-score threshold for anomaly detection.
-        """
-        import uuid as _uuid_mod
-        from datetime import UTC, datetime
-
-        from labclaw.discovery.mining import MiningConfig
-
-        miner = _get_pattern_miner()
-        config = MiningConfig(
-            min_sessions=min_sessions,
-            correlation_threshold=correlation_threshold,
-            anomaly_z_threshold=anomaly_z_threshold,
-        )
-        # Load experiment rows from session chronicle via memory/API
-        rows: list[dict[str, Any]] = []
-        try:
-            from labclaw.api.deps import get_session_chronicle
-
-            chronicle = get_session_chronicle()
-            for session in chronicle.list_sessions():
-                row = session.model_dump()
-                rows.append(row)
-        except (ImportError, Exception):
-            logger.debug("Could not load session data for mining", exc_info=True)
-            rows = []
-        if not rows:
-            return json.dumps(
-                {
-                    "patterns": [],
-                    "data_summary": {"row_count": 0},
-                    "provenance": {
-                        "tool": "discover",
-                        "run_id": str(_uuid_mod.uuid4()),
-                        "timestamp": datetime.now(UTC).isoformat(),
-                        "row_count": 0,
-                    },
-                    "message": "No experiment data available. Ingest data first.",
-                },
-                indent=2,
-            )
-        result = miner.mine(rows, config=config)
-        output = result.model_dump(mode="json")
-        output["provenance"] = {
-            "tool": "discover",
-            "run_id": str(_uuid_mod.uuid4()),
-            "timestamp": datetime.now(UTC).isoformat(),
-            "row_count": len(rows),
-            "config": {
-                "min_sessions": min_sessions,
-                "correlation_threshold": correlation_threshold,
-                "anomaly_z_threshold": anomaly_z_threshold,
-            },
-        }
-        return json.dumps(output, indent=2, default=str)
-
-    @mcp.tool()
-    def hypothesize(context: str = "", constraints: str = "") -> str:
-        """Generate hypotheses from discovered patterns.
-
-        Args:
-            context: Domain context to guide hypothesis generation.
-            constraints: Comma-separated constraints for hypotheses.
-        """
-        from labclaw.discovery.hypothesis import HypothesisInput
-
-        generator = _get_hypothesis_generator()
-        constraint_list = [c.strip() for c in constraints.split(",") if c.strip()]
-        # Load latest mined patterns from session chronicle
-        try:
-            from labclaw.api.deps import get_latest_patterns
-
-            patterns = get_latest_patterns()
-        except (ImportError, Exception):
-            patterns = []
-        inp = HypothesisInput(patterns=patterns, context=context, constraints=constraint_list)
-        results = generator.generate(inp)
-        return json.dumps(
-            [r.model_dump(mode="json") for r in results],
-            indent=2,
-            default=str,
-        )
-
-    @mcp.tool()
-    def evolution_status() -> str:
-        """Get current self-evolution cycle status."""
-        engine = _get_evolution_engine()
-        active = engine.get_active_cycles()
-        history = engine.get_history()
-        summary: dict[str, Any] = {
-            "active_cycles": len(active),
-            "total_cycles": len(history),
-            "cycles": [],
-        }
-        for cycle in active:
-            summary["cycles"].append(
-                {
-                    "cycle_id": cycle.cycle_id,
-                    "target": cycle.target.value,
-                    "stage": cycle.stage.value,
-                    "started_at": cycle.started_at.isoformat(),
-                    "candidate": cycle.candidate.description,
-                }
-            )
-        return json.dumps(summary, indent=2, default=str)
-
-    @mcp.tool()
-    def device_status() -> str:
-        """List all lab devices and their status."""
-        registry = _get_device_registry()
-        devices = registry.list_devices()
-        result = []
-        for d in devices:
-            result.append(
-                {
-                    "device_id": d.device_id,
-                    "name": d.name,
-                    "type": d.device_type,
-                    "status": d.status.value,
-                    "location": d.location,
-                    "model": d.model,
-                }
-            )
-        return json.dumps(result, indent=2, default=str)
-
-    @mcp.tool()
-    def query_memory(query: str) -> str:
-        """Search lab memory for information, including provenance chains.
-
-        Args:
-            query: Search query text.
-        """
-        from labclaw.memory.search import HybridSearchQuery
-
-        engine = _get_search_engine()
-        results = engine.search(HybridSearchQuery(text=query, limit=10))
-        output = []
-        for r in results:
-            output.append(
-                {
-                    "entity_id": r.entity_id,
-                    "snippet": r.snippet,
-                    "score": r.score,
-                    "source": f"tier-{r.source_tier}:{r.source_detail}",
-                    "provenance": _get_provenance_for_entity(r.entity_id),
-                }
-            )
-        return json.dumps(output, indent=2, default=str)
-
-    @mcp.tool()
-    def list_findings(limit: int = 10) -> str:
-        """List recent scientific findings from lab memory.
-
-        Args:
-            limit: Maximum number of findings to return.
-        """
-        from labclaw.memory.search import HybridSearchQuery
-
-        engine = _get_search_engine()
-        results = engine.search(
-            HybridSearchQuery(text="finding discovery hypothesis result", limit=limit)
-        )
-        output = []
-        for r in results:
-            output.append(
-                {
-                    "entity_id": r.entity_id,
-                    "snippet": r.snippet,
-                    "score": r.score,
-                    "source": f"tier-{r.source_tier}:{r.source_detail}",
-                }
-            )
-        return json.dumps(output, indent=2, default=str)
-
-    @mcp.tool()
-    def provenance(finding_id: str) -> str:
-        """Query the provenance chain for a specific finding.
-
-        Returns the full traceability chain from raw data to conclusion,
-        or an informative message when no chain is registered.
-
-        Args:
-            finding_id: The finding ID whose provenance chain is requested.
-        """
-        chain = _get_provenance_for_entity(finding_id)
-        if chain is None:
-            return json.dumps(
-                {
-                    "finding_id": finding_id,
-                    "chain": None,
-                    "message": (
-                        f"No provenance chain registered for finding {finding_id!r}. "
-                        "Run a discovery cycle first."
-                    ),
-                },
-                indent=2,
-            )
-        return json.dumps(
-            {
-                "finding_id": finding_id,
-                "chain": chain,
-            },
-            indent=2,
-            default=str,
-        )
-
-    return mcp
+@mcp.tool()
+async def labclaw_health() -> str:
+    """Check Cloud Brain health and available skills."""
+    status = await health()
+    return json.dumps(status.model_dump(), indent=2)
 
 
 def main() -> None:
     """Run MCP server via stdio transport."""
-    server = create_server()
-    server.run(transport="stdio")
+    mcp.run(transport="stdio")
 
 
 if __name__ == "__main__":
