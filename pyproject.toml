@@ -4,15 +4,15 @@ build-backend = "hatchling.build"
 
 [project]
 name = "labclaw"
-version = "0.0.13"
-description = "Distributed agentic architecture for self-documenting, self-improving neuroscience laboratories"
+version = "0.0.1"
+description = "Cloud Brain — unified gateway to 2400+ scientific tools"
 readme = "README.md"
 license = "Apache-2.0"
 requires-python = ">=3.11"
 authors = [
     { name = "LabClaw Team" },
 ]
-keywords = ["neuroscience", "lab-automation", "scientific-method", "agentic-ai", "self-improving"]
+keywords = ["scientific-tools", "lab-automation", "mcp", "cloud-brain", "life-science"]
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Science/Research",
@@ -26,73 +26,33 @@ classifiers = [
 dependencies = [
     "fastapi>=0.115.0,<1.0.0",
     "uvicorn>=0.30.0,<1.0.0",
-    "watchdog>=4.0.0,<7.0.0",
     "pydantic>=2.0.0,<3.0.0",
-    "anthropic>=0.40.0,<1.0.0",
-    "openai>=1.0.0,<3.0.0",
     "httpx>=0.27.0,<1.0.0",
-    "redis>=5.0.0,<8.0.0",
-    "streamlit>=1.38.0,<2.0.0",
     "pyyaml>=6.0,<7.0",
-    "aiosqlite>=0.20.0,<1.0.0",
-    "mcp>=1.0.0,<2.0.0",
-    "numpy>=1.26.0,<3.0.0",
-    "scipy>=1.12.0,<2.0.0",
-    "plotly>=5.18.0,<10.0.0",
     "slowapi>=0.1.9,<1.0.0",
+    "mcp>=1.0.0,<2.0.0",
 ]
 
 [project.optional-dependencies]
+tooluniverse = [
+    "tooluniverse>=1.1.0; python_version>='3.11'",
+]
+llm = [
+    "anthropic>=0.40.0,<1.0.0",
+    "openai>=1.0.0,<3.0.0",
+]
 dev = [
     "pytest>=8.0,<10.0",
     "pytest-asyncio>=0.24,<2.0",
-    "pytest-bdd>=7.0,<9.0",
     "pytest-cov>=6.0,<8.0",
     "httpx>=0.27.0,<1.0.0",
     "ruff>=0.6.0,<1.0.0",
     "mypy>=1.11,<2.0",
     "pre-commit>=4.0,<5.0",
     "build>=1.0,<2.0",
-    "hypothesis>=6.100.0,<7.0.0",
-    "bandit>=1.7.0,<2.0.0",
-    "pip-audit>=2.7.0,<3.0.0",
-    "safety>=3.0.0,<4.0.0",
-    "commitizen>=3.0,<5.0",
 ]
-skills = [
-    "tooluniverse>=1.1.0; python_version>='3.11'",
-    "biomni>=0.0.1; python_version>='3.11'",
-    "claude-skills-mcp>=1.0.0; python_version>='3.12'",
-    "langchain-openai>=1.0.0; python_version>='3.11'",
-    "langchain-anthropic>=1.0.0; python_version>='3.11'",
-]
-science = [
-    "scikit-learn>=1.4.0,<2.0.0",
-    "scikit-optimize>=0.10.0,<1.0.0",
-    "statsmodels>=0.14.0,<1.0.0",
-    "umap-learn>=0.5.0,<1.0.0",
-]
-ingest = [
-    "h5py>=3.10.0",
-    "pandas>=2.1.0",
-    "tables>=3.9.0",
-]
-nwb = [
-    "pynwb>=2.8.0",
-    "hdmf>=3.14.0",
-    "neuroconv>=0.6.0",
-]
-memory = [
-    "graphiti-core>=0.5.0,<1.0.0",
-    "sentence-transformers>=3.0.0,<6.0.0",
-]
-llm = [
-    "litellm>=1.30,<=1.82.6",  # SECURITY: 1.82.7+ compromised (supply chain attack 2026-03-24)
-]
-docs = [
-    "mkdocs>=1.6,<2",
-    "mkdocs-material>=9.5",
-    "mkdocstrings[python]>=0.27",
+all = [
+    "labclaw[tooluniverse,llm]",
 ]
 
 [project.urls]
@@ -104,12 +64,6 @@ Changelog = "https://github.com/labclaw/labclaw/blob/main/CHANGELOG.md"
 
 [project.scripts]
 labclaw = "labclaw.cli:main"
-labclaw-edge = "labclaw.edge.cli:main"
-labclaw-daemon = "labclaw.daemon:main"
-# labclaw-mcp entry point added when mcp package is installed (see PR #4)
-
-[project.entry-points."labclaw.plugins"]
-# Example: neuro = "labclaw_neuro:create_plugin"
 
 [tool.ruff]
 target-version = "py311"
@@ -118,29 +72,19 @@ line-length = 100
 [tool.ruff.lint]
 select = ["E", "F", "I", "N", "W", "UP"]
 
-[tool.ruff.lint.per-file-ignores]
-# Standard math notation (X, A, XtX) in linear algebra code
-"src/labclaw/discovery/modeling.py" = ["N802", "N803", "N806"]
-# sklearn import alias naming
-"src/labclaw/discovery/unsupervised.py" = ["N811"]
-# Standard math notation (X, A) in modeling tests
-"tests/unit/test_discovery_modeling_full.py" = ["N806"]
-
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 asyncio_mode = "auto"
 markers = [
-    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
-    "integration: marks integration tests",
-    "e2e: marks end-to-end pipeline tests",
+    "integration: marks integration tests (real API calls)",
+    "mcp: marks MCP server tests",
 ]
 
 [tool.coverage.run]
 source = ["labclaw"]
 omit = [
     "*/tests/*",
-    "*/demo/*",
-    "*/dashboard/*",
+    "*/integration/*",
 ]
 
 [tool.coverage.report]
@@ -153,22 +97,6 @@ exclude_lines = [
     "raise NotImplementedError",
     "@overload",
     "^\\s+\\.\\.\\.$",
-]
-
-[tool.commitizen]
-name = "cz_conventional_commits"
-version = "0.0.13"
-version_files = ["pyproject.toml:project.version"]
-tag_format = "v$version"
-update_changelog_on_bump = true
-changelog_incremental = true
-changelog_file = "CHANGELOG.md"
-
-[tool.uv]
-# Skills extra has forward-looking version pins (biomni >=0.1.0 not yet on PyPI)
-# Exclude from resolution so it doesn't block development workflows
-override-dependencies = [
-    "biomni>=0.0.1",
 ]
 
 [tool.mypy]

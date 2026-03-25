@@ -1,7 +1,4 @@
-.PHONY: test lint format build docker demo clean install dev-install coverage-html docs docs-serve release
-
-test:
-	uv run pytest --cov=labclaw --cov-report=term-missing --cov-fail-under=100 -q
+.PHONY: lint format test test-integration test-mcp build dev-install clean
 
 lint:
 	uv run ruff check src/ tests/
@@ -11,35 +8,20 @@ format:
 	uv run ruff check --fix src/ tests/
 	uv run ruff format src/ tests/
 
+test:
+	PYTHONPATH=src uv run pytest -m "not integration and not mcp" --cov=labclaw --cov-fail-under=100 -q
+
+test-integration:
+	PYTHONPATH=src uv run pytest -m integration -v
+
+test-mcp:
+	PYTHONPATH=src uv run pytest -m mcp -v
+
 build:
-	rm -rf dist
-	uv build --sdist --wheel
-
-docker:
-	docker build -t labclaw .
-
-demo:
-	uv run python -m labclaw demo
-
-clean:
-	rm -rf dist/ build/ .coverage htmlcov/ .pytest_cache/ .mypy_cache/ .ruff_cache/
-	find . -type d -name __pycache__ -exec rm -rf {} +
-
-install:
-	uv sync --frozen
+	uv run python -m build
 
 dev-install:
-	uv sync --extra dev --extra science --extra ingest --extra nwb --frozen
+	uv sync --extra dev --extra tooluniverse --extra llm
 
-coverage-html:
-	uv run pytest --cov=labclaw --cov-report=html -q
-
-docs:
-	uv run --extra docs mkdocs build
-
-docs-serve:
-	uv run --extra docs mkdocs serve
-
-release:
-	uv run cz bump
-	git push origin main --tags
+clean:
+	rm -rf dist/ build/ *.egg-info .pytest_cache .ruff_cache htmlcov .coverage
