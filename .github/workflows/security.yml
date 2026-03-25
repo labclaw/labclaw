@@ -19,7 +19,7 @@ concurrency:
 jobs:
   dependency-audit:
     name: dependency-audit
-    runs-on: [self-hosted, linux]
+    runs-on: ubuntu-latest
     timeout-minutes: 20
 
     steps:
@@ -47,7 +47,7 @@ jobs:
 
   bandit:
     name: bandit-sast
-    runs-on: [self-hosted, linux]
+    runs-on: ubuntu-latest
     timeout-minutes: 15
 
     steps:
@@ -81,7 +81,7 @@ jobs:
 
   codeql:
     name: codeql
-    runs-on: [self-hosted, linux]
+    runs-on: ubuntu-latest
     timeout-minutes: 30
     if: github.event_name != 'pull_request'
     continue-on-error: true  # GHAS required; free once repo is public
@@ -104,7 +104,7 @@ jobs:
 
   secrets-scan:
     name: secrets-scan
-    runs-on: [self-hosted, linux]
+    runs-on: ubuntu-latest
     timeout-minutes: 10
 
     steps:
