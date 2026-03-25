@@ -1,153 +1,64 @@
-"""Configuration loader for LabClaw."""
+"""Configuration loading for labclaw."""
 
 from __future__ import annotations
 
 import logging
 from pathlib import Path
-from typing import Any
 
-import yaml  # type: ignore[import-untyped]
+import yaml
 from pydantic import BaseModel
 
 logger = logging.getLogger(__name__)
 
-_DEFAULT_CONFIG = Path(__file__).resolve().parent.parent.parent / "configs" / "default.yaml"
+_SEARCH_PATHS = [
+    Path("labclaw.yaml"),
+    Path.home() / ".labclaw" / "config.yaml",
+]
 
 
-class SystemConfig(BaseModel):
-    name: str = "labclaw"
-    version: str = "0.0.1"
-    log_level: str = "INFO"
+class BrainConfig(BaseModel):
+    port: int = 18802
+    api_keys_env: str = "LABCLAW_API_KEYS"
+    rate_limit: str = "60/minute"
+    max_request_size: int = 1_048_576
+    max_response_size: int = 100_000
 
 
-class GraphConfig(BaseModel):
-    backend: str = "sqlite"
-    path: str = "data/labclaw.db"
-
-
-class EventsConfig(BaseModel):
-    backend: str = "memory"
-    redis_url: str = "redis://localhost:6379"
-
-
-class APIConfig(BaseModel):
-    host: str = "127.0.0.1"
-    port: int = 18800
-
-
-class EdgeConfig(BaseModel):
-    watch_paths: list[str] = []
-    poll_interval_seconds: int = 5
-
-
-class AgentsConfig(BaseModel):
-    default_model: str = "claude-sonnet-4-6"
-    max_tool_calls: int = 20
-
-
-class OrchestratorConfig(BaseModel):
-    """Configuration for the scientific method loop."""
-
-    max_llm_calls: int = 50
-    seed: int | None = None
-    skip_steps: list[str] = []
-
-
-class MemoryConfig(BaseModel):
-    """Configuration for the 3-tier memory system."""
-
-    tier_a_root: str = "lab"
-    tier_b_db_path: str = "data/knowledge_graph.db"
-    embedding_model: str = "all-MiniLM-L6-v2"
-
-
-class ProactiveConfig(BaseModel):
-    """Configuration for the proactive engine."""
-
+class SkillConfig(BaseModel):
     enabled: bool = True
-    commitment_check_interval: int = 60
-    default_cooldown: float = 5.0
-
-
-class SchedulingConfig(BaseModel):
-    """Configuration for the task scheduler."""
-
-    task_db_path: str = "data/tasks.db"
-    poll_interval: float = 1.0
-    backoff_base: float = 2.0
-    max_backoff: float = 60.0
-
-
-class SkillsConfig(BaseModel):
-    """Configuration for the cloud brain skills system."""
-
-    enabled: bool = True
-    auto_register_builtins: bool = True
-    enabled_skills: list[str] = []
-
-
-class LiteLLMConfig(BaseModel):
-    """Configuration for the LiteLLM routing layer."""
-
-    model: str = "gpt-4o"
-    fallback_models: list[str] = ["claude-sonnet-4-6", "gpt-4o-mini"]
     timeout: int = 30
-    num_retries: int = 2
+    lazy_loading: bool = True
 
 
-class LLMConfigFallback(BaseModel):
-    """Standalone LLM config used when llm package is not yet available."""
-
+class LLMConfig(BaseModel):
     provider: str = "anthropic"
     model: str = "claude-sonnet-4-6"
     api_key_env: str = "ANTHROPIC_API_KEY"
-    temperature: float = 0.7
+    temperature: float = 0.3
     max_tokens: int = 4096
 
 
-def _get_llm_config_class() -> type[BaseModel]:
-    """Return LLMConfig from llm.provider if available, else fallback."""
-    try:
-        from labclaw.llm.provider import LLMConfig
-
-        return LLMConfig
-    except ImportError:
-        return LLMConfigFallback
+class LabclawConfig(BaseModel):
+    brain: BrainConfig = BrainConfig()
+    skills: dict[str, SkillConfig] = {}
+    llm: LLMConfig = LLMConfig()
 
 
-class LabClawConfig(BaseModel):
-    system: SystemConfig = SystemConfig()
-    llm: Any = None  # Populated by load_config or default
-    graph: GraphConfig = GraphConfig()
-    events: EventsConfig = EventsConfig()
-    api: APIConfig = APIConfig()
-    edge: EdgeConfig = EdgeConfig()
-    agents: AgentsConfig = AgentsConfig()
-    orchestrator: OrchestratorConfig = OrchestratorConfig()
-    memory: MemoryConfig = MemoryConfig()
-    proactive: ProactiveConfig = ProactiveConfig()
-    scheduling: SchedulingConfig = SchedulingConfig()
-    skills: SkillsConfig = SkillsConfig()
-    litellm: LiteLLMConfig = LiteLLMConfig()
+def load_config(path: Path | None = None) -> LabclawConfig:
+    """Load config from file or defaults.
 
-    def model_post_init(self, __context: Any) -> None:
-        cls = _get_llm_config_class()
-        if self.llm is None:
-            self.llm = cls()
-        elif isinstance(self.llm, dict):
-            self.llm = cls(**self.llm)
-        elif not isinstance(self.llm, cls):
-            # Mismatched BaseModel — convert via model_dump then re-validate
-            self.llm = cls(**self.llm.model_dump())
+    Search: explicit path -> ./labclaw.yaml -> ~/.labclaw/config.yaml -> defaults.
+    """
+    if path and path.exists():
+        return _parse(path)
+    for p in _SEARCH_PATHS:
+        if p.exists():
+            logger.info("Loading config from %s", p)
+            return _parse(p)
+    logger.debug("No config file found, using defaults")
+    return LabclawConfig()
 
 
-def load_config(path: Path | None = None) -> LabClawConfig:
-    """Load config from YAML. Falls back to configs/default.yaml."""
-    config_path = path or _DEFAULT_CONFIG
-    if config_path.exists():
-        with open(config_path) as f:
-            data = yaml.safe_load(f) or {}
-        logger.info("Loaded config from %s", config_path)
-        return LabClawConfig.model_validate(data)
-    logger.warning("Config file %s not found, using defaults", config_path)
-    return LabClawConfig()
+def _parse(path: Path) -> LabclawConfig:
+    data = yaml.safe_load(path.read_text()) or {}
+    return LabclawConfig(**data)
