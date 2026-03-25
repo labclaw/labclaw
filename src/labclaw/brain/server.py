@@ -158,7 +158,7 @@ async def get_tools(request: Request, category: str = "") -> list[Any]:
     """List available tools, optionally filtered by category."""
     tools = await brain.list_tools(category=category)
     result: list[Any] = [t.model_dump() for t in tools]
-    return _truncate_response(result)  # type: ignore[return-value]
+    return _truncate_response(result)  # type: ignore[no-any-return]
 
 
 @app.post("/brain/execute", dependencies=[Depends(verify_api_key)])
@@ -166,7 +166,7 @@ async def get_tools(request: Request, category: str = "") -> list[Any]:
 async def post_execute(request: Request, body: ExecuteRequest) -> dict[Any, Any]:
     """Execute a scientific tool by name."""
     result = await brain.execute(body.tool_name, **body.arguments)
-    return _truncate_response(result.model_dump())  # type: ignore[return-value]
+    return _truncate_response(result.model_dump())  # type: ignore[no-any-return]
 
 
 @app.post("/brain/reason", dependencies=[Depends(verify_api_key)])
@@ -174,7 +174,7 @@ async def post_execute(request: Request, body: ExecuteRequest) -> dict[Any, Any]
 async def post_reason(request: Request, body: ReasonRequest) -> dict[Any, Any]:
     """Life science domain reasoning."""
     result = await brain.reason(body.question, domain=body.domain, context=body.context)
-    return _truncate_response(result.model_dump())  # type: ignore[return-value]
+    return _truncate_response(result.model_dump())  # type: ignore[no-any-return]
 
 
 @app.post("/brain/write", dependencies=[Depends(verify_api_key)])
@@ -182,4 +182,4 @@ async def post_reason(request: Request, body: ReasonRequest) -> dict[Any, Any]:
 async def post_write(request: Request, body: WriteRequest) -> dict[Any, Any]:
     """Generate a scientific writing section."""
     result = await brain.write(section=body.section, context=body.context)
-    return _truncate_response(result.model_dump())  # type: ignore[return-value]
+    return _truncate_response(result.model_dump())  # type: ignore[no-any-return]

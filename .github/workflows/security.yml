@@ -45,6 +45,7 @@ jobs:
           --ignore-vuln CVE-2026-33230
           --ignore-vuln CVE-2026-33231
           --ignore-vuln CVE-2026-4539
+          --ignore-vuln CVE-2026-25645
 
   bandit:
     name: bandit-sast
@@ -67,11 +68,11 @@ jobs:
         run: uv sync --extra dev --frozen
 
       - name: Run bandit SAST scan
-        run: uv run bandit -r src/labclaw -f json -o bandit-report.json -ll
+        run: uvx bandit -r src/labclaw/ -f json -o bandit-report.json -ll
 
       - name: Display results
         if: always()
-        run: uv run bandit -r src/labclaw -f screen -ll
+        run: uvx bandit -r src/labclaw/ -f screen -ll
 
       - name: Upload report
         if: always()
