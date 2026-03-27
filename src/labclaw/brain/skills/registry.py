@@ -77,5 +77,10 @@ class SkillRegistry:
         return await skill.execute(tool_name, **kwargs)
 
     async def health(self) -> dict[str, bool]:
-        """Check health of every registered skill."""
-        return {name: await skill.health_check() for name, skill in self._skills.items()}
+        """Check health of every registered skill concurrently."""
+        import asyncio
+
+        names = list(self._skills)
+        checks = [self._skills[n].health_check() for n in names]
+        results = await asyncio.gather(*checks)
+        return dict(zip(names, results))

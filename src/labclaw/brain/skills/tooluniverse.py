@@ -37,12 +37,14 @@ class ToolUniverseSkill:
 
     def __init__(self) -> None:
         self._tu_instance: Any = None
-        self._lock = asyncio.Lock()
+        self._lock: asyncio.Lock | None = None
 
     async def init_sdk(self) -> None:
         """Lazy-initialize the ToolUniverse singleton with asyncio.Lock."""
         if self._tu_instance is not None:
             return
+        if self._lock is None:
+            self._lock = asyncio.Lock()
         async with self._lock:
             if self._tu_instance is not None:
                 return  # pragma: no cover
@@ -53,9 +55,12 @@ class ToolUniverseSkill:
                 instance = await loop.run_in_executor(None, ToolUniverse)
                 await loop.run_in_executor(None, instance.load_tools)
                 self._tu_instance = instance
+                tool_count = await loop.run_in_executor(
+                    None, lambda: len(instance.return_all_loaded_tools())
+                )
                 logger.info(
                     "ToolUniverse initialized with %d tools",
-                    len(instance.return_all_loaded_tools()),
+                    tool_count,
                 )
             except (ImportError, ModuleNotFoundError):
                 logger.warning("tooluniverse package not installed")
@@ -98,7 +103,8 @@ class ToolUniverseSkill:
         """Return all loaded tools as ToolInfo list."""
         if self._tu_instance is None:
             return []
-        raw_tools = self._tu_instance.return_all_loaded_tools()
+        loop = asyncio.get_running_loop()
+        raw_tools = await loop.run_in_executor(None, self._tu_instance.return_all_loaded_tools)
         return [
             ToolInfo(
                 name=t.get("name", ""),
