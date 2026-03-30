@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import pytest
+
 from labclaw.brain.skills.base import CloudSkill, SkillCapability, SkillMetadata
 from labclaw.brain.types import BrainResult, ToolInfo
 
@@ -97,3 +99,90 @@ class TestCloudSkillProtocol:
             pass
 
         assert not isinstance(NotASkill(), CloudSkill)
+
+
+class TestCloudSkillProtocolMethods:
+    """Test CloudSkill Protocol method branches."""
+
+    @pytest.mark.asyncio
+    async def test_protocol_execute_branch(self) -> None:
+        """Test that Protocol execute method branch is covered."""
+
+        class ConcreteSkill:
+            def __init__(self) -> None:
+                self.metadata = SkillMetadata(
+                    name="concrete",
+                    version="1.0.0",
+                    description="Concrete skill",
+                    capabilities=[SkillCapability.TOOL_EXECUTION],
+                )
+
+            async def execute(self, tool_name: str, **kwargs: object) -> BrainResult:
+                return BrainResult(success=True, data={"tool": tool_name})
+
+            async def list_tools(self) -> list[ToolInfo]:
+                return []
+
+            async def health_check(self) -> bool:
+                return True
+
+        skill: CloudSkill = ConcreteSkill()  # type: ignore[assignment]
+        result = await skill.execute("test_tool", arg="value")
+        assert result.success is True
+        assert result.data == {"tool": "test_tool"}
+
+    @pytest.mark.asyncio
+    async def test_protocol_list_tools_branch(self) -> None:
+        """Test that Protocol list_tools method branch is covered."""
+
+        class ConcreteSkill:
+            def __init__(self) -> None:
+                self.metadata = SkillMetadata(
+                    name="concrete",
+                    version="1.0.0",
+                    description="Concrete skill",
+                    capabilities=[SkillCapability.TOOL_EXECUTION],
+                )
+
+            async def execute(self, tool_name: str, **kwargs: object) -> BrainResult:
+                return BrainResult(success=True)
+
+            async def list_tools(self) -> list[ToolInfo]:
+                return [
+                    ToolInfo(name="tool1", description="Tool 1", skill="concrete"),
+                    ToolInfo(name="tool2", description="Tool 2", skill="concrete"),
+                ]
+
+            async def health_check(self) -> bool:
+                return True
+
+        skill: CloudSkill = ConcreteSkill()  # type: ignore[assignment]
+        tools = await skill.list_tools()
+        assert len(tools) == 2
+        assert tools[0].name == "tool1"
+
+    @pytest.mark.asyncio
+    async def test_protocol_health_check_branch(self) -> None:
+        """Test that Protocol health_check method branch is covered."""
+
+        class ConcreteSkill:
+            def __init__(self) -> None:
+                self.metadata = SkillMetadata(
+                    name="concrete",
+                    version="1.0.0",
+                    description="Concrete skill",
+                    capabilities=[SkillCapability.TOOL_EXECUTION],
+                )
+
+            async def execute(self, tool_name: str, **kwargs: object) -> BrainResult:
+                return BrainResult(success=True)
+
+            async def list_tools(self) -> list[ToolInfo]:
+                return []
+
+            async def health_check(self) -> bool:
+                return False
+
+        skill: CloudSkill = ConcreteSkill()  # type: ignore[assignment]
+        result = await skill.health_check()
+        assert result is False
