@@ -114,21 +114,41 @@ class TestFormatCitation:
         assert "Paper Title" in result.data["citation"]
 
     @pytest.mark.asyncio
-    async def test_format_citation_non_apa_style(self) -> None:
+    async def test_format_citation_non_apa_no_doi(self) -> None:
+        """Test non-APA citation style without DOI (covers line 120->123 branch)."""
         from labclaw.brain.skills.write import WriteSkill
 
         skill = WriteSkill()
         result = await skill.execute(
             "format_citation",
-            title="Paper",
+            title="Paper Without DOI",
             authors=["Auth, A."],
             year=2023,
             journal="Science",
-            doi="10.5678/x",
             style="mla",
         )
         assert result.success is True
         assert result.data["style"] == "mla"
+        assert "doi:" not in result.data["citation"]
+
+    @pytest.mark.asyncio
+    async def test_format_citation_non_apa_with_doi(self) -> None:
+        """Test non-APA citation style with DOI (covers line 121)."""
+        from labclaw.brain.skills.write import WriteSkill
+
+        skill = WriteSkill()
+        result = await skill.execute(
+            "format_citation",
+            title="Paper With DOI",
+            authors=["Auth, A."],
+            year=2023,
+            journal="Science",
+            doi="10.5678/test",
+            style="mla",
+        )
+        assert result.success is True
+        assert result.data["style"] == "mla"
+        assert "doi:10.5678/test" in result.data["citation"]
 
 
 class TestWriteListTools:

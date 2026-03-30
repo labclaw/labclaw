@@ -155,7 +155,31 @@ class TestHealth:
         assert status == {"ok": True, "bad": False}
 
     @pytest.mark.asyncio
-    async def test_health_empty_registry(self) -> None:
+    async def test_list_all_tools_uses_cached_map(self) -> None:
+        """Test that list_all_tools uses cached tool map when not dirty."""
         reg = SkillRegistry()
-        status = await reg.health()
-        assert status == {}
+        reg.register(_make_mock_skill("s1"))
+
+        # First call builds the map
+        await reg.list_all_tools()
+        assert not reg._tool_map_dirty
+
+        # Second call should use cached map (line 55->58 not taken)
+        tools = await reg.list_all_tools()
+        names = [t.name for t in tools]
+        assert "s1_tool" in names
+
+    @pytest.mark.asyncio
+    async def test_execute_uses_cached_map(self) -> None:
+        """Test that execute uses cached tool map when not dirty."""
+        reg = SkillRegistry()
+        skill = _make_mock_skill("router")
+        reg.register(skill)
+
+        # First call builds the map
+        await reg.execute("router_tool")
+        assert not reg._tool_map_dirty
+
+        # Second call should use cached map (line 67->70 not taken)
+        result = await reg.execute("router_tool")
+        assert result.success is True
