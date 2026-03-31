@@ -70,3 +70,7 @@ logs/
 
 # Internal design docs (not for public)
 .stitch/
+.claude/traces/
+.claude/circuit-breaker.json
+.claude/quality-baseline.json
+docs/superpowers/
