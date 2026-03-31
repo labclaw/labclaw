@@ -74,3 +74,4 @@ logs/
 .claude/circuit-breaker.json
 .claude/quality-baseline.json
 docs/superpowers/
+.claude/metrics/
