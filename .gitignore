@@ -7,25 +7,21 @@ __pycache__/
 dist/
 build/
 .eggs/
-
 # Virtual environments
 .venv/
 venv/
 env/
-
 # IDE
 .idea/
 .vscode/
 *.swp
 *.swo
-
 # Environment
 .env
 .env.local
 *.pem
 credentials.json
 .mcp.json
-
 # Data (never commit raw data)
 data/
 *.h5
@@ -36,38 +32,30 @@ data/
 *.tiff
 *.bin
 *.dat
-
 # Databases
 *.sqlite
 *.sqlite3
 *.db
-
 # OS
 .DS_Store
 Thumbs.db
-
 # Jupyter
 .ipynb_checkpoints/
-
 # Testing
 .coverage
 coverage.json
 htmlcov/
 .pytest_cache/
-
 # Linting / Type checking
 .ruff_cache/
 .mypy_cache/
-
 # Docs build
 site/
-
 # Logs
 *.log
 logs/
 .hypothesis/
 .claude/worktrees/
-
 # Internal design docs (not for public)
 .stitch/
 .claude/traces/
