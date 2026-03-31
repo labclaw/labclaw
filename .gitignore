@@ -75,3 +75,4 @@ logs/
 .claude/quality-baseline.json
 docs/superpowers/
 .claude/metrics/
+.claude/verify.sh
